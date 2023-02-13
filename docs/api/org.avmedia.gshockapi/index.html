@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>org.avmedia.gshockapi</title>
+    <link href="../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../";</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/jetbrains-mono.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+<div class="navigation-wrapper" id="navigation-wrapper">
+    <div id="leftToggler"><span class="icon-toggler"></span></div>
+    <div class="library-name">
+            <a href="../../index.html">
+                    <span>api</span>
+            </a>
+    </div>
+    <div>
+    </div>
+    <div class="pull-right d-flex">
+        <button id="theme-toggle-button"><span id="theme-toggle"></span></button>
+        <div id="searchBar"></div>
+    </div>
+</div>
+<div id="container">
+    <div id="leftColumn">
+        <div id="sideMenu"></div>
+    </div>
+    <div id="main">
+<div class="main-content" id="content" pageIds="api::org.avmedia.gshockapi////PointingToDeclaration//1086730362">
+  <div class="breadcrumbs"><a href="../../index.html">api</a><span class="delimiter">/</span><span class="current">org.avmedia.gshockapi</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+    <div class="platform-hinted UnderCoverText" data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><p class="paragraph">Casio G-Shock 5000/5600 API</p><h2 class=""> Description</h2><p class="paragraph">This library provides an API to communicate and issue commands to the Casio G-Shock 5000 and 56000 series of watches via the Bluetooth interface. It can perform the following tasks:</p><ul><li><p class="paragraph">Set watch's time</p></li><li><p class="paragraph">Set Home Time (Home City)</p></li><li><p class="paragraph">Set Alarms</p></li><li><p class="paragraph">Set Reminders</p></li><li><p class="paragraph">Set watch's settings.</p></li><li><p class="paragraph">Get watch's name</p></li><li><p class="paragraph">Get watch's battery level</p></li><li><p class="paragraph">Set watch's Timer</p></li></ul><p class="paragraph"><i>All the API functions are located in the </i><a href="-g-shock-a-p-i/index.html"><i><strong>GShockAPI</strong></i></a><i> class.</i></p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button></div>
+    <div class="tabs-section-body">
+      <h2 class="">Types</h2>
+      <div class="table" data-togglable="Types"><a data-name="-72621159%2FClasslikes%2F1086730362" anchor-label="Alarm" id="-72621159%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-alarm/index.html"><span><span>Alarm</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-72621159%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="-alarm/index.html">Alarm</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">var </span>hour<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>minute<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>hasHourlyChime<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></span></span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-2039570576%2FClasslikes%2F1086730362" anchor-label="Event" id="-2039570576%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-event/index.html"><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2039570576%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-event/index.html">Event</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">var </span>title<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">startDate<span class="token operator">: </span><a href="-event-date/index.html">EventDate</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>endDate<span class="token operator">: </span><a href="-event-date/index.html">EventDate</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">repeatPeriod<span class="token operator">: </span><a href="-repeat-period/index.html">RepeatPeriod</a><span class="token punctuation">, </span></span><span class="parameter ">daysOfWeek<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/ArrayList.html">ArrayList</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://developer.android.com/reference/kotlin/java/time/DayOfWeek.html">DayOfWeek</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>incompatible<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>selected<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1736456222%2FClasslikes%2F1086730362" anchor-label="EventDate" id="-1736456222%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-event-date/index.html"><span>Event</span><wbr></wbr><span><span>Date</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1736456222%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-event-date/index.html">EventDate</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">var </span>year<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>month<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/time/Month.html">Month</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>day<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1847734155%2FClasslikes%2F1086730362" anchor-label="GShockAPI" id="1847734155%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-g-shock-a-p-i/index.html"><span>GShock</span><wbr></wbr><span><span>API</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1847734155%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-g-shock-a-p-i/index.html">GShockAPI</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Context.html">Context</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">This class contains all the API functions. This should the the main interface to the library.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="21185746%2FClasslikes%2F1086730362" anchor-label="ProgressEvents" id="21185746%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-progress-events/index.html"><span>Progress</span><wbr></wbr><span><span>Events</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="21185746%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="-progress-events/index.html">ProgressEvents</a></div><div class="brief "><p class="paragraph">This class is used to send RX events to the rest of the library and to the application to inform them of some internal events. For example, when a connection is established, a <code class="lang-kotlin">ConnectionSetupComplete</code> event is broadcast. If the application is listening on this event, it can change its UI to reflect this. The app can call <a href="-progress-events/-subscriber/start.html">Subscriber.start</a> method to start listening to events. Here is an example which can reside in the <code class="lang-kotlin">MainActivity</code>:</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1112270404%2FClasslikes%2F1086730362" anchor-label="RepeatPeriod" id="-1112270404%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-repeat-period/index.html"><span>Repeat</span><wbr></wbr><span><span>Period</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1112270404%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-repeat-period/index.html">RepeatPeriod</a> : <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="-repeat-period/index.html">RepeatPeriod</a><span class="token operator">&gt; </span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="739920437%2FClasslikes%2F1086730362" anchor-label="Settings" id="739920437%2FClasslikes%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-settings/index.html"><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="739920437%2FClasslikes%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-settings/index.html">Settings</a></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2023 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+    </div>
+</div>
+</body>
+</html>
