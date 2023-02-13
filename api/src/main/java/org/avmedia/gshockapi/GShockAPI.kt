@@ -35,7 +35,6 @@ import kotlin.reflect.KSuspendFunction1
  *      ...
  *      runBlocking {
  *          api.waitForConnection(this)
- *          api.init ()
  *          api.getPressedButton()
  *          api.getWatchName()
  *          api.getBatteryLevel()
