@@ -72,7 +72,14 @@ class GShockAPI(private val context: Context) {
      *   }
      * ```
      */
+
     suspend fun waitForConnection(deviceId: String? = ""): String {
+        var connectedStatus = _waitForConnection(deviceId)
+        init()
+        return connectedStatus
+    }
+
+    private suspend fun _waitForConnection(deviceId: String? = ""): String {
 
         if (Connection.isConnected() || Connection.isConnecting()) {
             return "Connecting"
@@ -109,6 +116,14 @@ class GShockAPI(private val context: Context) {
 
         waitForConnectionSetupComplete()
         return deferredResult.await()
+    }
+
+    private suspend fun init() {
+        resultQueue.clear()
+        getPressedButton()
+        ProgressEvents.onNext(ProgressEvents.Events.ButtonPressedInfoReceived)
+        getAppInfo() // this call re-enables lower-right button after watch reset.
+        ProgressEvents.onNext(ProgressEvents.Events.WatchInitializationCompleted)
     }
 
     /**
@@ -512,28 +527,6 @@ class GShockAPI(private val context: Context) {
         readAndWrite(::getWorldCities, 3)
         readAndWrite(::getWorldCities, 4)
         readAndWrite(::getWorldCities, 5)
-    }
-
-    /**
-     * Call this function when the app first starts, right after connection has been established,
-     * i.e. after [waitForConnection] returns. Here is an example:
-     *
-     * ```
-     * private fun run() {
-     *      val scope = CoroutineScope(Dispatchers.Default)
-     *      scope.launch {
-     *          waitForConnection()
-     *          init()
-     *      }
-     * }
-     * ```
-     */
-    suspend fun init() {
-        resultQueue.clear()
-        getPressedButton()
-        ProgressEvents.onNext(ProgressEvents.Events.ButtonPressedInfoReceived)
-        getAppInfo() // this call re-enables lower-right button after watch reset.
-        ProgressEvents.onNext(ProgressEvents.Events.WatchInitializationCompleted)
     }
 
     /**

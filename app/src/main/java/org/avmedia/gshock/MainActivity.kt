@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity() {
 
         GlobalScope.launch {
             api.waitForConnection()
-            api.init()
 
             println("Button pressed: ${api.getPressedButton()}")
 
