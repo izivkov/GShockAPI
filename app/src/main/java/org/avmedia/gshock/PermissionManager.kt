@@ -15,8 +15,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import org.avmedia.gShockPhoneSync.utils.Utils
 import org.avmedia.gshockapi.ProgressEvents
 
 data class PermissionManager(val context: Context) {
@@ -70,7 +70,8 @@ data class PermissionManager(val context: Context) {
                     ENABLE_BLUETOOTH_REQUEST_CODE
                 )
             } catch (e: SecurityException) {
-                Utils.snackBar(context, "Please turn on BlueTooth and restart the app...")
+                Toast.makeText(context,"Please turn on BlueTooth and restart the app...",Toast.LENGTH_LONG).show();
+
                 (context as Activity).finish()
             }
         }

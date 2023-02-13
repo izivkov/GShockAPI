@@ -7,6 +7,7 @@ $dokka.location:org.avmedia.gshockapi/Alarm/enabled/#/PointingToDeclaration/api
 $dokka.location:org.avmedia.gshockapi/Alarm/hasHourlyChime/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/has-hourly-chime.html
 $dokka.location:org.avmedia.gshockapi/Alarm/hour/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/hour.html
 $dokka.location:org.avmedia.gshockapi/Alarm/minute/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/minute.html
+$dokka.location:org.avmedia.gshockapi/Alarm/toString/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/to-string.html
 $dokka.location:org.avmedia.gshockapi/Event///PointingToDeclaration/api/org.avmedia.gshockapi/-event/index.html
 $dokka.location:org.avmedia.gshockapi/Event/Event/#kotlin.String#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.RepeatPeriod#java.util.ArrayList[java.time.DayOfWeek]?#kotlin.Boolean#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-event/-event.html
 $dokka.location:org.avmedia.gshockapi/Event/Event/#org.json.JSONObject/PointingToDeclaration/api/org.avmedia.gshockapi/-event/-event.html
@@ -18,6 +19,7 @@ $dokka.location:org.avmedia.gshockapi/Event/getPeriodFormatted/#/PointingToDecla
 $dokka.location:org.avmedia.gshockapi/Event/incompatible/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/incompatible.html
 $dokka.location:org.avmedia.gshockapi/Event/selected/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/selected.html
 $dokka.location:org.avmedia.gshockapi/Event/title/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/title.html
+$dokka.location:org.avmedia.gshockapi/Event/toString/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/to-string.html
 $dokka.location:org.avmedia.gshockapi/EventDate///PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/index.html
 $dokka.location:org.avmedia.gshockapi/EventDate/EventDate/#kotlin.Int?#java.time.Month?#kotlin.Int?/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/-event-date.html
 $dokka.location:org.avmedia.gshockapi/EventDate/day/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/day.html
