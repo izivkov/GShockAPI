@@ -20,4 +20,4 @@ series of watches via the Bluetooth interface. It can perform the following task
 
 *All the API functions are located in the **[GShockAPI]** class.*
 
-For a quick start, you can take a look at the `/app` directory if this project for an example app.
+For a quick start, you can take a look at the `/app` directory of this project for an example app.
