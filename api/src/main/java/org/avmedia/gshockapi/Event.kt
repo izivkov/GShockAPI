@@ -223,4 +223,8 @@ class Event(
             else -> "th"
         }
     }
+
+    override fun toString(): String {
+        return "Event(title='$title', startDate=$startDate, endDate=$endDate, repeatPeriod=$repeatPeriod, daysOfWeek=$daysOfWeek, enabled=$enabled, incompatible=$incompatible, selected=$selected)"
+    }
 }

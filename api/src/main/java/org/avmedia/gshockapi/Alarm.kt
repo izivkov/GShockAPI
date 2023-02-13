@@ -5,4 +5,8 @@ open class Alarm(
     var minute: Int,
     var enabled: Boolean,
     var hasHourlyChime: Boolean = false
-)
+) {
+    override fun toString(): String {
+        return "Alarm(hour=$hour, minute=$minute, enabled=$enabled, hasHourlyChime=$hasHourlyChime)"
+    }
+}
