@@ -11,6 +11,6 @@ This library provides an API to communicate and issue commands to the Casio G-Sh
 - Set watch's Timer
 
 
-Here is the (documentation)[https://izivkov.github.io/GShockAPI/api/org.avmedia.gshockapi/index.html]
+Here is the [documentation](https://izivkov.github.io/GShockAPI/api/org.avmedia.gshockapi/index.html)
 
 More to come...
