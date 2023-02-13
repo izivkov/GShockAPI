@@ -33,7 +33,7 @@ import kotlin.reflect.KSuspendFunction1
  *  override fun onCreate(savedInstanceState: Bundle?) {
  *      super.onCreate(savedInstanceState)
  *      ...
- *      runBlocking {
+ *      GlobalScope.launch {
  *          api.waitForConnection(this)
  *          api.getPressedButton()
  *          api.getWatchName()
