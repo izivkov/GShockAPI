@@ -22,20 +22,3 @@ series of watches via the Bluetooth interface. It can perform the following task
 
 For a quick start, you can take a look at the `/app` directory of this project for an example app.
 
-## Dependency
-
-Add the following to your **build.gradle** file:
-```groovy
-allprojects {
-    repositories {
-        maven { url 'https://jitpack.io' }
-    }
-}
-
-dependencies {
-    implementation 'com.github.izivkov:GShockAPI:1.0.2'
-}
-
-Here is a complete app using this library:
-
-[Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync)

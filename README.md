@@ -10,7 +10,24 @@ This library provides an API to communicate and issue commands to the Casio G-Sh
 - Get watch's battery level
 - Set watch's Timer
 
+## Documentation
 
-Here is the [documentation](https://izivkov.github.io/GShockAPI/api/org.avmedia.gshockapi/index.html)
+The API documentation can be found [here](https://izivkov.github.io/GShockAPI/api/org.avmedia.gshockapi/index.html)
 
-More to come...
+## Dependency
+
+Add the following to your **build.gradle** file:
+```groovy
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+dependencies {
+    implementation 'com.github.izivkov:GShockAPI:1.0.2'
+}
+
+Here is a complete app using this library:
+
+[Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync)
