@@ -27,6 +27,7 @@ allprojects {
 dependencies {
     implementation 'com.github.izivkov:GShockAPI:1.0.2'
 }
+```
 
 ## Who is using it?
 
