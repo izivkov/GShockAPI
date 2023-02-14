@@ -32,6 +32,6 @@ dependencies {
 ## Who is using it?
 
 The `Casio GShock Smart Sync` app integrates G-Shock 5000/5600 watches with Google services such as `Google Calendar` events.
-`Google Alarm Clock`. You can find it here:
+`Google Alarm Clock`, etc. You can find it here:
 
 [Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync)
