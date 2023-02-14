@@ -17,9 +17,10 @@ The API documentation can be found [here](https://izivkov.github.io/GShockAPI/ap
 ## Dependency
 
 Add the following to your **build.gradle** file:
-```groovy
+```
 allprojects {
     repositories {
+        ...
         maven { url 'https://jitpack.io' }
     }
 }
