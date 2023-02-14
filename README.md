@@ -28,6 +28,6 @@ dependencies {
     implementation 'com.github.izivkov:GShockAPI:1.0.2'
 }
 
-Here is a complete app using this library:
+## Who is using it?
 
-[Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync)
+(Casio GShock Smart Sync)[https://github.com/izivkov/CasioGShockSmartSync]
