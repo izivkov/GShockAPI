@@ -260,8 +260,9 @@ object Connection : IConnection {
                 Timber.w("Disconnecting from ${device.address}")
                 gatt.close()
                 deviceGattMap.remove(device)
-                ProgressEvents.Events.Disconnect.payload = device
-                ProgressEvents.onNext(ProgressEvents.Events.Disconnect)
+                val event = ProgressEvents.lookupEvent("Disconnect")
+                event?.payload = device
+                ProgressEvents.onNext("Disconnect")
                 signalEndOfOperation()
             }
             is CharacteristicWrite -> with(operation) {
@@ -368,7 +369,7 @@ object Connection : IConnection {
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    ProgressEvents.onNext(ProgressEvents.Events.ConnectionStarted)
+                    ProgressEvents.onNext("ConnectionStarted")
                     deviceGattMap[gatt.device] = gatt
                     Handler(Looper.getMainLooper()).post {
                         gatt.discoverServices()
@@ -388,7 +389,7 @@ object Connection : IConnection {
 
                 if (pendingOperation is Connect) {
                     signalEndOfOperation()
-                    ProgressEvents.onNext(ProgressEvents.Events.ConnectionFailed)
+                    ProgressEvents.onNext("ConnectionFailed")
                     Timber.d("Restart connection...")
                 }
                 teardownConnection(gatt.device)
@@ -407,13 +408,14 @@ object Connection : IConnection {
                     Timber.e("Service discovery failed due to status $status")
                     teardownConnection(gatt.device)
                     Timber.d("Restart connection after failed discovery...")
-                    ProgressEvents.onNext(ProgressEvents.Events.ConnectionFailed)
+                    ProgressEvents.onNext("ConnectionFailed")
                 }
             }
 
             if (pendingOperation is Connect) {
-                ProgressEvents.Events.ConnectionSetupComplete.payload = gatt.device
-                ProgressEvents.onNext(ProgressEvents.Events.ConnectionSetupComplete)
+                val event = ProgressEvents.lookupEvent("ConnectionSetupComplete")
+                ProgressEvents.lookupEvent("ConnectionSetupComplete")?.payload = gatt.device
+                ProgressEvents.onNext("ConnectionSetupComplete")
 
                 signalEndOfOperation()
             }
@@ -421,10 +423,6 @@ object Connection : IConnection {
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
             Timber.w("ATT MTU changed to $mtu, success: ${status == BluetoothGatt.GATT_SUCCESS}")
-
-            // listeners.forEach { it.get()?.onMtuChanged?.invoke(gatt.device, mtu) }
-//            ProgressEvents.Events.MtuChanged.payload = gatt.device
-//            ProgressEvents.onNext(ProgressEvents.Events.MtuChanged)
 
             if (pendingOperation is MtuRequest) {
                 signalEndOfOperation()
@@ -560,13 +558,14 @@ object Connection : IConnection {
             when {
                 notificationsEnabled -> {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
-                    ProgressEvents.Events.NotificationsEnabled.payload = characteristic
-                    ProgressEvents.onNext(ProgressEvents.Events.NotificationsEnabled)
+                    val event = ProgressEvents.lookupEvent("NotificationsEnabled")
+                    event?.payload = characteristic
+                    ProgressEvents.onNext("NotificationsEnabled")
                 }
                 notificationsDisabled -> {
-                    Timber.w("Notifications or indications DISABLED on $charUuid")
-                    ProgressEvents.Events.NotificationsDisabled.payload = characteristic
-                    ProgressEvents.onNext(ProgressEvents.Events.NotificationsDisabled)
+                    val event = ProgressEvents.lookupEvent("NotificationsDisabled")
+                    event?.payload = characteristic
+                    ProgressEvents.onNext("NotificationsDisabled")
                 }
                 else -> {
                     Timber.e("Unexpected value ${value.toHexString()} on CCCD of $charUuid")

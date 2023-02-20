@@ -15,9 +15,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.utils.Utils
 
 data class PermissionManager(val context: Context) {
 
@@ -25,7 +25,6 @@ data class PermissionManager(val context: Context) {
     private var PERMISSION_ALL = 1
     private var PERMISSIONS = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.READ_CALENDAR,
     )
 
     init {
@@ -33,6 +32,9 @@ data class PermissionManager(val context: Context) {
             PERMISSIONS += Manifest.permission.BLUETOOTH_SCAN
             PERMISSIONS += Manifest.permission.BLUETOOTH_CONNECT
         }
+
+        ProgressEvents.addEvent("FineLocationPermissionGranted")
+        ProgressEvents.addEvent("FineLocationPermissionNotGranted")
     }
 
     private fun hasPermissions(context: Context, permissions: Array<String>): Boolean =
@@ -44,15 +46,7 @@ data class PermissionManager(val context: Context) {
         if (!hasPermissions(context, PERMISSIONS)) {
             ActivityCompat.requestPermissions(context as Activity, PERMISSIONS, PERMISSION_ALL)
         } else {
-            ProgressEvents.onNext(ProgressEvents.Events.AllPermissionsAccepted)
-        }
-    }
-
-    fun setupPermissions(strArray: Array<String>) {
-        if (!hasPermissions(context, strArray)) {
-            ActivityCompat.requestPermissions(context as Activity, strArray, PERMISSION_ALL)
-        } else {
-            ProgressEvents.onNext(ProgressEvents.Events.AllPermissionsAccepted)
+            ProgressEvents.onNext("FineLocationPermissionGranted")
         }
     }
 
@@ -60,28 +54,19 @@ data class PermissionManager(val context: Context) {
         return hasPermissions(context, PERMISSIONS)
     }
 
-    @SuppressLint("MissingPermission")
-    fun promptEnableBluetooth() {
-        if (!(context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            try {
-                (context as Activity).startActivityForResult(
-                    enableBtIntent,
-                    ENABLE_BLUETOOTH_REQUEST_CODE
-                )
-            } catch (e: SecurityException) {
-                Toast.makeText(context,"Please turn on BlueTooth and restart the app...",Toast.LENGTH_LONG).show();
-
-                (context as Activity).finish()
-            }
-        }
-    }
-
     fun onRequestPermissionsResult(
+        permissions: Array<String>,
         grantResults: IntArray
     ) {
-        if (grantResults.all { it == 0 }) {
-            ProgressEvents.onNext(ProgressEvents.Events.AllPermissionsAccepted)
+        permissions.forEachIndexed { index, permission ->
+            when (permission) {
+                Manifest.permission.ACCESS_FINE_LOCATION -> {
+                    ProgressEvents.onNext(
+                        if (grantResults[index] == 0) "FineLocationPermissionGranted" else "FineLocationPermissionNotGranted"
+                    )
+                }
+                // ignore the rest. They are handled in their fragments
+            }
         }
     }
 }
