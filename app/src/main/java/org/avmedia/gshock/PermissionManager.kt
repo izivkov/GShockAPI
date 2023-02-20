@@ -7,17 +7,12 @@
 package org.avmedia.gshock
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import org.avmedia.gshockapi.ProgressEvents
-import org.avmedia.gshockapi.utils.Utils
 
 data class PermissionManager(val context: Context) {
 

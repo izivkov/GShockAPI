@@ -11,6 +11,8 @@ import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.processors.PublishProcessor
+import org.avmedia.gshockapi.ProgressEvents.Events
+import org.avmedia.gshockapi.ProgressEvents.Subscriber
 import timber.log.Timber
 
 /**
@@ -108,7 +110,7 @@ object ProgressEvents {
         }
     }
 
-    fun lookupEvent(eventName:String): Events? {
+    fun lookupEvent(eventName: String): Events? {
         return builtinEventMap[eventName]
     }
 
@@ -121,17 +123,16 @@ object ProgressEvents {
         builtinEventMap[eventName] = Events()
     }
 
-    fun getPayload (eventName: String): Any? {
+    fun getPayload(eventName: String): Any? {
         return builtinEventMap[eventName]?.payload
     }
 
-    fun addPayload (eventName: String, payload: Any?) {
+    fun addPayload(eventName: String, payload: Any?) {
         builtinEventMap[eventName]?.payload = payload
     }
 
     open class Events
-        (var payload: Any? = null) {
-    }
+        (var payload: Any? = null)
 
     private var builtinEventMap = mutableMapOf<String, Events>(
         Pair("Init", Events()),

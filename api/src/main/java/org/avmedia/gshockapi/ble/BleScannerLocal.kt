@@ -107,7 +107,9 @@ Characteristics:
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
 
-            if (foundDevices.contains(result.device.toString())) { return }
+            if (foundDevices.contains(result.device.toString())) {
+                return
+            }
             foundDevices.add(result.device.toString())
 
             stopBleScan()
