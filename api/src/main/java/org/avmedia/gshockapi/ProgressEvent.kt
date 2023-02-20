@@ -6,15 +6,12 @@
 
 package org.avmedia.gshockapi
 
-import android.bluetooth.BluetoothDevice
+import android.annotation.SuppressLint
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.processors.PublishProcessor
 import timber.log.Timber
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 /**
  * This class is used to send RX events to the rest of the library and to the application to inform
@@ -69,12 +66,13 @@ object ProgressEvents {
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
          * subscription per name is allowed. The caller can use its class name (`this.javaClass.simpleName`) to ensure uniqueness:
          */
-        fun start(name: String, onNext: Consumer<in Events>, onError: Consumer<in Throwable>) {
+        @SuppressLint("CheckResult")
+        fun start(name: String, onNextStr: Consumer<in Events>, onError: Consumer<in Throwable>) {
             if (subscribers.contains(name)) {
                 return // do not allow multiple subscribers with same name
             }
 
-            eventsProcessor.observeOn(AndroidSchedulers.mainThread()).doOnNext(onNext)
+            eventsProcessor.observeOn(AndroidSchedulers.mainThread()).doOnNext(onNextStr)
                 .doOnError(onError).subscribe({}, onError)
             (subscribers as LinkedHashSet).add(name)
         }
@@ -84,6 +82,7 @@ object ProgressEvents {
          *
          * @param name Name of the subscriber. This is the unique name passes to [start]
          */
+        @SuppressLint("CheckResult")
         fun stop(name: String) {
             eventsProcessor.unsubscribeOn(AndroidSchedulers.mainThread())
             (subscribers as LinkedHashSet).remove(name)
@@ -103,30 +102,52 @@ object ProgressEvents {
      * ```
      * @param e [Event] to broadcast
      */
-    fun onNext(e: Events) {
+    fun onNext(eventName: String) {
         if (eventsProcessor.hasSubscribers()) {
-            return eventsProcessor.onNext(e)
+            return eventsProcessor.onNext(builtinEventMap[eventName])
         }
+    }
+
+    fun lookupEvent(eventName:String): Events? {
+        return builtinEventMap[eventName]
+    }
+
+    fun addEvent(eventName: String) {
+        if (builtinEventMap.containsKey(eventName)) {
+            Timber.d("Event $eventName")
+            return
+        }
+
+        builtinEventMap[eventName] = Events()
+    }
+
+    fun getPayload (eventName: String): Any? {
+        return builtinEventMap[eventName]?.payload
+    }
+
+    fun addPayload (eventName: String, payload: Any?) {
+        builtinEventMap[eventName]?.payload = payload
     }
 
     open class Events
         (var payload: Any? = null) {
-
-        object Init : Events()
-
-        object ConnectionStarted : Events()
-        object ConnectionSetupComplete : Events()
-        object Disconnect : Events()
-        object AlarmDataLoaded : Events()
-        object NotificationsEnabled : Events()
-        object NotificationsDisabled : Events()
-        object WatchInitializationCompleted : Events()
-        object AllPermissionsAccepted : Events()
-        object ButtonPressedInfoReceived : Events()
-        object ConnectionFailed : Events()
-        object SettingsLoaded : Events()
-        object NeedToUpdateUI : Events()
-        object CalendarUpdated : Events()
-        object HomeTimeUpdated : Events()
     }
+
+    private var builtinEventMap = mutableMapOf<String, Events>(
+        Pair("Init", Events()),
+        Pair("ConnectionStarted", Events()),
+        Pair("ConnectionSetupComplete", Events()),
+        Pair("Disconnect", Events()),
+        Pair("AlarmDataLoaded", Events()),
+        Pair("NotificationsEnabled", Events()),
+        Pair("NotificationsDisabled", Events()),
+        Pair("WatchInitializationCompleted", Events()),
+        Pair("AllPermissionsAccepted", Events()),
+        Pair("ButtonPressedInfoReceived", Events()),
+        Pair("ConnectionFailed", Events()),
+        Pair("SettingsLoaded", Events()),
+        Pair("NeedToUpdateUI", Events()),
+        Pair("CalendarUpdated", Events()),
+        Pair("HomeTimeUpdated", Events()),
+    )
 }

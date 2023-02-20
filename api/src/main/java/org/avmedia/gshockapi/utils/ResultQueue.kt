@@ -1,5 +1,7 @@
 package org.avmedia.gshockapi.utils
 
+import timber.log.Timber
+
 class ResultQueue<T> {
     private var queue: MutableList<T> = mutableListOf()
 
@@ -8,6 +10,7 @@ class ResultQueue<T> {
     }
 
     fun dequeue(): T? {
+
         return if (queue.isEmpty()) {
             null
         } else {

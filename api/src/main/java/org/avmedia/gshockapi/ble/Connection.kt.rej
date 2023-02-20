@@ -1,0 +1,116 @@
+*** ../../CasioGShockSmartSync/api/src/main/java/org/avmedia/gshockapi/ble/Connection.kt	2023-02-19 20:26:00.920206574 -0500
+--- src/main/java/org/avmedia/gshockapi/ble/Connection.kt	2023-02-11 12:36:55.288000000 -0500
+***************
+*** 260,268 ****
+                  Timber.w("Disconnecting from ${device.address}")
+                  gatt.close()
+                  deviceGattMap.remove(device)
+!                 val event = ProgressEvents.lookupEvent("Disconnect")
+!                 event?.payload = device
+!                 ProgressEvents.onNext("Disconnect")
+                  signalEndOfOperation()
+              }
+              is CharacteristicWrite -> with(operation) {
+--- 260,267 ----
+                  Timber.w("Disconnecting from ${device.address}")
+                  gatt.close()
+                  deviceGattMap.remove(device)
+!                 ProgressEvents.Events.Disconnect.payload = device
+!                 ProgressEvents.onNext(ProgressEvents.Events.Disconnect)
+                  signalEndOfOperation()
+              }
+              is CharacteristicWrite -> with(operation) {
+***************
+*** 369,375 ****
+  
+              if (status == BluetoothGatt.GATT_SUCCESS) {
+                  if (newState == BluetoothProfile.STATE_CONNECTED) {
+!                     ProgressEvents.onNext("ConnectionStarted")
+                      deviceGattMap[gatt.device] = gatt
+                      Handler(Looper.getMainLooper()).post {
+                          gatt.discoverServices()
+--- 368,374 ----
+  
+              if (status == BluetoothGatt.GATT_SUCCESS) {
+                  if (newState == BluetoothProfile.STATE_CONNECTED) {
+!                     ProgressEvents.onNext(ProgressEvents.Events.ConnectionStarted)
+                      deviceGattMap[gatt.device] = gatt
+                      Handler(Looper.getMainLooper()).post {
+                          gatt.discoverServices()
+***************
+*** 389,395 ****
+  
+                  if (pendingOperation is Connect) {
+                      signalEndOfOperation()
+!                     ProgressEvents.onNext("ConnectionFailed")
+                      Timber.d("Restart connection...")
+                  }
+                  teardownConnection(gatt.device)
+--- 388,394 ----
+  
+                  if (pendingOperation is Connect) {
+                      signalEndOfOperation()
+!                     ProgressEvents.onNext(ProgressEvents.Events.ConnectionFailed)
+                      Timber.d("Restart connection...")
+                  }
+                  teardownConnection(gatt.device)
+***************
+*** 408,421 ****
+                      Timber.e("Service discovery failed due to status $status")
+                      teardownConnection(gatt.device)
+                      Timber.d("Restart connection after failed discovery...")
+!                     ProgressEvents.onNext("ConnectionFailed")
+                  }
+              }
+  
+              if (pendingOperation is Connect) {
+!                 val event = ProgressEvents.lookupEvent("ConnectionSetupComplete")
+!                 ProgressEvents.lookupEvent("ConnectionSetupComplete")?.payload = gatt.device
+!                 ProgressEvents.onNext("ConnectionSetupComplete")
+  
+                  signalEndOfOperation()
+              }
+--- 407,419 ----
+                      Timber.e("Service discovery failed due to status $status")
+                      teardownConnection(gatt.device)
+                      Timber.d("Restart connection after failed discovery...")
+!                     ProgressEvents.onNext(ProgressEvents.Events.ConnectionFailed)
+                  }
+              }
+  
+              if (pendingOperation is Connect) {
+!                 ProgressEvents.Events.ConnectionSetupComplete.payload = gatt.device
+!                 ProgressEvents.onNext(ProgressEvents.Events.ConnectionSetupComplete)
+  
+                  signalEndOfOperation()
+              }
+***************
+*** 562,575 ****
+              when {
+                  notificationsEnabled -> {
+                      Timber.w("Notifications or indications ENABLED on $charUuid")
+!                     val event = ProgressEvents.lookupEvent("NotificationsEnabled")
+!                     event?.payload = characteristic
+!                     ProgressEvents.onNext("NotificationsEnabled")
+                  }
+                  notificationsDisabled -> {
+!                     val event = ProgressEvents.lookupEvent("NotificationsDisabled")
+!                     event?.payload = characteristic
+!                     ProgressEvents.onNext("NotificationsDisabled")
+                  }
+                  else -> {
+                      Timber.e("Unexpected value ${value.toHexString()} on CCCD of $charUuid")
+--- 564,576 ----
+              when {
+                  notificationsEnabled -> {
+                      Timber.w("Notifications or indications ENABLED on $charUuid")
+!                     ProgressEvents.Events.NotificationsEnabled.payload = characteristic
+!                     ProgressEvents.onNext(ProgressEvents.Events.NotificationsEnabled)
+                  }
+                  notificationsDisabled -> {
+!                     Timber.w("Notifications or indications DISABLED on $charUuid")
+!                     ProgressEvents.Events.NotificationsDisabled.payload = characteristic
+!                     ProgressEvents.onNext(ProgressEvents.Events.NotificationsDisabled)
+                  }
+                  else -> {
+                      Timber.e("Unexpected value ${value.toHexString()} on CCCD of $charUuid")
