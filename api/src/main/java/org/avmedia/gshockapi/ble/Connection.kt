@@ -260,7 +260,7 @@ object Connection : IConnection {
                 Timber.w("Disconnecting from ${device.address}")
                 gatt.close()
                 deviceGattMap.remove(device)
-                val event = ProgressEvents.lookupEvent("Disconnect")
+                val event = ProgressEvents["Disconnect"]
                 event?.payload = device
                 ProgressEvents.onNext("Disconnect")
                 signalEndOfOperation()
@@ -413,8 +413,8 @@ object Connection : IConnection {
             }
 
             if (pendingOperation is Connect) {
-                val event = ProgressEvents.lookupEvent("ConnectionSetupComplete")
-                ProgressEvents.lookupEvent("ConnectionSetupComplete")?.payload = gatt.device
+                val event = ProgressEvents["ConnectionSetupComplete"]
+                ProgressEvents["ConnectionSetupComplete"]?.payload = gatt.device
                 ProgressEvents.onNext("ConnectionSetupComplete")
 
                 signalEndOfOperation()
@@ -558,12 +558,12 @@ object Connection : IConnection {
             when {
                 notificationsEnabled -> {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
-                    val event = ProgressEvents.lookupEvent("NotificationsEnabled")
+                    val event = ProgressEvents["NotificationsEnabled"]
                     event?.payload = characteristic
                     ProgressEvents.onNext("NotificationsEnabled")
                 }
                 notificationsDisabled -> {
-                    val event = ProgressEvents.lookupEvent("NotificationsDisabled")
+                    val event = ProgressEvents["NotificationsDisabled"]
                     event?.payload = characteristic
                     ProgressEvents.onNext("NotificationsDisabled")
                 }

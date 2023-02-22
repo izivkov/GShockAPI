@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.ProgressEvents.lookupEvent
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.Connection.sendMessage
@@ -97,7 +96,7 @@ class GShockAPI(private val context: Context) {
         fun waitForConnectionSetupComplete() {
             ProgressEvents.subscriber.start(this.javaClass.simpleName, {
                 when (it) {
-                    lookupEvent("ConnectionSetupComplete") -> {
+                    ProgressEvents["ConnectionSetupComplete"] -> {
                         val device =
                             ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
                         DeviceCharacteristics.init(device)

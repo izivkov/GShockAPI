@@ -1,5 +1,6 @@
 package org.avmedia.gshock
 
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -9,11 +10,24 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.casio.BluetoothWatch
+import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
+import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity() {
 
     private val api = GShockAPI(this)
     private lateinit var permissionManager: PermissionManager
+    private val customEventName = "************** My Oun Event Generated from the App.!!!! ************"
+
+    init {
+        // Add a custom event. Send it like this:
+        // ProgressEvents.onNext(customEventName)
+        ProgressEvents.addEvent(customEventName)
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,8 +37,41 @@ class MainActivity : AppCompatActivity() {
         permissionManager = PermissionManager(this)
         permissionManager.setupPermissions()
 
+        listenToProgressEvents ()
         run(this)
     }
+
+    private fun listenToProgressEvents() {
+        ProgressEvents.subscriber.start(this.javaClass.simpleName,
+
+            {
+                when (it) {
+                    ProgressEvents["ConnectionSetupComplete"] -> {
+                        println("Got \"ConnectionSetupComplete\" event")
+                    }
+
+                    ProgressEvents["Disconnect"] -> {
+                        println("Got \"Disconnect\" event")
+                    }
+
+                    ProgressEvents["ConnectionFailed"] -> {
+                        println("Got \"ConnectionFailed\" event")
+                    }
+
+                    ProgressEvents["WatchInitializationCompleted"] -> {
+                        println("Got \"WatchInitializationCompleted\" event")
+                    }
+
+                    ProgressEvents[customEventName] -> {
+                        println("Got \"$customEventName\" event")
+                    }
+                }
+            }, { throwable ->
+                println("Got error on subscribe: $throwable")
+                throwable.printStackTrace()
+            })
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun run(context: Context) {
@@ -46,6 +93,8 @@ class MainActivity : AppCompatActivity() {
             getWorldCities()
             getRTSForWorldCities()
 
+            generateCustomEvent()
+
             api.setTime()
 
             val alarms = api.getAlarms()
@@ -62,6 +111,10 @@ class MainActivity : AppCompatActivity() {
             api.disconnect(this@MainActivity)
             println("--------------- END ------------------")
         }
+    }
+
+    private fun generateCustomEvent() {
+        ProgressEvents.onNext(customEventName)
     }
 
     private suspend fun getRTSForWorldCities() {

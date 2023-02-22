@@ -110,7 +110,7 @@ object ProgressEvents {
         }
     }
 
-    fun lookupEvent(eventName: String): Events? {
+    operator fun get(eventName: String): Events? {
         return builtinEventMap[eventName]
     }
 
