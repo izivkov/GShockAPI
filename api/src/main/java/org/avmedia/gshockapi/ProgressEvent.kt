@@ -137,7 +137,7 @@ object ProgressEvents {
     }
 
     /**
-     * This class contains built-un and custom events which the library can broadcast to the application.
+     * This class contains built-in and custom events which the library can broadcast to the application.
      * Here is a list of the built-in events:
      * ```
      * "Init"
