@@ -96,8 +96,8 @@ object ProgressEvents {
 
     /**
      * The application can broadcast its own events by calling this function.
-     * Also, the application can extend can add its own events. The
-     * new custom event would first has to be added to the ProgressEvents like this:
+     * Also, the application can add its own events. The
+     * new custom event would first have to be added to the ProgressEvents like this:
      *
      * ```
      * ProgressEvents.addEvent("CustomEvent")
