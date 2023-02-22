@@ -17,36 +17,37 @@ import timber.log.Timber
 
 /**
  * This class is used to send RX events to the rest of the library and to the application to inform
- * them of some internal events. For example, when a connection is established, a `ConnectionSetupComplete`
+ * them of some internal events. For example, when a connection is established, a `"ConnectionSetupComplete"`
  * event is broadcast. If the application is listening on this event, it can change its UI to reflect this.
  * The app can call [Subscriber.start] method to start listening to events.
  * Here is an example which can reside in the `MainActivity`:
  *
  * ```
- * private fun createSubscription() {
- *    ProgressEvents.subscriber.start(this.javaClass.simpleName,
- *        {
- *            when (it) {
- *                ProgressEvents.Events.ConnectionSetupComplete -> {
- *                    InactivityWatcher.start(this)
- *                }
- *
- *                ProgressEvents.Events.Disconnect -> {
- *                    Timber.i("onDisconnect")
- *                    InactivityWatcher.cancel()
- *                }
- *
- *                ProgressEvents.Events.ConnectionFailed -> {
- *                    // Do something
- *                }
- *
- *                ProgressEvents.Events.WatchInitializationCompleted -> {
- *                }
- *            }
- *        }, { throwable ->
- *            Timber.d("Got error on subscribe: $throwable")
- *            throwable.printStackTrace()
- *        })
+ * private fun listenToProgressEvents() {
+ *   ProgressEvents.subscriber.start(this.javaClass.simpleName,
+ *       {
+ *           when (it) {
+ *              ProgressEvents["ConnectionSetupComplete"] -> {
+ *                  println("Got \"ConnectionSetupComplete\" event")
+ *              }
+ *              ProgressEvents["Disconnect"] -> {
+ *                  println("Got \"Disconnect\" event")
+ *              }
+ *              ProgressEvents["ConnectionFailed"] -> {
+ *                  println("Got \"ConnectionFailed\" event")
+ *              }
+ *              ProgressEvents["WatchInitializationCompleted"] -> {
+ *                  println("Got \"WatchInitializationCompleted\" event")
+ *              }
+ *              ProgressEvents["CustomEvent"] -> {
+ *                  println("Got \"CustomEvent\" event")
+ *              }
+ *           }, { throwable ->
+ *              println("Got error on subscribe: $throwable")
+ *              throwable.printStackTrace()
+ *           })
+ *       }
+ *   }
  * }
  * ```
  * @see Events
@@ -95,46 +96,75 @@ object ProgressEvents {
 
     /**
      * The application can broadcast its own events by calling this function.
-     * Also, the application can extend this class and add its own events.
+     * Also, the application can extend can add its own events. The
+     * new custom event would first has to be added to the ProgressEvents like this:
      *
-     *
-     * For example, we can broadcast that the calendar has been updated like this:
      * ```
-     *  ProgressEvents.onNext(ProgressEvents.Events.CalendarUpdated)
+     * ProgressEvents.addEvent("CustomEvent")
+     * ```
+     *
+     * And then we can broadcast it like this:
+     * ```
+     *  ProgressEvents.onNext("CustomEvent")
      * ```
      * @param e [Event] to broadcast
      */
     fun onNext(eventName: String) {
         if (eventsProcessor.hasSubscribers()) {
-            return eventsProcessor.onNext(builtinEventMap[eventName])
+            return eventsProcessor.onNext(eventMap[eventName])
         }
     }
 
     operator fun get(eventName: String): Events? {
-        return builtinEventMap[eventName]
+        return eventMap[eventName]
     }
 
     fun addEvent(eventName: String) {
-        if (builtinEventMap.containsKey(eventName)) {
+        if (eventMap.containsKey(eventName)) {
             Timber.d("Event $eventName")
             return
         }
 
-        builtinEventMap[eventName] = Events()
+        eventMap[eventName] = Events()
     }
 
     fun getPayload(eventName: String): Any? {
-        return builtinEventMap[eventName]?.payload
+        return eventMap[eventName]?.payload
     }
 
     fun addPayload(eventName: String, payload: Any?) {
-        builtinEventMap[eventName]?.payload = payload
+        eventMap[eventName]?.payload = payload
     }
 
+    /**
+     * This class contains built-un and custom events which the library can broadcast to the application.
+     * Here is a list of the built-in events:
+     * ```
+     * "Init"
+     * "ConnectionStarted"
+     * "ConnectionSetupComplete"
+     * "Disconnect"
+     * "AlarmDataLoaded"
+     * "NotificationsEnabled"
+     * "NotificationsDisabled"
+     * "WatchInitializationCompleted"
+     * "AllPermissionsAccepted"
+     * "ButtonPressedInfoReceived"
+     * "ConnectionFailed"
+     * "SettingsLoaded"
+     * "NeedToUpdateUI"
+     * "CalendarUpdated"
+     * "HomeTimeUpdated"
+     * ```
+     * The App can add their oun arbitrary events like this:
+     * ```
+     * ProgressEvents.addEvent("MyCustomEvent")
+     * ```
+     */
     open class Events
         (var payload: Any? = null)
 
-    private var builtinEventMap = mutableMapOf<String, Events>(
+    private var eventMap = mutableMapOf<String, Events>(
         Pair("Init", Events()),
         Pair("ConnectionStarted", Events()),
         Pair("ConnectionSetupComplete", Events()),

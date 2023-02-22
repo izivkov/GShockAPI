@@ -55,7 +55,7 @@
   <div class="breadcrumbs"><a href="../../../index.html">api</a><span class="delimiter">/</span><a href="../index.html">org.avmedia.gshockapi</a><span class="delimiter">/</span><span class="current">ProgressEvents</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Progress</span><wbr></wbr><span><span>Events</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">ProgressEvents</a></div><p class="paragraph">This class is used to send RX events to the rest of the library and to the application to inform them of some internal events. For example, when a connection is established, a <code class="lang-kotlin">ConnectionSetupComplete</code> event is broadcast. If the application is listening on this event, it can change its UI to reflect this. The app can call <a href="-subscriber/start.html">Subscriber.start</a> method to start listening to events. Here is an example which can reside in the <code class="lang-kotlin">MainActivity</code>:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">private fun createSubscription() {<br>   ProgressEvents.subscriber.start(this.javaClass.simpleName,<br>       {<br>           when (it) {<br>               ProgressEvents.Events.ConnectionSetupComplete -&gt; {<br>                   InactivityWatcher.start(this)<br>               }<br><br>               ProgressEvents.Events.Disconnect -&gt; {<br>                   Timber.i(&quot;onDisconnect&quot;)<br>                   InactivityWatcher.cancel()<br>               }<br><br>               ProgressEvents.Events.ConnectionFailed -&gt; {<br>                   // Do something<br>               }<br><br>               ProgressEvents.Events.WatchInitializationCompleted -&gt; {<br>               }<br>           }<br>       }, { throwable -&gt;<br>           Timber.d(&quot;Got error on subscribe: $throwable&quot;)<br>           throwable.printStackTrace()<br>       })<br>}</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">ProgressEvents</a></div><p class="paragraph">This class is used to send RX events to the rest of the library and to the application to inform them of some internal events. For example, when a connection is established, a <code class="lang-kotlin">&quot;ConnectionSetupComplete&quot;</code> event is broadcast. If the application is listening on this event, it can change its UI to reflect this. The app can call <a href="-subscriber/start.html">Subscriber.start</a> method to start listening to events. Here is an example which can reside in the <code class="lang-kotlin">MainActivity</code>:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">private fun listenToProgressEvents() {<br>  ProgressEvents.subscriber.start(this.javaClass.simpleName,<br>      {<br>          when (it) {<br>             ProgressEvents[&quot;ConnectionSetupComplete&quot;] -&gt; {<br>                 println(&quot;Got \&quot;ConnectionSetupComplete\&quot; event&quot;)<br>             }<br>             ProgressEvents[&quot;Disconnect&quot;] -&gt; {<br>                 println(&quot;Got \&quot;Disconnect\&quot; event&quot;)<br>             }<br>             ProgressEvents[&quot;ConnectionFailed&quot;] -&gt; {<br>                 println(&quot;Got \&quot;ConnectionFailed\&quot; event&quot;)<br>             }<br>             ProgressEvents[&quot;WatchInitializationCompleted&quot;] -&gt; {<br>                 println(&quot;Got \&quot;WatchInitializationCompleted\&quot; event&quot;)<br>             }<br>             ProgressEvents[&quot;CustomEvent&quot;] -&gt; {<br>                 println(&quot;Got \&quot;CustomEvent\&quot; event&quot;)<br>             }<br>          }, { throwable -&gt;<br>             println(&quot;Got error on subscribe: $throwable&quot;)<br>             throwable.printStackTrace()<br>          })<br>      }<br>  }<br>}</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Properties">Properties</button><button class="section-tab" data-togglable="See also">See also</button></div>
@@ -75,7 +75,7 @@
                 </span></span></div>
             <div>
               <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="-events/index.html">Events</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">var </span>payload<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div></div></div>
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="-events/index.html">Events</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">var </span>payload<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">This class contains built-un and custom events which the library can broadcast to the application. Here is a list of the built-in events:</p></div></div></div>
               </div>
             </div>
           </div>
@@ -97,17 +97,77 @@
         </div>
       </div>
       <h2 class="">Functions</h2>
-      <div class="table" data-togglable="Functions"><a data-name="-1138677794%2FFunctions%2F1086730362" anchor-label="onNext" id="-1138677794%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+      <div class="table" data-togglable="Functions"><a data-name="-1167220240%2FFunctions%2F1086730362" anchor-label="addEvent" id="-1167220240%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
         <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
           <div class="main-subrow keyValue ">
             <div class=""><span class="inline-flex">
-                <div><a href="on-next.html"><span>on</span><wbr></wbr><span><span>Next</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1138677794%2FFunctions%2F1086730362"></span>
+                <div><a href="add-event.html"><span>add</span><wbr></wbr><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1167220240%2FFunctions%2F1086730362"></span>
                   <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                 </span></span></div>
             <div>
               <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="on-next.html"><span class="token function">onNext</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">e<span class="token operator">: </span><a href="-events/index.html">ProgressEvents.Events</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">The application can broadcast its own events by calling this function. Also, the application can extend this class and add its own events.</p></div></div></div>
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="add-event.html"><span class="token function">addEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventName<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-389913529%2FFunctions%2F1086730362" anchor-label="addPayload" id="-389913529%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="add-payload.html"><span>add</span><wbr></wbr><span><span>Payload</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-389913529%2FFunctions%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="add-payload.html"><span class="token function">addPayload</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventName<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">payload<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1851175059%2FFunctions%2F1086730362" anchor-label="get" id="-1851175059%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get.html"><span><span>get</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1851175059%2FFunctions%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">operator </span><span class="token keyword">fun </span><a href="get.html"><span class="token function">get</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventName<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-events/index.html">ProgressEvents.Events</a><span class="token operator">?</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="718677391%2FFunctions%2F1086730362" anchor-label="getPayload" id="718677391%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-payload.html"><span>get</span><wbr></wbr><span><span>Payload</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="718677391%2FFunctions%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-payload.html"><span class="token function">getPayload</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventName<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="120492585%2FFunctions%2F1086730362" anchor-label="onNext" id="120492585%2FFunctions%2F1086730362" data-filterable-set=":api:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":api:dokkaHtml/release" data-filterable-set=":api:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="on-next.html"><span>on</span><wbr></wbr><span><span>Next</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="120492585%2FFunctions%2F1086730362"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="on-next.html"><span class="token function">onNext</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventName<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">The application can broadcast its own events by calling this function. Also, the application can extend can add its own events. The new custom event would first has to be added to the ProgressEvents like this:</p></div></div></div>
               </div>
             </div>
           </div>

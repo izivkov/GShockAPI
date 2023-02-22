@@ -64,6 +64,8 @@ class MainActivity : AppCompatActivity() {
 
                     ProgressEvents[customEventName] -> {
                         println("Got \"$customEventName\" event")
+                    } else -> {
+                        println("Got \"${it.javaClass}\" event")
                     }
                 }
             }, { throwable ->
@@ -71,7 +73,6 @@ class MainActivity : AppCompatActivity() {
                 throwable.printStackTrace()
             })
     }
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun run(context: Context) {
