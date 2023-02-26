@@ -24,7 +24,7 @@ import timber.log.Timber
  *
  * ```
  * private fun listenToProgressEvents() {
- *   ProgressEvents.subscriber.start(this.javaClass.simpleName,
+ *   ProgressEvents.subscriber.start(this.javaClass.canonicalName,
  *       {
  *           when (it) {
  *              ProgressEvents["ConnectionSetupComplete"] -> {
@@ -67,7 +67,7 @@ object ProgressEvents {
          * Call this from anywhere to start listening to [ProgressEvents].
          *
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
-         * subscription per name is allowed. The caller can use its class name (`this.javaClass.simpleName`) to ensure uniqueness:
+         * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
          */
         @SuppressLint("CheckResult")
         fun start(name: String, onNextStr: Consumer<in Events>, onError: Consumer<in Throwable>) {

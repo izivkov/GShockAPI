@@ -62,9 +62,7 @@ pwr. saving off:00010000
 object SettingsDecoder {
 
     fun toJson(casioArray: String): JSONObject {
-        val jsonResponse = JSONObject()
-        jsonResponse.put("SETTINGS", createJsonSettings(casioArray))
-        return jsonResponse
+        return createJsonSettings(casioArray)
     }
 
     private fun createJsonSettings(settingString: String): JSONObject {
@@ -129,11 +127,7 @@ object SettingsDecoder {
     }
 
     fun toJsonTimeAdjustment(settings: Settings): JSONObject {
-        var jsonResponse = JSONObject()
-        return jsonResponse.put(
-            "TIME_ADJUSTMENT",
-            "{\"timeAdjustment\": ${settings.timeAdjustment} }"
-        )
+        return JSONObject("{\"timeAdjustment\": ${settings.timeAdjustment} }")
     }
 
     object CasioIsAutoTimeOriginalValue {

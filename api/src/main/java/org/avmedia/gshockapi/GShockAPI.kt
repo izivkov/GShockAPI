@@ -91,17 +91,22 @@ class GShockAPI(private val context: Context) {
         bleScannerLocal.startConnection(deviceId)
 
         val deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(
+            ResultQueue.KeyedResult(
+                "waitForConnection",
+                deferredResult as CompletableDeferred<Any>
+            )
+        )
 
         fun waitForConnectionSetupComplete() {
-            ProgressEvents.subscriber.start(this.javaClass.simpleName, {
+            ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
                 when (it) {
                     ProgressEvents["ConnectionSetupComplete"] -> {
                         val device =
                             ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
                         DeviceCharacteristics.init(device)
 
-                        resultQueue.dequeue()?.complete("Connected")
+                        resultQueue.dequeue("waitForConnection")?.complete("Connected")
                     }
                 }
             }, { throwable ->
@@ -190,15 +195,21 @@ class GShockAPI(private val context: Context) {
         request(key)
 
         val deferredResultButton = CompletableDeferred<BluetoothWatch.WATCH_BUTTON>()
-        resultQueue.enqueue(deferredResultButton as CompletableDeferred<Any>)
 
-        subscribe("BUTTON_PRESSED") { data ->
+        resultQueue.enqueue(ResultQueue.KeyedResult(
+            key, deferredResultButton as CompletableDeferred<Any>))
+
+        subscribe("BUTTON_PRESSED") { keyedData ->
             /*
             RIGHT BUTTON: 0x10 17 62 07 38 85 CD 7F ->04<- 03 0F FF FF FF FF 24 00 00 00
             LEFT BUTTON:  0x10 17 62 07 38 85 CD 7F ->01<- 03 0F FF FF FF FF 24 00 00 00
                           0x10 17 62 16 05 85 dd 7f ->00<- 03 0f ff ff ff ff 24 00 00 00 // after watch reset
             AUTO-TIME:    0x10 17 62 16 05 85 dd 7f ->03<- 03 0f ff ff ff ff 24 00 00 00 // no button pressed
             */
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
             var ret: BluetoothWatch.WATCH_BUTTON = BluetoothWatch.WATCH_BUTTON.INVALID
 
             if (data != "" && Utils.toIntArray(data).size >= 19) {
@@ -210,7 +221,7 @@ class GShockAPI(private val context: Context) {
                     else -> BluetoothWatch.WATCH_BUTTON.INVALID
                 }
             }
-            resultQueue.dequeue()!!.complete(ret)
+            resultQueue.dequeue(key)!!.complete(ret)
         }
 
         return deferredResultButton.await()
@@ -265,11 +276,15 @@ class GShockAPI(private val context: Context) {
         request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_WATCH_NAME") {
-            resultQueue.dequeue()
-                ?.complete(Utils.trimNonAsciiCharacters(Utils.toAsciiString(it, 1)))
+        subscribe("CASIO_WATCH_NAME") { keyedData ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)
+                ?.complete(Utils.trimNonAsciiCharacters(Utils.toAsciiString(data, 1)))
         }
 
         return deferredResult.await()
@@ -290,10 +305,14 @@ class GShockAPI(private val context: Context) {
         request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_DST_WATCH_STATE") { data: String ->
-            resultQueue.dequeue()?.complete(data)
+        subscribe("CASIO_DST_WATCH_STATE") { keyedData: String ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(data)
         }
 
         return deferredResult.await()
@@ -317,10 +336,14 @@ class GShockAPI(private val context: Context) {
         request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_DST_SETTING") { data: String ->
-            resultQueue.dequeue()?.complete(data)
+        subscribe("CASIO_DST_SETTING") { keyedData: String ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(data)
         }
 
         return deferredResult.await()
@@ -344,10 +367,14 @@ class GShockAPI(private val context: Context) {
         request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_WORLD_CITIES") { data: String ->
-            resultQueue.dequeue()?.complete(data)
+        subscribe("CASIO_WORLD_CITIES") { keyedData: String ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(data)
         }
 
         return deferredResult.await()
@@ -379,11 +406,15 @@ class GShockAPI(private val context: Context) {
 
         request(key)
 
-        var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        val deferredResult = CompletableDeferred<String>()
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_WATCH_CONDITION") {
-            resultQueue.dequeue()?.complete(BatteryLevelDecoder.decodeValue(it))
+        subscribe("CASIO_WATCH_CONDITION") { keyedData->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(BatteryLevelDecoder.decodeValue(data))
         }
 
         return deferredResult.await()
@@ -407,10 +438,14 @@ class GShockAPI(private val context: Context) {
         }
 
         var deferredResult = CompletableDeferred<Int>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_TIMER") {
-            resultQueue.dequeue()?.complete(getTimer(it).toInt())
+        subscribe("CASIO_TIMER") {keyedData ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(getTimer(data).toInt())
         }
 
         return deferredResult.await()
@@ -457,11 +492,15 @@ class GShockAPI(private val context: Context) {
         }
 
         var deferredResult = CompletableDeferred<String>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_APP_INFORMATION") {
-            resultQueue.dequeue()?.complete(it)
-            setAppInfo(it)
+        subscribe("CASIO_APP_INFORMATION") {keyedData->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            resultQueue.dequeue(key)?.complete(data)
+            setAppInfo(data)
         }
 
         return deferredResult.await()
@@ -542,14 +581,19 @@ class GShockAPI(private val context: Context) {
         }
 
         sendMessage("{ action: 'GET_ALARMS'}")
+        val key = "GET_ALARMS"
 
         var deferredResult = CompletableDeferred<ArrayList<Alarm>>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("ALARMS") {
-            fromJson(it)
+        subscribe("ALARMS") {keyedData ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = "GET_ALARMS"
+
+            fromJson(data)
             if (alarms.size > 1) {
-                resultQueue.dequeue()?.complete(alarms)
+                resultQueue.dequeue(key)?.complete(alarms)
             }
         }
         return deferredResult.await()
@@ -607,11 +651,15 @@ class GShockAPI(private val context: Context) {
         request("31${eventNumber}") // reminder time
 
         var deferredResult = CompletableDeferred<Event>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult("310${eventNumber}", deferredResult as CompletableDeferred<Any>))
 
         var title = ""
-        subscribe("REMINDERS") {
-            val reminderJson = JSONObject(it)
+        subscribe("REMINDERS") {keyedData ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            val reminderJson = JSONObject(data)
             when (reminderJson.keys().next()) {
                 "title" -> {
                     title = reminderJson["title"] as String
@@ -619,7 +667,7 @@ class GShockAPI(private val context: Context) {
                 "time" -> {
                     reminderJson.put("title", title)
                     val event = Event(reminderJson)
-                    resultQueue.dequeue()?.complete(event)
+                    resultQueue.dequeue(key)?.complete(event)
                 }
             }
         }
@@ -656,7 +704,7 @@ class GShockAPI(private val context: Context) {
         WatchDataEvents.addSubject(subject)
 
         // receive values from the commands we issued in start()
-        WatchDataEvents.subscribe(this.javaClass.simpleName, subject) {
+        WatchDataEvents.subscribe(this.javaClass.canonicalName, subject) {
             onDataReceived(it as String)
         }
     }
@@ -682,13 +730,17 @@ class GShockAPI(private val context: Context) {
     private suspend fun getBasicSettings(): Settings {
         sendMessage("{ action: 'GET_SETTINGS'}")
 
+        val key = "13"
         var deferredResult = CompletableDeferred<Settings>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("SETTINGS") {
-            val model = Gson().fromJson(it, Settings::class.java)
-            resultQueue.dequeue()?.complete(model)
+        subscribe("SETTINGS") {keyedData ->
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
 
+            val model = Gson().fromJson(data, Settings::class.java)
+            resultQueue.dequeue(key)?.complete(model)
         }
         return deferredResult.await()
     }
@@ -696,14 +748,20 @@ class GShockAPI(private val context: Context) {
     private suspend fun getTimeAdjustment(): Boolean {
         sendMessage("{ action: 'GET_TIME_ADJUSTMENT'}")
 
+        val key = "11"
         var deferredResult = CompletableDeferred<Boolean>()
-        resultQueue.enqueue(deferredResult as CompletableDeferred<Any>)
+        resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("TIME_ADJUSTMENT") { timeAdjustmentData ->
-            val dataJson = JSONObject(timeAdjustmentData)
+        subscribe("TIME_ADJUSTMENT") { keyedData ->
+
+            val jsonObject = JSONObject(keyedData)
+            val data = jsonObject.getString("value")
+            val key = jsonObject.getString("key")
+
+            val dataJson = JSONObject(data)
             val timeAdjustment = dataJson.getBooleanSafe("timeAdjustment") == true
 
-            resultQueue.dequeue()?.complete(timeAdjustment)
+            resultQueue.dequeue(key)?.complete(timeAdjustment)
         }
 
         return deferredResult.await()

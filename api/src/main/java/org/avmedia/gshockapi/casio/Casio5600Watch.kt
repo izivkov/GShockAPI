@@ -17,6 +17,7 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
+import java.util.*
 
 class Casio5600Watch : BluetoothWatch() {
     private val settings = Settings()
@@ -131,59 +132,87 @@ class Casio5600Watch : BluetoothWatch() {
                 CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code,
                 CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code
             ) -> {
-                return AlarmDecoder.toJson(data)
+                return JSONObject().put("ALARMS", JSONObject().put("value", AlarmDecoder.toJson(data).get("ALARMS")).put("key", "GET_ALARMS"))
             }
 
             // Add topics so the right component will receive data
             CasioConstants.CHARACTERISTICS.CASIO_DST_SETTING.code -> {
-                json.put("CASIO_DST_SETTING", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_DST_SETTING", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code -> {
-                return SettingsDecoder.toJson(data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", SettingsDecoder.toJson(data))
+                val settingsJson = JSONObject()
+                settingsJson.put("SETTINGS", dataJson)
+                return settingsJson
             }
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code -> {
-                SettingsDecoder.getTimeAdjustment(data, settings)
-                return SettingsDecoder.toJsonTimeAdjustment(settings)
+                val valueJson = SettingsDecoder.toJsonTimeAdjustment(settings)
+                val dataJson = JSONObject().apply {
+                    put("key", createKey(data))
+                    put("value", valueJson)
+                }.toString()
+                return JSONObject().apply {
+                    put("TIME_ADJUSTMENT", dataJson)
+                }
             }
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code -> {
                 val reminderJson = JSONObject()
-                val startOfData = data + 2 // skip command code 0x31 01
-                reminderJson.put("REMINDERS", ReminderDecoder.reminderTimeToJson(startOfData))
+                val value = ReminderDecoder.reminderTimeToJson(data + 2)
+                reminderJson.put("REMINDERS", JSONObject().put("key", createKey(data)).put("value", value))
                 return reminderJson
             }
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code -> {
-                val reminderJson = JSONObject()
-                reminderJson.put("REMINDERS", ReminderDecoder.reminderTitleToJson(data))
-                return reminderJson
+                return JSONObject().put("REMINDERS", JSONObject().put("key", createKey(data)).put("value", ReminderDecoder.reminderTitleToJson(data)))
             }
             CasioConstants.CHARACTERISTICS.CASIO_TIMER.code -> {
-                json.put("CASIO_TIMER", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_TIMER", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_WORLD_CITIES.code -> {
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
                 val characteristicsArray = Utils.toIntArray(data)
                 if (characteristicsArray[1] == 0) {
                     // 0x1F 00 ... Only the first World City contains the home time.
                     // Send this data on topic "HOME_TIME" to be received by HomeTime custom component.
-                    json.put("HOME_TIME", data)
+                    json.put("HOME_TIME", dataJson)
                 }
-                json.put("CASIO_WORLD_CITIES", data)
+                json.put("CASIO_WORLD_CITIES", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_DST_WATCH_STATE.code -> {
-                json.put("CASIO_DST_WATCH_STATE", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_DST_WATCH_STATE", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_WATCH_NAME.code -> {
-                json.put("CASIO_WATCH_NAME", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_WATCH_NAME", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code -> {
-                json.put("CASIO_WATCH_CONDITION", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_WATCH_CONDITION", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_APP_INFORMATION.code -> {
-                json.put("CASIO_APP_INFORMATION", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("CASIO_APP_INFORMATION", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_BLE_FEATURES.code -> {
-                json.put("BUTTON_PRESSED", data)
+                val dataJson = JSONObject().put("key", createKey(data)).put("value", data)
+                json.put("BUTTON_PRESSED", dataJson)
             }
         }
         return json
+    }
+
+    private fun createKey(data: String): String {
+
+        val shortStr = Utils.toCompactString(data)
+        var keyLength = 2
+        // get the first byte of the returned data, which indicates the data content.
+        val startOfData = shortStr.substring(0, 2).uppercase(Locale.getDefault())
+        if (startOfData in arrayOf("1D", "1E", "1F", "30", "31")) {
+            keyLength = 4
+        }
+        val key = shortStr.substring(0, keyLength).uppercase(Locale.getDefault())
+        return key
     }
 }

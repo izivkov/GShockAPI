@@ -6,8 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.casio.BluetoothWatch
 import java.util.*
@@ -16,6 +15,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlin.concurrent.schedule
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun run(context: Context) {
 
-        GlobalScope.launch {
+        CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
 
             println("Button pressed: ${api.getPressedButton()}")

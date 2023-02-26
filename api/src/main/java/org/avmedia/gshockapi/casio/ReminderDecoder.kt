@@ -21,6 +21,9 @@ import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 object ReminderDecoder {
     /* Reminders
@@ -36,6 +39,10 @@ object ReminderDecoder {
             // 0XFF indicates end of reminders
             return JSONObject("{\"end\": \"\"}")
         }
+
+        val shortStr = Utils.toCompactString(reminderStr)
+        // get the first byte of the returned data, which indicates the data content.
+        val key = shortStr.substring(0, 4).uppercase(Locale.getDefault())
 
         val reminderAll: IntArray = Utils.toIntArray(reminderStr).toIntArray()
 

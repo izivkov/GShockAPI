@@ -9,6 +9,7 @@ package org.avmedia.gshockapi.utils
 import android.annotation.SuppressLint
 import io.reactivex.functions.Consumer
 import io.reactivex.subjects.PublishSubject
+import org.json.JSONObject
 
 object WatchDataEvents {
     private val subjects = HashMap<String, PublishSubject<String?>>()
