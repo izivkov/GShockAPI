@@ -2,6 +2,8 @@ package org.avmedia.gshockapi.utils
 
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.casio.BluetoothWatch
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 class ResultQueue<T> {
 
@@ -11,7 +13,7 @@ class ResultQueue<T> {
         }
     }
 
-    private val keyedResultMap : MutableMap<String, CompletableDeferred<Any>> = HashMap()
+    private val keyedResultMap : ConcurrentMap<String, CompletableDeferred<Any>> = ConcurrentHashMap()
 
     fun enqueue(element: KeyedResult) {
         keyedResultMap[element.key.uppercase()] = element.result
