@@ -151,7 +151,7 @@ class Casio5600Watch : BluetoothWatch() {
                 val dataJson = JSONObject().apply {
                     put("key", createKey(data))
                     put("value", valueJson)
-                }.toString()
+                }
                 return JSONObject().apply {
                     put("TIME_ADJUSTMENT", dataJson)
                 }

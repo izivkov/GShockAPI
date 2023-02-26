@@ -206,9 +206,8 @@ class GShockAPI(private val context: Context) {
                           0x10 17 62 16 05 85 dd 7f ->00<- 03 0f ff ff ff ff 24 00 00 00 // after watch reset
             AUTO-TIME:    0x10 17 62 16 05 85 dd 7f ->03<- 03 0f ff ff ff ff 24 00 00 00 // no button pressed
             */
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             var ret: BluetoothWatch.WATCH_BUTTON = BluetoothWatch.WATCH_BUTTON.INVALID
 
@@ -279,9 +278,8 @@ class GShockAPI(private val context: Context) {
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
         subscribe("CASIO_WATCH_NAME") { keyedData ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)
                 ?.complete(Utils.trimNonAsciiCharacters(Utils.toAsciiString(data, 1)))
@@ -307,10 +305,9 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_DST_WATCH_STATE") { keyedData: String ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+        subscribe("CASIO_DST_WATCH_STATE") { keyedData ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(data)
         }
@@ -338,10 +335,9 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_DST_SETTING") { keyedData: String ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+        subscribe("CASIO_DST_SETTING") { keyedData: JSONObject ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(data)
         }
@@ -369,10 +365,9 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_WORLD_CITIES") { keyedData: String ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+        subscribe("CASIO_WORLD_CITIES") { keyedData: JSONObject ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(data)
         }
@@ -409,10 +404,9 @@ class GShockAPI(private val context: Context) {
         val deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_WATCH_CONDITION") { keyedData->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+        subscribe("CASIO_WATCH_CONDITION") { keyedData:JSONObject ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(BatteryLevelDecoder.decodeValue(data))
         }
@@ -440,10 +434,9 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<Int>()
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
-        subscribe("CASIO_TIMER") {keyedData ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+        subscribe("CASIO_TIMER") {keyedData:JSONObject ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(getTimer(data).toInt())
         }
@@ -495,9 +488,8 @@ class GShockAPI(private val context: Context) {
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
         subscribe("CASIO_APP_INFORMATION") {keyedData->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             resultQueue.dequeue(key)?.complete(data)
             setAppInfo(data)
@@ -587,8 +579,7 @@ class GShockAPI(private val context: Context) {
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
         subscribe("ALARMS") {keyedData ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
+            val data = keyedData.getString("value")
             val key = "GET_ALARMS"
 
             fromJson(data)
@@ -655,9 +646,8 @@ class GShockAPI(private val context: Context) {
 
         var title = ""
         subscribe("REMINDERS") {keyedData ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             val reminderJson = JSONObject(data)
             when (reminderJson.keys().next()) {
@@ -700,12 +690,12 @@ class GShockAPI(private val context: Context) {
         sendMessage("{action: \"SET_REMINDERS\", value: ${getSelectedEvents(events)} }")
     }
 
-    private fun subscribe(subject: String, onDataReceived: (String) -> Unit): Unit {
+    private fun subscribe(subject: String, onDataReceived: (JSONObject) -> Unit): Unit {
         WatchDataEvents.addSubject(subject)
 
         // receive values from the commands we issued in start()
         WatchDataEvents.subscribe(this.javaClass.canonicalName, subject) {
-            onDataReceived(it as String)
+            onDataReceived(it as JSONObject)
         }
     }
 
@@ -735,9 +725,8 @@ class GShockAPI(private val context: Context) {
         resultQueue.enqueue(ResultQueue.KeyedResult(key, deferredResult as CompletableDeferred<Any>))
 
         subscribe("SETTINGS") {keyedData ->
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             val model = Gson().fromJson(data, Settings::class.java)
             resultQueue.dequeue(key)?.complete(model)
@@ -754,9 +743,8 @@ class GShockAPI(private val context: Context) {
 
         subscribe("TIME_ADJUSTMENT") { keyedData ->
 
-            val jsonObject = JSONObject(keyedData)
-            val data = jsonObject.getString("value")
-            val key = jsonObject.getString("key")
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
 
             val dataJson = JSONObject(data)
             val timeAdjustment = dataJson.getBooleanSafe("timeAdjustment") == true

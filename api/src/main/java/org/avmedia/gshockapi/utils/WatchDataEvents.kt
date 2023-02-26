@@ -12,14 +12,14 @@ import io.reactivex.subjects.PublishSubject
 import org.json.JSONObject
 
 object WatchDataEvents {
-    private val subjects = HashMap<String, PublishSubject<String?>>()
+    private val subjects = HashMap<String, PublishSubject<JSONObject?>>()
     private val subscribers = HashMap<String, LinkedHashSet<String>>()
 
     fun addSubject(name: String) {
         if (subjects[name] != null) {
             return
         }
-        val subject: PublishSubject<String?> = PublishSubject.create()
+        val subject: PublishSubject<JSONObject?> = PublishSubject.create()
         subjects[name] = subject
     }
 
@@ -48,7 +48,7 @@ object WatchDataEvents {
     }
 
     @SuppressLint("CheckResult")
-    fun subscribe(subscriberName: String, subject: String, onNext: Consumer<in String?>) {
+    fun subscribe(subscriberName: String, subject: String, onNext: Consumer<in JSONObject?>) {
         if (!subscriberAlreadySubscribed(subscriberName, subject)) {
             getProcessor(subject)?.subscribe(onNext)
             addSubscriberAndSubject(subscriberName, subject)
@@ -59,7 +59,7 @@ object WatchDataEvents {
     fun subscribeWithDeferred(
         subscriberName: String,
         subject: String,
-        onNext: Consumer<in String?>
+        onNext: Consumer<in JSONObject?>
     ) {
         if (!subscriberAlreadySubscribed(subscriberName, subject)) {
             getProcessor(subject)?.subscribe(onNext)
@@ -67,11 +67,11 @@ object WatchDataEvents {
         }
     }
 
-    private fun getProcessor(name: String): PublishSubject<String?>? {
+    private fun getProcessor(name: String): PublishSubject<JSONObject?>? {
         return subjects[name]
     }
 
-    fun emitEvent(name: String, event: String) {
+    fun emitEvent(name: String, event: JSONObject) {
         subjects[name]?.onNext(event)
     }
 }
