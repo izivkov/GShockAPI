@@ -1,19 +1,19 @@
 package org.avmedia.gshockapi.utils
 
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.casio.BluetoothWatch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
 class ResultQueue<T> {
 
-    data class KeyedResult (val key:String, val result: CompletableDeferred<Any>) {
+    data class KeyedResult(val key: String, val result: CompletableDeferred<Any>) {
         override fun toString(): String {
             return "KeyedResult(key='$key', result=$result)"
         }
     }
 
-    private val keyedResultMap : ConcurrentMap<String, CompletableDeferred<Any>> = ConcurrentHashMap()
+    private val keyedResultMap: ConcurrentMap<String, CompletableDeferred<Any>> =
+        ConcurrentHashMap()
 
     fun enqueue(element: KeyedResult) {
         keyedResultMap[element.key.uppercase()] = element.result

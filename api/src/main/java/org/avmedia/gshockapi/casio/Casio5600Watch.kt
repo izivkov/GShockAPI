@@ -132,7 +132,11 @@ class Casio5600Watch : BluetoothWatch() {
                 CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code,
                 CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code
             ) -> {
-                return JSONObject().put("ALARMS", JSONObject().put("value", AlarmDecoder.toJson(data).get("ALARMS")).put("key", "GET_ALARMS"))
+                return JSONObject().put(
+                    "ALARMS",
+                    JSONObject().put("value", AlarmDecoder.toJson(data).get("ALARMS"))
+                        .put("key", "GET_ALARMS")
+                )
             }
 
             // Add topics so the right component will receive data
@@ -141,7 +145,8 @@ class Casio5600Watch : BluetoothWatch() {
                 json.put("CASIO_DST_SETTING", dataJson)
             }
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code -> {
-                val dataJson = JSONObject().put("key", createKey(data)).put("value", SettingsDecoder.toJson(data))
+                val dataJson = JSONObject().put("key", createKey(data))
+                    .put("value", SettingsDecoder.toJson(data))
                 val settingsJson = JSONObject()
                 settingsJson.put("SETTINGS", dataJson)
                 return settingsJson
@@ -159,11 +164,18 @@ class Casio5600Watch : BluetoothWatch() {
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code -> {
                 val reminderJson = JSONObject()
                 val value = ReminderDecoder.reminderTimeToJson(data + 2)
-                reminderJson.put("REMINDERS", JSONObject().put("key", createKey(data)).put("value", value))
+                reminderJson.put(
+                    "REMINDERS",
+                    JSONObject().put("key", createKey(data)).put("value", value)
+                )
                 return reminderJson
             }
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code -> {
-                return JSONObject().put("REMINDERS", JSONObject().put("key", createKey(data)).put("value", ReminderDecoder.reminderTitleToJson(data)))
+                return JSONObject().put(
+                    "REMINDERS",
+                    JSONObject().put("key", createKey(data))
+                        .put("value", ReminderDecoder.reminderTitleToJson(data))
+                )
             }
             CasioConstants.CHARACTERISTICS.CASIO_TIMER.code -> {
                 val dataJson = JSONObject().put("key", createKey(data)).put("value", data)

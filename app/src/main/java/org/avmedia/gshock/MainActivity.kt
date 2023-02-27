@@ -1,6 +1,5 @@
 package org.avmedia.gshock
 
-import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -10,18 +9,13 @@ import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.casio.BluetoothWatch
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
     private val api = GShockAPI(this)
     private lateinit var permissionManager: PermissionManager
-    private val customEventName = "************** My Oun Event Generated from the App.!!!! ************"
+    private val customEventName =
+        "************** My Oun Event Generated from the App.!!!! ************"
 
     init {
         // Add a custom event. Send it like this:
@@ -37,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         permissionManager = PermissionManager(this)
         permissionManager.setupPermissions()
 
-        listenToProgressEvents ()
+        listenToProgressEvents()
         run(this)
     }
 
@@ -64,7 +58,8 @@ class MainActivity : AppCompatActivity() {
 
                     ProgressEvents[customEventName] -> {
                         println("Got \"$customEventName\" event")
-                    } else -> {
+                    }
+                    else -> {
                         println("Got \"${it.javaClass}\" event")
                     }
                 }

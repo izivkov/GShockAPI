@@ -22,8 +22,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 object ReminderDecoder {
     /* Reminders
