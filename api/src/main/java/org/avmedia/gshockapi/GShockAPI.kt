@@ -602,16 +602,10 @@ class GShockAPI(private val context: Context) {
      * @return ArrayList<[Alarm]>
      */
     suspend fun getAlarms(): ArrayList<Alarm> {
-        var alarms = ArrayList<Alarm>()
-
-        fun fromJson(jsonStr: String) {
-            val gson = Gson()
-            val alarmArr = gson.fromJson(jsonStr, Array<Alarm>::class.java)
-            alarms.addAll(alarmArr)
-        }
-
         sendMessage("{ action: 'GET_ALARMS'}")
         val key = "GET_ALARMS"
+
+        Alarm.alarms.clear()
 
         var deferredResult = CompletableDeferred<ArrayList<Alarm>>()
         resultQueue.enqueue(
@@ -625,9 +619,15 @@ class GShockAPI(private val context: Context) {
             val data = keyedData.getString("value")
             val key = "GET_ALARMS"
 
+            fun fromJson(jsonStr: String) {
+                val gson = Gson()
+                val alarmArr = gson.fromJson(jsonStr, Array<Alarm>::class.java)
+                Alarm.alarms.addAll(alarmArr)
+            }
+
             fromJson(data)
-            if (alarms.size > 1) {
-                resultQueue.dequeue(key)?.complete(alarms)
+            if (Alarm.alarms.size > 1) {
+                resultQueue.dequeue(key)?.complete(Alarm.alarms)
             }
         }
         return deferredResult.await()

@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
 
-            for (i in 0..3) {
+            for (i in 0..1) {
                 runCommands()
             }
 
