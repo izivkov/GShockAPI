@@ -75,38 +75,45 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
 
-            println("Button pressed: ${api.getPressedButton()}")
-
-            println("Name returned: ${api.getWatchName()}")
-
-            println("Battery Level: ${api.getBatteryLevel()}")
-            println("Timer: ${api.getTimer()}")
-            println("App Info: ${api.getAppInfo()}")
-
-            println("Home Time: ${api.getHomeTime()}")
-
-            getDTSState()
-            getWorldCities()
-            getRTSForWorldCities()
-
-            generateCustomEvent()
-
-            api.setTime()
-
-            val alarms = api.getAlarms()
-            println("Alarm model: $alarms")
-
-            alarms[0] = Alarm(6, 46, enabled = true, hasHourlyChime = false)
-            alarms[4] = Alarm(9, 25, enabled = false)
-            api.setAlarms(alarms)
-
-            handleReminders()
-
-            handleSettings()
+            for (i in 0..3) {
+                runCommands()
+            }
 
             api.disconnect(this@MainActivity)
             println("--------------- END ------------------")
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun runCommands () {
+        println("Button pressed: ${api.getPressedButton()}")
+
+        println("Name returned: ${api.getWatchName()}")
+
+        println("Battery Level: ${api.getBatteryLevel()}")
+        println("Timer: ${api.getTimer()}")
+        println("App Info: ${api.getAppInfo()}")
+
+        println("Home Time: ${api.getHomeTime()}")
+
+        getDTSState()
+        getWorldCities()
+        getRTSForWorldCities()
+
+        generateCustomEvent()
+
+        api.setTime()
+
+        val alarms = api.getAlarms()
+        println("Alarm model: $alarms")
+
+        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
+        alarms[4] = Alarm(9, 25, enabled = false)
+        api.setAlarms(alarms)
+
+        handleReminders()
+
+        handleSettings()
     }
 
     private fun generateCustomEvent() {
