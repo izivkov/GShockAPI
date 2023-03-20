@@ -1,5 +1,5 @@
 # GShockAPI
-This library provides an API to communicate and issue commands to the Casio G-Shock [5600](https://tinyurl.com/y4r5xf94) and [5000](https://tinyurl.com/yvnku2au) series of watches via the Bluetooth interface. It can perform the following tasks:
+This library provides an API to communicate and issue commands to the Casio G-Shock [5600](https://amzn.to/3LDv7zT) and [5000](https://amzn.to/3n5L0Fd) series of watches via the Bluetooth interface. It can perform the following tasks:
 
 - Set watch's time
 - Set Home Time (Home City)
