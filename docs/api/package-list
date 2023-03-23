@@ -1,6 +1,8 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
 $dokka.location:org.avmedia.gshockapi////PointingToDeclaration/api/org.avmedia.gshockapi/index.html
+$dokka.location:org.avmedia.gshockapi/Alarm.Companion///PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-companion/index.html
+$dokka.location:org.avmedia.gshockapi/Alarm.Companion/alarms/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-companion/alarms.html
 $dokka.location:org.avmedia.gshockapi/Alarm///PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/index.html
 $dokka.location:org.avmedia.gshockapi/Alarm/Alarm/#kotlin.Int#kotlin.Int#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-alarm.html
 $dokka.location:org.avmedia.gshockapi/Alarm/enabled/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/enabled.html
