@@ -155,6 +155,7 @@ object ProgressEvents {
      * "NeedToUpdateUI"
      * "CalendarUpdated"
      * "HomeTimeUpdated"
+     * "ApiError"
      * ```
      * The App can add their oun arbitrary events like this:
      * ```
@@ -180,5 +181,6 @@ object ProgressEvents {
         Pair("NeedToUpdateUI", Events()),
         Pair("CalendarUpdated", Events()),
         Pair("HomeTimeUpdated", Events()),
+        Pair("ApiError", Events()),
     )
 }

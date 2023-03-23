@@ -1,8 +1,7 @@
 package org.avmedia.gshockapi.utils
 
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.Alarm
-import java.util.ArrayList
+import org.avmedia.gshockapi.ProgressEvents
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
@@ -24,6 +23,7 @@ class ResultQueue<T> {
     fun dequeue(_key: String): CompletableDeferred<Any>? {
 
         return if (keyedResultMap.isEmpty()) {
+            ProgressEvents.onNext("ApiError")
             null
         } else {
             val key = _key.uppercase()

@@ -160,6 +160,11 @@ object Connection : IConnection {
     }
 
     fun enableNotifications() {
+        if (!isConnected()) {
+            ProgressEvents.onNext("ApiError")
+            return
+        }
+
         enableNotifications(
             device,
             DeviceCharacteristics.findCharacteristic(CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID)
