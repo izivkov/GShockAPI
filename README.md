@@ -35,3 +35,8 @@ dependencies {
 ## Who is using it?
 
 The [Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync) app integrates G-Shock 5000/5600 watches with Google services such as `Google Calendar` events. `Google Alarm Clock`, etc.
+
+
+## Credits
+- The BLE-related code in this app is based on the `ble-starter-android` https://github.com/PunchThrough/ble-starter-android, but with many modifications.
+- Some if the Casio specific code is loosely based on the `Gadgetbridge` https://github.com/Freeyourgadget/Gadgetbridge project
