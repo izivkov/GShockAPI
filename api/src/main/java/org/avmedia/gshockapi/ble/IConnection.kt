@@ -19,5 +19,5 @@ interface IConnection {
     fun sendMessage(message: String)
     fun start()
     fun stop()
-    fun getDeviceId(): String
+    fun getDeviceId(): String?
 }

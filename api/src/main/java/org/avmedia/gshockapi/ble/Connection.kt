@@ -73,8 +73,8 @@ object Connection : IConnection {
     override fun stop() {
     }
 
-    override fun getDeviceId(): String {
-        return device.address
+    override fun getDeviceId(): String? {
+        return device?.address
     }
 
     // end of interface
@@ -160,15 +160,18 @@ object Connection : IConnection {
     }
 
     fun enableNotifications() {
-        if (!isConnected()) {
+        if (!isConnected() || DeviceCharacteristics.findCharacteristic(CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID) == null) {
             ProgressEvents.onNext("ApiError")
             return
         }
 
-        enableNotifications(
-            device,
-            DeviceCharacteristics.findCharacteristic(CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID)
-        )
+        DeviceCharacteristics.findCharacteristic(CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID)
+            ?.let {
+                enableNotifications(
+                    device,
+                    it
+                )
+            }
     }
 
     private fun enableNotifications(

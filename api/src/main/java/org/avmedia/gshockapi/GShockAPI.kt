@@ -553,10 +553,9 @@ class GShockAPI(private val context: Context) {
         initializeForSettingTime()
 
         // Update the HomeTime according to the current TimeZone
-        // This could be optimised to be called only if the
-        // timezone has changed, but this adds complexity.
-        // Maybe we can do this in the future.
-        if (changeHomeTime) {
+        val city = CasioTimeZone.TimeZoneHelper.parseCity(TimeZone.getDefault().id)
+        val homeTime = getHomeTime()
+        if (changeHomeTime && homeTime.uppercase() != city.uppercase()) {
             CasioTimeZone.setHomeTime(TimeZone.getDefault().id)
             setHomeTime(TimeZone.getDefault().id)
         }
@@ -835,13 +834,12 @@ class GShockAPI(private val context: Context) {
         sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
     }
 
-
     /**
      * Get the Bluetooth ID os the connected watch
      *
      * @return watch's Bluetooth ID as a String. Should look something like: "ED:85:83:38:62:17"
      */
-    fun getDeviceId(): String {
+    fun getDeviceId(): String? {
         return Connection.getDeviceId()
     }
 

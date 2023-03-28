@@ -8,6 +8,7 @@ package org.avmedia.gshockapi.ble
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
+import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
 import java.util.*
 
@@ -25,14 +26,14 @@ object DeviceCharacteristics {
         this.device = device
     }
 
-    val characteristics by lazy {
+    private val characteristics by lazy {
         Connection.servicesOnDevice(device)?.flatMap { service ->
             service.characteristics ?: listOf()
         } ?: listOf()
     }
 
-    fun findCharacteristic(uuid: UUID?): BluetoothGattCharacteristic {
-        return characteristicMap[uuid]!!
+    fun findCharacteristic(uuid: UUID?): BluetoothGattCharacteristic? {
+        return characteristicMap[uuid]
     }
 
     fun printCharacteristics() {
