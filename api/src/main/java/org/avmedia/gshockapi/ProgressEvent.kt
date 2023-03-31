@@ -113,7 +113,7 @@ object ProgressEvents {
      *    }
      ```
      *
-     * @param e [Event] to broadcast
+     * @param eventName [String] to broadcast
      */
     fun onNext(eventName: String) {
         // add it if not in map.
