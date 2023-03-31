@@ -97,14 +97,14 @@ object ProgressEvents {
     /**
      * The application can broadcast built in events by calling this function.
      * ```
-     *  ProgressEvents.onNext("ApiError")
+     *  ProgressEvents.onNext("AllPermissionsAccepted")
      * ```
      * Also, the app can add its own events by passing an arbitrary string to "onNext":
      *
      * ```
      *  ProgressEvents.onNext("CustomEvent")
      * ```
-     * and then listen on this event: using the `start()` function, just like it was a built-in event:
+     * and then listen on this event using the `start()` function, just like it was a built-in event:
      * ```
      * ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
      *  when (it) {
@@ -113,7 +113,7 @@ object ProgressEvents {
      *    }
      ```
      *
-     * @param eventName [String]: Name of event to broadcast
+     * @param eventName: Name of event to broadcast
      */
     fun onNext(eventName: String) {
         // add it if not in map.
