@@ -17,11 +17,7 @@ class MainActivity : AppCompatActivity() {
     private val customEventName =
         "************** My Oun Event Generated from the App.!!!! ************"
 
-    init {
-        // Add a custom event. Send it like this:
-        // ProgressEvents.onNext(customEventName)
-        ProgressEvents.addEvent(customEventName)
-    }
+    init {}
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -66,7 +66,6 @@ $dokka.location:org.avmedia.gshockapi/ProgressEvents.Subscriber/Subscriber/#/Poi
 $dokka.location:org.avmedia.gshockapi/ProgressEvents.Subscriber/start/#kotlin.String#io.reactivex.functions.Consumer[org.avmedia.gshockapi.ProgressEvents.Events]#io.reactivex.functions.Consumer[kotlin.Throwable]/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/-subscriber/start.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents.Subscriber/stop/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/-subscriber/stop.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents///PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/index.html
-$dokka.location:org.avmedia.gshockapi/ProgressEvents/addEvent/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/add-event.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/addPayload/#kotlin.String#kotlin.Any?/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/add-payload.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/connectionEventsFlowable/#/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/connection-events-flowable.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/get/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/get.html

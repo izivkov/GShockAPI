@@ -95,12 +95,16 @@ object ProgressEvents {
     val connectionEventsFlowable = (eventsProcessor as Flowable<Events>)
 
     /**
-     * The application can broadcast its own events by calling this function.
+     * The application can broadcast built in events by calling this function.
+     * ```
+     *  ProgressEvents.onNext("ApiError")
+     * ```
+     * Also, the app can add its own events by passing an arbitrary string to "onNext":
+     *
      * ```
      *  ProgressEvents.onNext("CustomEvent")
      * ```
-     * You can pass an arbitrary string to "onNext", and then listen on this event: using the `start()` function:
-     *
+     * and then listen on this event: using the `start()` function, just like it was a built-in event:
      * ```
      * ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
      *  when (it) {
