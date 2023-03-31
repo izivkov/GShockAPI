@@ -96,20 +96,27 @@ object ProgressEvents {
 
     /**
      * The application can broadcast its own events by calling this function.
-     * Also, the application can add its own events. The
-     * new custom event would first have to be added to the ProgressEvents like this:
-     *
-     * ```
-     * ProgressEvents.addEvent("CustomEvent")
-     * ```
-     *
-     * And then we can broadcast it like this:
      * ```
      *  ProgressEvents.onNext("CustomEvent")
      * ```
+     * You can pass an arbitrary string to "onNext", and then listen on this event: using the `start()` function:
+     *
+     * ```
+     * ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
+     *  when (it) {
+     *      ProgressEvents["CustomEvent"] -> {
+     *      // ...
+     *    }
+     ```
+     *
      * @param e [Event] to broadcast
      */
     fun onNext(eventName: String) {
+        // add it if not in map.
+        if (!eventMap.containsKey(eventName)) {
+            addEvent(eventName)
+        }
+
         if (eventsProcessor.hasSubscribers()) {
             return eventsProcessor.onNext(eventMap[eventName])
         }
@@ -119,7 +126,7 @@ object ProgressEvents {
         return eventMap[eventName]
     }
 
-    fun addEvent(eventName: String) {
+    private fun addEvent(eventName: String) {
         if (eventMap.containsKey(eventName)) {
             Timber.d("Event $eventName")
             return

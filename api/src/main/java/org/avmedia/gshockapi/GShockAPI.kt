@@ -835,7 +835,7 @@ class GShockAPI(private val context: Context) {
     }
 
     /**
-     * Get the Bluetooth ID os the connected watch
+     * Get the Bluetooth ID of the connected watch
      *
      * @return watch's Bluetooth ID as a String. Should look something like: "ED:85:83:38:62:17"
      */
