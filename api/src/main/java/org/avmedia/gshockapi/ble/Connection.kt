@@ -74,6 +74,9 @@ object Connection : IConnection {
     }
 
     override fun getDeviceId(): String? {
+        if (!this::device.isInitialized) {
+            return null
+        }
         return device?.address
     }
 
