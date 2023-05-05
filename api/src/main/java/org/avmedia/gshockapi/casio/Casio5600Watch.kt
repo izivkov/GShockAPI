@@ -157,6 +157,10 @@ class Casio5600Watch : BluetoothWatch() {
                     put("key", createKey(data))
                     put("value", valueJson)
                 }
+                
+                // TODO: INZ check this
+                SettingsDecoder.CasioIsAutoTimeOriginalValue.value = data
+
                 return JSONObject().apply {
                     put("TIME_ADJUSTMENT", dataJson)
                 }
