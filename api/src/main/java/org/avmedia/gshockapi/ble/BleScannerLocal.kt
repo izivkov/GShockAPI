@@ -17,6 +17,8 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import androidx.appcompat.app.AppCompatActivity
+import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.CasioConstants
 import timber.log.Timber
 
@@ -33,9 +35,11 @@ data class BleScannerLocal(val context: Context) {
         bluetoothAdapter.bluetoothLeScanner
     }
 
-    private val scanSettings = ScanSettings.Builder()
-        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-        .build()
+    private val scanSettings =
+        ScanSettings.Builder().setScanMode(
+            // ScanSettings.SCAN_MODE_LOW_POWER
+            ScanSettings.SCAN_MODE_LOW_LATENCY
+        ).build()
 
     private var isScanning = false
 
@@ -57,6 +61,7 @@ data class BleScannerLocal(val context: Context) {
             if (!bluetoothAdapter.isEnabled || bleScanner == null) {
                 return
             }
+
             bleScanner.startScan(createFilters(), scanSettings, scanCallback)
             isScanning = true
         } else {
@@ -90,8 +95,7 @@ Characteristics:
 
     private fun createFilters(): ArrayList<ScanFilter> {
         val filter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid.fromString(CasioConstants.CASIO_SERVICE.toString()))
-            .build()
+            .setServiceUuid(ParcelUuid.fromString(CasioConstants.CASIO_SERVICE.toString())).build()
 
         val filters = ArrayList<ScanFilter>()
         filters.add(filter)
@@ -106,11 +110,23 @@ Characteristics:
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+            super.onScanResult(callbackType, result)
 
             if (foundDevices.contains(result.device.toString())) {
                 return
             }
             foundDevices.add(result.device.toString())
+
+            val name = result.scanRecord?.deviceName
+            if (name != null) {
+                WatchInfo.setDeviceName(name.trimEnd('\u0000'))
+
+                ProgressEvents.onNext("DeviceName")
+                ProgressEvents["DeviceName"]?.payload = WatchInfo.getDeviceName()
+            }
+
+            ProgressEvents.onNext("DeviceAddress")
+            ProgressEvents["DeviceAddress"]?.payload = result.device.toString()
 
             stopBleScan()
             Connection.connect(result.device, context)

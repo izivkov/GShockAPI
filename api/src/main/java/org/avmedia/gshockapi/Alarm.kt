@@ -1,7 +1,5 @@
 package org.avmedia.gshockapi
 
-import java.util.ArrayList
-
 open class Alarm(
     var hour: Int,
     var minute: Int,
@@ -14,5 +12,9 @@ open class Alarm(
 
     companion object {
         val alarms: ArrayList<Alarm> = ArrayList<Alarm>()
+
+        fun clear() {
+            alarms.clear()
+        }
     }
 }

@@ -6,11 +6,14 @@
 
 package org.avmedia.gshockapi.ble
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
+import androidx.core.app.ActivityCompat
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.WatchFactory
@@ -36,6 +39,30 @@ object Connection : IConnection {
     var oneTimeLock = false
     lateinit var applicationContext: Context
     private var isConnecting = false
+
+    object CurrentDevice {
+        private var gatt: BluetoothGatt? = null
+        fun set(gatt: BluetoothGatt?) {
+            this.gatt = gatt
+        }
+
+        fun reset() {
+            this.gatt = null
+        }
+
+        fun isSet(): Boolean {
+            return gatt != null
+        }
+
+        @SuppressLint("MissingPermission")
+        fun close() {
+            if (gatt != null) {
+                gatt?.disconnect()
+                gatt?.close()
+                gatt = null
+            }
+        }
+    }
 
     // Interface
     override fun init(context: Context) {
@@ -77,7 +104,7 @@ object Connection : IConnection {
         if (!this::device.isInitialized) {
             return null
         }
-        return device?.address
+        return device.address
     }
 
     // end of interface
@@ -171,8 +198,7 @@ object Connection : IConnection {
         DeviceCharacteristics.findCharacteristic(CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID)
             ?.let {
                 enableNotifications(
-                    device,
-                    it
+                    device, it
                 )
             }
     }
@@ -251,7 +277,13 @@ object Connection : IConnection {
         // Handle Connect separately from other operations that require device to be connected
         if (operation is Connect) {
             with(operation) {
-                device.connectGatt(context, true, callback)
+                CurrentDevice.set(
+                    device.connectGatt(
+                        context,
+                        true,
+                        callback
+                    )
+                )
             }
             return
         }
@@ -270,6 +302,7 @@ object Connection : IConnection {
             is Disconnect -> with(operation) {
                 Timber.w("Disconnecting from ${device.address}")
                 gatt.close()
+                CurrentDevice.reset()
                 deviceGattMap.remove(device)
                 val event = ProgressEvents["Disconnect"]
                 event?.payload = device
@@ -375,9 +408,9 @@ object Connection : IConnection {
     private val callback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+
             val deviceAddress = gatt.device.address
             device = gatt.device
-
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     ProgressEvents.onNext("ConnectionStarted")
@@ -386,12 +419,16 @@ object Connection : IConnection {
                         gatt.discoverServices()
                     }
 
+                    CurrentDevice.set(gatt)
+
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Timber.e("onConnectionStateChange: disconnected from $deviceAddress")
+                    Timber.e("===> Closing gatt 1<===")
                     teardownConnection(gatt.device)
                 }
             } else {
                 Timber.e("onConnectionStateChange: status $status encountered for $deviceAddress!")
+                // gatt.close()
                 if (status == 19 || status == 8) { // disconnected by device
                     Timber.d("Got error $status")
                     //ProgressEvents.Events.Disconnect.payload = device
@@ -586,4 +623,10 @@ object Connection : IConnection {
     }
 
     private fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
+
+    override fun breakWait() {
+        CurrentDevice.close()
+        isConnecting = false
+        signalEndOfOperation()
+    }
 }

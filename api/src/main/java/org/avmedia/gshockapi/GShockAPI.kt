@@ -72,7 +72,7 @@ class GShockAPI(private val context: Context) {
      * ```
      */
 
-    suspend fun waitForConnection(deviceId: String? = ""):String {
+    suspend fun waitForConnection(deviceId: String? = ""): String {
         var connectedStatus = _waitForConnection(deviceId)
         if (connectedStatus == "OK") {
             init()
@@ -95,8 +95,7 @@ class GShockAPI(private val context: Context) {
         val deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                "waitForConnection",
-                deferredResult as CompletableDeferred<Any>
+                "waitForConnection", deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -108,6 +107,8 @@ class GShockAPI(private val context: Context) {
                             ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
                         DeviceCharacteristics.init(device)
 
+                        cache.clear()
+                        Alarm.clear()
                         resultQueue.dequeue("waitForConnection")?.complete("OK")
                     }
                 }
@@ -122,7 +123,7 @@ class GShockAPI(private val context: Context) {
         return deferredResult.await()
     }
 
-    private suspend fun init() : Boolean {
+    private suspend fun init(): Boolean {
         WatchFactory.watch.init()
         resultQueue.clear()
         getPressedButton()
@@ -284,8 +285,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -317,8 +317,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -352,8 +351,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -387,8 +385,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -431,8 +428,7 @@ class GShockAPI(private val context: Context) {
         val deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -466,8 +462,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<Int>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -524,8 +519,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -550,7 +544,11 @@ class GShockAPI(private val context: Context) {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun setTime(changeHomeTime: Boolean = true) {
 
-        initializeForSettingTime()
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) {
+            initializeForSettingTimeForB2100()
+        } else {
+            initializeForSettingTimeForB5600()
+        }
 
         // Update the HomeTime according to the current TimeZone
         val city = CasioTimeZone.TimeZoneHelper.parseCity(TimeZone.getDefault().id)
@@ -570,7 +568,7 @@ class GShockAPI(private val context: Context) {
     /**
      * This function is internally called by [setTime] to initialize some values.
      */
-    private suspend fun initializeForSettingTime() {
+    private suspend fun initializeForSettingTimeForB5600() {
         // Before we can set time, we must read and write back these values.
         // Why? Not sure, ask Casio
 
@@ -599,6 +597,25 @@ class GShockAPI(private val context: Context) {
         readAndWrite(::getWorldCities, 5)
     }
 
+    private suspend fun initializeForSettingTimeForB2100() {
+        // Before we can set time, we must read and write back these values.
+        // Why? Not sure, ask Casio
+
+        suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
+            val ret: String = function(param)
+            val shortStr = Utils.toCompactString(ret)
+            CasioIO.writeCmd(0xE, shortStr)
+        }
+
+        readAndWrite(::getDSTWatchState, BluetoothWatch.DTS_STATE.ZERO)
+
+        readAndWrite(::getDSTForWorldCities, 0)
+        readAndWrite(::getDSTForWorldCities, 1)
+
+        readAndWrite(::getWorldCities, 0)
+        readAndWrite(::getWorldCities, 1)
+    }
+
     /**
      * Gets the current alarms from the watch. Up to 5 alarms are supported on the watch.
      *
@@ -608,13 +625,12 @@ class GShockAPI(private val context: Context) {
         sendMessage("{ action: 'GET_ALARMS'}")
         val key = "GET_ALARMS"
 
-        Alarm.alarms.clear()
+        Alarm.clear()
 
         var deferredResult = CompletableDeferred<ArrayList<Alarm>>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -690,8 +706,7 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<Event>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                "310${eventNumber}",
-                deferredResult as CompletableDeferred<Any>
+                "310${eventNumber}", deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -775,30 +790,27 @@ class GShockAPI(private val context: Context) {
         var deferredResult = CompletableDeferred<Settings>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
         subscribe("SETTINGS") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
-
             val model = Gson().fromJson(data, Settings::class.java)
             resultQueue.dequeue(key)?.complete(model)
         }
         return deferredResult.await()
     }
 
-    private suspend fun getTimeAdjustment(): Boolean {
+    suspend fun getTimeAdjustment(): Boolean {
         sendMessage("{ action: 'GET_TIME_ADJUSTMENT'}")
 
         val key = "11"
         var deferredResult = CompletableDeferred<Boolean>()
         resultQueue.enqueue(
             ResultQueue.KeyedResult(
-                key,
-                deferredResult as CompletableDeferred<Any>
+                key, deferredResult as CompletableDeferred<Any>
             )
         )
 
@@ -852,6 +864,10 @@ class GShockAPI(private val context: Context) {
         Connection.disconnect(context)
     }
 
+    fun stopScan() {
+        bleScannerLocal.stopBleScan()
+    }
+
     fun preventReconnection() {
         Connection.oneTimeLock = true
     }
@@ -868,5 +884,9 @@ class GShockAPI(private val context: Context) {
      */
     fun isBluetoothEnabled(): Boolean {
         return bleScannerLocal.bluetoothAdapter.isEnabled
+    }
+
+    fun resetHand() {
+        sendMessage("{action: \"RESET_HAND\", value: \"\"}")
     }
 }

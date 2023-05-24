@@ -12,6 +12,7 @@ import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.byteArrayOfIntArray
 import org.avmedia.gshockapi.utils.Utils.byteArrayOfInts
+import org.avmedia.gshockapi.utils.Utils.hexToBytes
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
@@ -25,6 +26,52 @@ class Casio5600Watch : BluetoothWatch() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun callWriter(message: String) {
         when (val action = JSONObject(message).get("action")) {
+            "RESET_HAND" -> {
+                writeCmd(
+                    0x000e,
+                    "1a0412000000".hexToBytes()
+                )
+                writeCmd(
+                    0x000e,
+                    "1a0418080700".hexToBytes()
+                )
+
+                // Adjustment
+                // "1a0418->0a<-0700"
+
+                // Minutes
+                // 0->15 : 05
+                // 15->70 : 07
+                // 30->45 : 05
+                // 45->0 : 07
+                // "1a04180a >07< 00"
+
+                // reset
+                // 1a0412000000
+                // 1a0418a00500
+                // or
+                // 1a0418080700  - 9:30 am
+
+                // Counter CW
+                // 1a0418a10500
+                // 1a0419a00500
+
+                // Counter CW
+                // 1a0418090700
+                // 1a0400000000
+
+                // Counter CW x5
+                // 1a04180d0700
+                // 1a0400000000
+
+                // CW
+                // 1a04189f0500
+                // 1a0419a00500
+
+                // CW x3
+                // 1a0418050700
+                // 1a0400000000
+            }
             "GET_ALARMS" -> {
                 // get alarm 1
                 writeCmd(
@@ -152,12 +199,14 @@ class Casio5600Watch : BluetoothWatch() {
                 return settingsJson
             }
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code -> {
+                SettingsDecoder.getTimeAdjustment(data, settings)
+
                 val valueJson = SettingsDecoder.toJsonTimeAdjustment(settings)
                 val dataJson = JSONObject().apply {
                     put("key", createKey(data))
                     put("value", valueJson)
                 }
-                
+
                 // TODO: INZ check this
                 SettingsDecoder.CasioIsAutoTimeOriginalValue.value = data
 

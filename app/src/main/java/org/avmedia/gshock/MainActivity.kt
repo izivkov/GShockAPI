@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private suspend fun runCommands () {
+    private suspend fun runCommands() {
         println("Button pressed: ${api.getPressedButton()}")
 
         println("Name returned: ${api.getWatchName()}")
@@ -119,25 +119,34 @@ class MainActivity : AppCompatActivity() {
     private suspend fun getRTSForWorldCities() {
         println("World DTS City 0: ${api.getDSTForWorldCities(0)}")
         println("World DTS City 1: ${api.getDSTForWorldCities(1)}")
-        println("World DTS City 2: ${api.getDSTForWorldCities(2)}")
-        println("World DTS City 3: ${api.getDSTForWorldCities(3)}")
-        println("World DTS City 4: ${api.getDSTForWorldCities(4)}")
-        println("World DTS City 5: ${api.getDSTForWorldCities(5)}")
+
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+            println("World DTS City 2: ${api.getDSTForWorldCities(2)}")
+            println("World DTS City 3: ${api.getDSTForWorldCities(3)}")
+            println("World DTS City 4: ${api.getDSTForWorldCities(4)}")
+            println("World DTS City 5: ${api.getDSTForWorldCities(5)}")
+        }
     }
 
     private suspend fun getWorldCities() {
         println("World City 0: ${api.getWorldCities(0)}")
         println("World City 1: ${api.getWorldCities(1)}")
-        println("World City 2: ${api.getWorldCities(2)}")
-        println("World City 3: ${api.getWorldCities(3)}")
-        println("World City 4: ${api.getWorldCities(4)}")
-        println("World City 5: ${api.getWorldCities(5)}")
+
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+            println("World City 2: ${api.getWorldCities(2)}")
+            println("World City 3: ${api.getWorldCities(3)}")
+            println("World City 4: ${api.getWorldCities(4)}")
+            println("World City 5: ${api.getWorldCities(5)}")
+        }
     }
 
     private suspend fun getDTSState() {
         println("TDS STATE ZERO: ${api.getDSTWatchState(BluetoothWatch.DTS_STATE.ZERO)}")
-        println("TDS STATE TWO: ${api.getDSTWatchState(BluetoothWatch.DTS_STATE.TWO)}")
-        println("TDS STATE FOUR: ${api.getDSTWatchState(BluetoothWatch.DTS_STATE.FOUR)}")
+
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+            println("TDS STATE TWO: ${api.getDSTWatchState(BluetoothWatch.DTS_STATE.TWO)}")
+            println("TDS STATE FOUR: ${api.getDSTWatchState(BluetoothWatch.DTS_STATE.FOUR)}")
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
