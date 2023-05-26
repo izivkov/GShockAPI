@@ -44,11 +44,15 @@ data class BleScannerLocal(val context: Context) {
     private var isScanning = false
 
     @SuppressLint("MissingPermission")
-    fun startConnection(deviceId: String?) {
+    fun startConnection(deviceId: String?, deviceName: String?) {
 
         foundDevices.clear()
 
         var device: BluetoothDevice? = null
+
+        if (!deviceName.isNullOrEmpty()) {
+            WatchInfo.setDeviceName(deviceName)
+        }
         if (!deviceId.isNullOrEmpty()) {
             device = bluetoothAdapter.getRemoteDevice(deviceId)
         }

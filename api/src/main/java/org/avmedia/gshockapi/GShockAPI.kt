@@ -72,15 +72,15 @@ class GShockAPI(private val context: Context) {
      * ```
      */
 
-    suspend fun waitForConnection(deviceId: String? = ""): String {
-        var connectedStatus = _waitForConnection(deviceId)
+    suspend fun waitForConnection(deviceId: String? = "", deviceName:String? = ""): String {
+        var connectedStatus = _waitForConnection(deviceId, deviceName)
         if (connectedStatus == "OK") {
             init()
         }
         return connectedStatus
     }
 
-    private suspend fun _waitForConnection(deviceId: String? = ""): String {
+    private suspend fun _waitForConnection(deviceId: String? = "", deviceName:String? = ""): String {
 
         if (Connection.isConnected() || Connection.isConnecting()) {
             return "Connecting"
@@ -90,7 +90,7 @@ class GShockAPI(private val context: Context) {
         WatchDataListener.init()
 
         bleScannerLocal = BleScannerLocal(context)
-        bleScannerLocal.startConnection(deviceId)
+        bleScannerLocal.startConnection(deviceId, deviceName)
 
         val deferredResult = CompletableDeferred<String>()
         resultQueue.enqueue(
