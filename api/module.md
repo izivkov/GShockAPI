@@ -1,7 +1,7 @@
 # Module casio-g-shock-smart-sync-app
 
 # Package org.avmedia.gshockapi
-Casio G-Shock 5000/5600 API
+Casio G-Shock B5000/B5600/B2100 API
 
 ## Description
 This library provides an API to communicate and issue commands to the Casio G-Shock 5000 and 5600
