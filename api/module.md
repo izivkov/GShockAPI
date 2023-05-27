@@ -4,7 +4,7 @@
 Casio G-Shock B5000/B5600/B2100 API
 
 ## Description
-This library provides an API to communicate and issue commands to the Casio G-Shock 5000 and 5600
+This library provides an API to communicate and issue commands to the Casio G-Shock B5000, B5600 and B2100
 series of watches via the Bluetooth interface. It can perform the following tasks:
 
 
