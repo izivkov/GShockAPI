@@ -3,6 +3,7 @@ $dokka.linkExtension:html
 $dokka.location:org.avmedia.gshockapi////PointingToDeclaration/api/org.avmedia.gshockapi/index.html
 $dokka.location:org.avmedia.gshockapi/Alarm.Companion///PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-companion/index.html
 $dokka.location:org.avmedia.gshockapi/Alarm.Companion/alarms/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-companion/alarms.html
+$dokka.location:org.avmedia.gshockapi/Alarm.Companion/clear/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-companion/clear.html
 $dokka.location:org.avmedia.gshockapi/Alarm///PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/index.html
 $dokka.location:org.avmedia.gshockapi/Alarm/Alarm/#kotlin.Int#kotlin.Int#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/-alarm.html
 $dokka.location:org.avmedia.gshockapi/Alarm/enabled/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/enabled.html
@@ -42,6 +43,7 @@ $dokka.location:org.avmedia.gshockapi/GShockAPI/getEventsFromWatch/#/PointingToD
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getHomeTime/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-home-time.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getPressedButton/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-pressed-button.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getSettings/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-settings.html
+$dokka.location:org.avmedia.gshockapi/GShockAPI/getTimeAdjustment/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-time-adjustment.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getTimer/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-timer.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getWatchName/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-watch-name.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/getWorldCities/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/get-world-cities.html
@@ -51,13 +53,15 @@ $dokka.location:org.avmedia.gshockapi/GShockAPI/isBluetoothEnabled/#/PointingToD
 $dokka.location:org.avmedia.gshockapi/GShockAPI/isConnected/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/is-connected.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/isNormalButtonPressed/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/is-normal-button-pressed.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/preventReconnection/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/prevent-reconnection.html
+$dokka.location:org.avmedia.gshockapi/GShockAPI/resetHand/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/reset-hand.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setAlarms/#java.util.ArrayList[org.avmedia.gshockapi.Alarm]/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-alarms.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setEvents/#java.util.ArrayList[org.avmedia.gshockapi.Event]/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-events.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setSettings/#org.avmedia.gshockapi.Settings/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-settings.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setTime/#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-time.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setTimer/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-timer.html
+$dokka.location:org.avmedia.gshockapi/GShockAPI/stopScan/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/stop-scan.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/teardownConnection/#android.bluetooth.BluetoothDevice/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/teardown-connection.html
-$dokka.location:org.avmedia.gshockapi/GShockAPI/waitForConnection/#kotlin.String?/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/wait-for-connection.html
+$dokka.location:org.avmedia.gshockapi/GShockAPI/waitForConnection/#kotlin.String?#kotlin.String?/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/wait-for-connection.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents.Events///PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/-events/index.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents.Events/Events/#kotlin.Any?/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/-events/-events.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents.Events/payload/#/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/-events/payload.html
@@ -91,5 +95,15 @@ $dokka.location:org.avmedia.gshockapi/Settings/lightDuration/#/PointingToDeclara
 $dokka.location:org.avmedia.gshockapi/Settings/powerSavingMode/#/PointingToDeclaration/api/org.avmedia.gshockapi/-settings/power-saving-mode.html
 $dokka.location:org.avmedia.gshockapi/Settings/timeAdjustment/#/PointingToDeclaration/api/org.avmedia.gshockapi/-settings/time-adjustment.html
 $dokka.location:org.avmedia.gshockapi/Settings/timeFormat/#/PointingToDeclaration/api/org.avmedia.gshockapi/-settings/time-format.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL.B2100///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/-b2100/index.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL.B5600///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/-b5600/index.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL.UNKNOWN///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/-u-n-k-n-o-w-n/index.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL///PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/index.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL/valueOf/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/value-of.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo.WATCH_MODEL/values/#/PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/-w-a-t-c-h_-m-o-d-e-l/values.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo///PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/index.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo/getDeviceName/#/PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/get-device-name.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo/model/#/PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/model.html
+$dokka.location:org.avmedia.gshockapi/WatchInfo/setDeviceName/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-watch-info/set-device-name.html
 org.avmedia.gshockapi
 
