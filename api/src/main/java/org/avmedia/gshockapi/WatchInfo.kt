@@ -5,31 +5,38 @@ package org.avmedia.gshockapi
  * Currently supported models are: B2100, B5600 (which also includes the B5000, but they have identical functionality)
  */
 object WatchInfo {
-
     enum class WATCH_MODEL {
         B2100, B5600, UNKNOWN
     }
 
     var model = WATCH_MODEL.UNKNOWN
-    private var deviceName: String = ""
+    private var name: String = ""
+    private var address: String = ""
 
-    /**
-     * Sets the name of the watch, usually obtained from BLE scanning.
-     */
-    fun setDeviceName(name: String) {
-        deviceName = name
-
-        model = if (deviceName.contains("2100")) {
-            WATCH_MODEL.B2100
-        } else {
-            WATCH_MODEL.B5600
+    fun setNameAndModel(name: String) {
+        this.name = name
+        model = when {
+            name.contains("2100") -> WATCH_MODEL.B2100
+            else -> WATCH_MODEL.B5600
         }
+
+        ProgressEvents.onNext("DeviceName")
+        ProgressEvents["DeviceName"]?.payload = name
     }
 
-    /**
-     * Returns name of the watch.
-     */
-    fun getDeviceName(): String {
-        return deviceName
+    fun getName(): String = name
+
+    fun setAddress(address: String) {
+        this.address = address
+
+        ProgressEvents.onNext("DeviceAddress")
+        ProgressEvents["DeviceAddress"]?.payload = address
+    }
+
+    fun getAddress(): String = address
+
+    fun reset () {
+        this.address = ""
+        this.name = ""
     }
 }

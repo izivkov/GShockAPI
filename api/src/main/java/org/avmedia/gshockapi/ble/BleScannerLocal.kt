@@ -35,11 +35,10 @@ data class BleScannerLocal(val context: Context) {
         bluetoothAdapter.bluetoothLeScanner
     }
 
-    private val scanSettings =
-        ScanSettings.Builder().setScanMode(
-            // ScanSettings.SCAN_MODE_LOW_POWER
-            ScanSettings.SCAN_MODE_LOW_LATENCY
-        ).build()
+    private val scanSettings = ScanSettings.Builder().setScanMode(
+        // ScanSettings.SCAN_MODE_LOW_POWER
+        ScanSettings.SCAN_MODE_LOW_LATENCY
+    ).build()
 
     private var isScanning = false
 
@@ -51,10 +50,11 @@ data class BleScannerLocal(val context: Context) {
         var device: BluetoothDevice? = null
 
         if (!deviceName.isNullOrEmpty()) {
-            WatchInfo.setDeviceName(deviceName)
+            WatchInfo.setNameAndModel(deviceName)
         }
         if (!deviceId.isNullOrEmpty()) {
             device = bluetoothAdapter.getRemoteDevice(deviceId)
+            WatchInfo.setAddress(deviceId.toString())
         }
 
         if (device == null || device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
@@ -123,14 +123,9 @@ Characteristics:
 
             val name = result.scanRecord?.deviceName
             if (name != null) {
-                WatchInfo.setDeviceName(name.trimEnd('\u0000'))
-
-                ProgressEvents.onNext("DeviceName")
-                ProgressEvents["DeviceName"]?.payload = WatchInfo.getDeviceName()
+                WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             }
-
-            ProgressEvents.onNext("DeviceAddress")
-            ProgressEvents["DeviceAddress"]?.payload = result.device.toString()
+            WatchInfo.setAddress(result.device.toString())
 
             stopBleScan()
             Connection.connect(result.device, context)
