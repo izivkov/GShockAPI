@@ -37,6 +37,10 @@ dependencies {
 
 The [Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync) app integrates G-Shock B5000/B5600/B2100 watches with Google services such as `Google Calendar` events. `Google Alarm Clock`, etc.
 
+## Similar Project
+If you rather not use a mobile app, but still like to set the time on your G-Shock to the correct time, 
+here is a [Python program](https://github.com/izivkov/GShockTimeServer) which can run as a server on a regular PC or Raspberry PI with Bluetooth interface.
+The project is still WIP, but you can give it a try.
 
 ## Credits
 - The BLE-related code in this app is based on the `ble-starter-android` https://github.com/PunchThrough/ble-starter-android, but with many modifications.
