@@ -31,7 +31,7 @@ object MessageDispatcher {
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun callWriter(message: String) {
+    fun sendToWatch(message: String) {
         val action = JSONObject(message).get("action")
         watchSenders[action]!!.invoke(message)
     }

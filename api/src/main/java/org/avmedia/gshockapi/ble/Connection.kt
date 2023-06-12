@@ -92,7 +92,7 @@ object Connection : IConnection {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun sendMessage(message: String) {
-        MessageDispatcher.callWriter(message)
+        MessageDispatcher.sendToWatch(message)
     }
 
     override fun start() {
