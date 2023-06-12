@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi.utils
+package org.avmedia.gshockapi.apiIO
 
 import org.avmedia.gshockapi.Alarm
 import java.util.ArrayList
@@ -6,6 +6,10 @@ import kotlin.reflect.KSuspendFunction1
 
 class WatchValuesCache {
     private val map = mutableMapOf<String, Any>()
+
+    suspend fun getCached(key: String): Any? {
+        return get(key)
+    }
 
     suspend fun getCached(key: String, func: KSuspendFunction1<String, Any>): Any {
         val cachedResult = get(key)

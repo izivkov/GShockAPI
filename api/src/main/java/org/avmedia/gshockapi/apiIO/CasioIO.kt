@@ -4,9 +4,10 @@
  * Last modified 2022-03-29, 2:38 p.m.
  */
 
-package org.avmedia.gshockapi.casio
+package org.avmedia.gshockapi.apiIO
 
 import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.casio.WatchFactory
 
 object CasioIO {
 

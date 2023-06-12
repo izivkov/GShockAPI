@@ -1,17 +1,59 @@
-/*
- * Created by Ivo Zivkov (izivkov@gmail.com) on 2022-04-03, 10:57 a.m.
- * Copyright (c) 2022 . All rights reserved.
- * Last modified 2022-04-03, 10:57 a.m.
- */
+package org.avmedia.gshockapi.apiIO
 
-package org.avmedia.gshockapi.casio
-
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.gson.Gson
+import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.casio.SettingsEncoder
+import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
-/*
+object SettingsIO {
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun request(): Settings {
+        return ApiIO.request("GET_SETTINGS", ::getBasicSettings) as Settings
+    }
+
+    private suspend fun getBasicSettings(key: String): Settings {
+        Connection.sendMessage("{ action: '$key'}")
+
+        val key = "13"
+        var deferredResult = CompletableDeferred<Settings>()
+        ApiIO.resultQueue.enqueue(
+            ResultQueue.KeyedResult(
+                key, deferredResult as CompletableDeferred<Any>
+            )
+        )
+
+        ApiIO.subscribe("SETTINGS") { keyedData ->
+            val data = keyedData.getString("value")
+            val key = keyedData.getString("key")
+            val model = Gson().fromJson(data, Settings::class.java)
+            ApiIO.resultQueue.dequeue(key)?.complete(model)
+        }
+        return deferredResult.await()
+    }
+
+    fun set(settings: Settings) {
+        val settingJson = Gson().toJson(settings)
+        ApiIO.cache.remove("GET_SETTINGS")
+        Connection.sendMessage("{action: \"SET_SETTINGS\", value: ${settingJson}}")
+    }
+
+    fun toJson(data: String): JSONObject {
+        val dataJson = JSONObject().put("key", ApiIO.createKey(data))
+            .put("value", decodeToJson(data))
+        val settingsJson = JSONObject()
+        settingsJson.put("SETTINGS", dataJson)
+        return settingsJson
+    }
+
+    /*
 Time Format:
 24 h:   13 05 00 00 00 00 00 00 00 00 00 00
 12 h:   13 04 00 00 00 00 00 00 00 00 00 00
@@ -58,10 +100,7 @@ button tone     00000010
 light off:      00000100
 pwr. saving off:00010000
  */
-
-object SettingsDecoder {
-
-    fun toJson(casioArray: String): JSONObject {
+    private fun decodeToJson(casioArray: String): JSONObject {
         return createJsonSettings(casioArray)
     }
 
@@ -118,19 +157,15 @@ object SettingsDecoder {
         return JSONObject(Gson().toJson(settings))
     }
 
-    fun getTimeAdjustment(data: String, settings: Settings) {
-        // syncing off: 110f0f0f0600500004000100->80<-37d2
-        // syncing on:  110f0f0f0600500004000100->00<-37d2
-
-        CasioIsAutoTimeOriginalValue.value = data // save original data for future use
-        settings.timeAdjustment = Utils.toIntArray(data)[12] == 0
+    fun sendToWatch(message:String) {
+        WatchFactory.watch.writeCmd(
+            0x000c,
+            Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
+        )
     }
 
-    fun toJsonTimeAdjustment(settings: Settings): JSONObject {
-        return JSONObject("{\"timeAdjustment\": ${settings.timeAdjustment} }")
-    }
-
-    object CasioIsAutoTimeOriginalValue {
-        var value = ""
+    fun sendToWatchSet(message:String) {
+        val settings = JSONObject(message).get("value") as JSONObject
+        WatchFactory.watch.writeCmd(0x000e, SettingsEncoder.encode(settings))
     }
 }

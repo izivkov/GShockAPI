@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.casio
 
+import org.avmedia.gshockapi.apiIO.CasioIO
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
 

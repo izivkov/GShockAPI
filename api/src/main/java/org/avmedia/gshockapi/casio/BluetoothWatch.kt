@@ -9,12 +9,13 @@ package org.avmedia.gshockapi.casio
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.apiIO.CasioIO
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import org.avmedia.gshockapi.ble.DeviceCharacteristics.device
 import org.json.JSONObject
 import java.util.*
 
-sealed class BluetoothWatch {
+object BluetoothWatch {
 
     private var mAvailableCharacteristics: Map<UUID, BluetoothGattCharacteristic>? = null
     private lateinit var writer: (BluetoothDevice, BluetoothGattCharacteristic, ByteArray) -> Unit
@@ -33,7 +34,7 @@ sealed class BluetoothWatch {
         this.writer = writer
     }
 
-    protected fun writeCmd(handle: Int, bytesArray: ByteArray) {
+    fun writeCmd(handle: Int, bytesArray: ByteArray) {
         val handle = lookupHandle(handle)
         if (handle == null) {
             ProgressEvents.onNext("ApiError")
@@ -74,7 +75,4 @@ sealed class BluetoothWatch {
     private fun lookupHandle(handle: Int): BluetoothGattCharacteristic? {
         return DeviceCharacteristics.findCharacteristic(DeviceCharacteristics.handlesToCharacteristicsMap[handle])
     }
-
-    abstract fun callWriter(message: String)
-    abstract fun toJson(data: String): JSONObject
 }
