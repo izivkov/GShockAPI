@@ -7,7 +7,7 @@ import org.json.JSONObject
 object WorldCitiesIO {
 
     suspend fun request(cityNumber: Int): String {
-        return ApiIO.request("1f0$cityNumber", ::getWorldCities) as String
+        return CachedIO.request("1f0$cityNumber", ::getWorldCities) as String
     }
 
     private suspend fun getWorldCities(key: String): String {
@@ -15,17 +15,17 @@ object WorldCitiesIO {
         CasioIO.request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("CASIO_WORLD_CITIES") { keyedData: JSONObject ->
+        CachedIO.subscribe("CASIO_WORLD_CITIES") { keyedData: JSONObject ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
-            ApiIO.resultQueue.dequeue(key)?.complete(data)
+            CachedIO.resultQueue.dequeue(key)?.complete(data)
         }
 
         return deferredResult.await()
@@ -33,7 +33,7 @@ object WorldCitiesIO {
 
     fun toJson(data: String): JSONObject {
         val json = JSONObject()
-        val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
+        val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
         val characteristicsArray = Utils.toIntArray(data)
         if (characteristicsArray[1] == 0) {
             // 0x1F 00 ... Only the first World City contains the home time.

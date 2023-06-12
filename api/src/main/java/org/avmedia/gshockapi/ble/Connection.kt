@@ -14,9 +14,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.apiIO.CasioIO
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.MessageDispatcher
-import org.avmedia.gshockapi.casio.WatchFactory
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.*
@@ -67,7 +67,7 @@ object Connection : IConnection {
     // Interface
     override fun init(context: Context) {
         applicationContext = context.applicationContext
-        WatchFactory.watch.setWriter(::writeCharacteristic)
+        CasioIO.setWriter(::writeCharacteristic)
     }
 
     override fun setDataCallback(dataCallback: IDataReceived?) {

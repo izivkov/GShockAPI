@@ -21,7 +21,7 @@ object EventsIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun request(eventNumber: Int): Event {
-        return ApiIO.request(eventNumber.toString(), ::getEventFromWatch) as Event
+        return CachedIO.request(eventNumber.toString(), ::getEventFromWatch) as Event
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -30,14 +30,14 @@ object EventsIO {
         CasioIO.request("31${eventNumber}") // reminder time
 
         var deferredResult = CompletableDeferred<Event>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 "310${eventNumber}", deferredResult as CompletableDeferred<Any>
             )
         )
 
         var title = ""
-        ApiIO.subscribe("REMINDERS") { keyedData ->
+        CachedIO.subscribe("REMINDERS") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
@@ -49,7 +49,7 @@ object EventsIO {
                 "time" -> {
                     reminderJson.put("title", title)
                     val event = Event(reminderJson)
-                    ApiIO.resultQueue.dequeue(key)?.complete(event)
+                    CachedIO.resultQueue.dequeue(key)?.complete(event)
                 }
             }
         }
@@ -82,7 +82,7 @@ object EventsIO {
         val value = ReminderDecoder.reminderTimeToJson(data + 2)
         reminderJson.put(
             "REMINDERS",
-            JSONObject().put("key", ApiIO.createKey(data)).put("value", value)
+            JSONObject().put("key", CachedIO.createKey(data)).put("value", value)
         )
         return reminderJson
     }
@@ -90,7 +90,7 @@ object EventsIO {
     fun toJsonTitle(data: String): JSONObject {
         return JSONObject().put(
             "REMINDERS",
-            JSONObject().put("key", ApiIO.createKey(data))
+            JSONObject().put("key", CachedIO.createKey(data))
                 .put("value", ReminderDecoder.reminderTitleToJson(data))
         )
     }
@@ -100,7 +100,7 @@ object EventsIO {
         (0 until remindersJsonArr.length()).forEachIndexed { index, element ->
             val reminderJson = remindersJsonArr.getJSONObject(element)
             val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
-            WatchFactory.watch.writeCmd(
+            CasioIO.writeCmd(
                 0x000e, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index + 1
                 ) + title
@@ -110,7 +110,7 @@ object EventsIO {
             reminderTime += CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code
             reminderTime += index + 1
             reminderTime += ReminderEncoder.reminderTimeFromJson(reminderJson)
-            WatchFactory.watch.writeCmd(0x000e, Utils.byteArrayOfIntArray(reminderTime))
+            CasioIO.writeCmd(0x000e, Utils.byteArrayOfIntArray(reminderTime))
         }
 
         Timber.i("Got reminders $remindersJsonArr")

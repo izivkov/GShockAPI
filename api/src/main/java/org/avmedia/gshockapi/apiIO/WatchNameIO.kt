@@ -7,7 +7,7 @@ import org.json.JSONObject
 object WatchNameIO {
 
     suspend fun request(): String {
-        return ApiIO.request("23", ::getWatchName) as String
+        return CachedIO.request("23", ::getWatchName) as String
     }
 
     private suspend fun getWatchName(key: String): String {
@@ -15,17 +15,17 @@ object WatchNameIO {
         CasioIO.request(key)
 
         var deferredResult = CompletableDeferred<String>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("CASIO_WATCH_NAME") { keyedData ->
+        CachedIO.subscribe("CASIO_WATCH_NAME") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
-            ApiIO.resultQueue.dequeue(key)
+            CachedIO.resultQueue.dequeue(key)
                 ?.complete(Utils.trimNonAsciiCharacters(Utils.toAsciiString(data, 1)))
         }
 
@@ -34,7 +34,7 @@ object WatchNameIO {
 
     fun toJson(data: String): JSONObject {
         val json = JSONObject()
-        val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
+        val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
         json.put("CASIO_WATCH_NAME", dataJson)
         return json
     }

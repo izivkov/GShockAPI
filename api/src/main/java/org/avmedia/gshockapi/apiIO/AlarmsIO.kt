@@ -6,7 +6,6 @@ import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.Alarms
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -15,7 +14,7 @@ import timber.log.Timber
 object AlarmsIO {
 
     suspend fun request(): ArrayList<Alarm> {
-        return ApiIO.request("GET_ALARMS", ::getAlarms) as ArrayList<Alarm>
+        return CachedIO.request("GET_ALARMS", ::getAlarms) as ArrayList<Alarm>
     }
 
     private suspend fun getAlarms(key: String): ArrayList<Alarm> {
@@ -24,13 +23,13 @@ object AlarmsIO {
         Alarm.clear()
 
         var deferredResult = CompletableDeferred<ArrayList<Alarm>>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("ALARMS") { keyedData ->
+        CachedIO.subscribe("ALARMS") { keyedData ->
             val data = keyedData.getString("value")
             val key = "GET_ALARMS"
 
@@ -43,7 +42,7 @@ object AlarmsIO {
             fromJson(data)
 
             if (Alarm.alarms.size > 1) {
-                ApiIO.resultQueue.dequeue(key)?.complete(Alarm.alarms)
+                CachedIO.resultQueue.dequeue(key)?.complete(Alarm.alarms)
             }
         }
         return deferredResult.await()
@@ -62,7 +61,7 @@ object AlarmsIO {
         }
 
         // remove from cache
-        ApiIO.cache.remove("GET_ALARMS")
+        CachedIO.cache.remove("GET_ALARMS")
 
         Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")
     }
@@ -78,13 +77,13 @@ object AlarmsIO {
     // watch senders
     fun sendToWatch(message: String) {
         // get alarm 1
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
         )
 
         // get the rest of the alarms
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code.toByte())
         )
@@ -93,9 +92,9 @@ object AlarmsIO {
     fun sendToWatchSet(message: String) {
         val alarmsJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
         val alarmCasio0 = Alarms.fromJsonAlarmFirstAlarm(alarmsJsonArr[0] as JSONObject)
-        WatchFactory.watch.writeCmd(0x000e, alarmCasio0)
+        CasioIO.writeCmd(0x000e, alarmCasio0)
         var alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
-        WatchFactory.watch.writeCmd(0x000e, alarmCasio)
+        CasioIO.writeCmd(0x000e, alarmCasio)
     }
 
     object AlarmDecoder {

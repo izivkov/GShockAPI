@@ -7,7 +7,6 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import kotlin.experimental.or
@@ -16,7 +15,7 @@ object SettingsIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun request(): Settings {
-        return ApiIO.request("GET_SETTINGS", ::getBasicSettings) as Settings
+        return CachedIO.request("GET_SETTINGS", ::getBasicSettings) as Settings
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -25,17 +24,17 @@ object SettingsIO {
 
         val key = "13"
         var deferredResult = CompletableDeferred<Settings>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("SETTINGS") { keyedData ->
+        CachedIO.subscribe("SETTINGS") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
             val model = Gson().fromJson(data, Settings::class.java)
-            ApiIO.resultQueue.dequeue(key)?.complete(model)
+            CachedIO.resultQueue.dequeue(key)?.complete(model)
         }
         return deferredResult.await()
     }
@@ -43,12 +42,12 @@ object SettingsIO {
     @RequiresApi(Build.VERSION_CODES.O)
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
-        ApiIO.cache.remove("GET_SETTINGS")
+        CachedIO.cache.remove("GET_SETTINGS")
         Connection.sendMessage("{action: \"SET_SETTINGS\", value: ${settingJson}}")
     }
 
     fun toJson(data: String): JSONObject {
-        val dataJson = JSONObject().put("key", ApiIO.createKey(data))
+        val dataJson = JSONObject().put("key", CachedIO.createKey(data))
             .put("value", decodeToJson(data))
         val settingsJson = JSONObject()
         settingsJson.put("SETTINGS", dataJson)
@@ -160,7 +159,7 @@ pwr. saving off:00010000
     }
 
     fun sendToWatch(message: String) {
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
         )
@@ -168,7 +167,7 @@ pwr. saving off:00010000
 
     fun sendToWatchSet(message: String) {
         val settings = JSONObject(message).get("value") as JSONObject
-        WatchFactory.watch.writeCmd(0x000e, SettingsEncoder.encode(settings))
+        CasioIO.writeCmd(0x000e, SettingsEncoder.encode(settings))
     }
 
     object SettingsEncoder {

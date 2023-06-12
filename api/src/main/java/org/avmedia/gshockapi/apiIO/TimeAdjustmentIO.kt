@@ -7,7 +7,6 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
 import org.json.JSONObject
@@ -16,7 +15,7 @@ import org.json.JSONObject
 object TimeAdjustmentIO {
 
     suspend fun request(): Boolean {
-        return ApiIO.request("GET_TIME_ADJUSTMENT", ::getTimeAdjustment) as Boolean
+        return CachedIO.request("GET_TIME_ADJUSTMENT", ::getTimeAdjustment) as Boolean
     }
 
     private suspend fun getTimeAdjustment(key: String): Boolean {
@@ -24,13 +23,13 @@ object TimeAdjustmentIO {
 
         val key = "11"
         var deferredResult = CompletableDeferred<Boolean>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("TIME_ADJUSTMENT") { keyedData ->
+        CachedIO.subscribe("TIME_ADJUSTMENT") { keyedData ->
 
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
@@ -38,7 +37,7 @@ object TimeAdjustmentIO {
             val dataJson = JSONObject(data)
             val timeAdjustment = dataJson.getBooleanSafe("timeAdjustment") == true
 
-            ApiIO.resultQueue.dequeue(key)?.complete(timeAdjustment)
+            CachedIO.resultQueue.dequeue(key)?.complete(timeAdjustment)
         }
 
         return deferredResult.await()
@@ -46,7 +45,7 @@ object TimeAdjustmentIO {
 
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
-        ApiIO.cache.remove("TIME_ADJUSTMENT")
+        CachedIO.cache.remove("TIME_ADJUSTMENT")
         Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
     }
 
@@ -55,7 +54,7 @@ object TimeAdjustmentIO {
 
         val valueJson = toJsonTimeAdjustment(timeAdjustmentSet)
         val dataJson = JSONObject().apply {
-            put("key", ApiIO.createKey(data))
+            put("key", CachedIO.createKey(data))
             put("value", valueJson)
         }
 
@@ -83,7 +82,7 @@ object TimeAdjustmentIO {
     }
 
     fun sendToWatch(message: String) {
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
         )
@@ -98,7 +97,7 @@ object TimeAdjustmentIO {
         )
         val encodedTimeAdj = encodeTimeAdjustment(settings)
         if (encodedTimeAdj.isNotEmpty()) {
-            WatchFactory.watch.writeCmd(0x000e, encodedTimeAdj)
+            CasioIO.writeCmd(0x000e, encodedTimeAdj)
         }
     }
 

@@ -73,8 +73,8 @@ class GShockAPI(private val context: Context) {
     }
 
     private suspend fun init(): Boolean {
-        WatchFactory.watch.init()
-        ApiIO.init()
+        CasioIO.init()
+        CachedIO.init()
         getPressedButton()
 
         ProgressEvents.onNext("ButtonPressedInfoReceived")
@@ -132,11 +132,11 @@ class GShockAPI(private val context: Context) {
      *
      * @return [BluetoothWatch.WATCH_BUTTON]
      **
-     * @see BluetoothWatch.WATCH_BUTTON
+     * @seeCasioIO.WATCH_BUTTON
      */
     /* Do not get value from cache, because we do not want to
     get all values here. */
-    suspend fun getPressedButton(): BluetoothWatch.WATCH_BUTTON {
+    suspend fun getPressedButton(): CasioIO.WATCH_BUTTON {
         val value = ButtonPressedIO.request()
         ButtonPressedIO.put(value)
         return value
@@ -150,7 +150,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isActionButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == BluetoothWatch.WATCH_BUTTON.LOWER_RIGHT
+        return button == CasioIO.WATCH_BUTTON.LOWER_RIGHT
     }
 
     /**
@@ -161,7 +161,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isNormalButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == BluetoothWatch.WATCH_BUTTON.LOWER_LEFT
+        return button == CasioIO.WATCH_BUTTON.LOWER_LEFT
     }
 
     /**
@@ -173,7 +173,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isAutoTimeStarted(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == BluetoothWatch.WATCH_BUTTON.NO_BUTTON
+        return button == CasioIO.WATCH_BUTTON.NO_BUTTON
     }
 
     /**
@@ -190,7 +190,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return returns the Daylight Saving Time state of the watch as a String.
      */
-    suspend fun getDSTWatchState(state: BluetoothWatch.DTS_STATE): String {
+    suspend fun getDSTWatchState(state: CasioIO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 

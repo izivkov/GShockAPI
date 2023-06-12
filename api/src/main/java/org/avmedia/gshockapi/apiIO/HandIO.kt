@@ -1,6 +1,5 @@
 package org.avmedia.gshockapi.apiIO
 
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils.hexToBytes
 
 object HandIO {
@@ -8,11 +7,11 @@ object HandIO {
     fun sendToWatch(cmd: String) {
         // placeholder
 
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000e,
             "1a0412000000".hexToBytes()
         )
-        WatchFactory.watch.writeCmd(
+        CasioIO.writeCmd(
             0x000e,
             "1a0418080700".hexToBytes()
         )

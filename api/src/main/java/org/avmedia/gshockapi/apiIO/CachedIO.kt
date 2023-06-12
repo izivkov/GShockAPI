@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.util.*
 import kotlin.reflect.KSuspendFunction1
 
-object ApiIO {
+object CachedIO {
 
     val cache = WatchValuesCache()
     val resultQueue = ResultQueue<CompletableDeferred<Any>>()
@@ -29,10 +29,6 @@ object ApiIO {
             return funcResult
         }
         return value
-    }
-
-    fun send() {
-        TODO("Not yet implemented")
     }
 
     fun subscribe(subject: String, onDataReceived: (JSONObject) -> Unit): Unit {

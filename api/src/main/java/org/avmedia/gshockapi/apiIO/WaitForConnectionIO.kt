@@ -39,7 +39,7 @@ object WaitForConnectionIO {
         bleScannerLocal.startConnection(deviceId, deviceName)
 
         val deferredResult = CompletableDeferred<String>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 "waitForConnection", deferredResult as CompletableDeferred<Any>
             )
@@ -53,8 +53,8 @@ object WaitForConnectionIO {
                             ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
                         DeviceCharacteristics.init(device)
 
-                        ApiIO.clearCache()
-                        ApiIO.resultQueue.dequeue("waitForConnection")?.complete("OK")
+                        CachedIO.clearCache()
+                        CachedIO.resultQueue.dequeue("waitForConnection")?.complete("OK")
                     }
                 }
             }, { throwable ->

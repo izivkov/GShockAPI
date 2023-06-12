@@ -5,9 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.casio.BluetoothWatch
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import java.time.Clock
@@ -38,7 +36,7 @@ object TimeIO {
         return WorldCitiesIO.request(cityNum)
     }
 
-    private suspend fun getDSTWatchState(state: BluetoothWatch.DTS_STATE): String {
+    private suspend fun getDSTWatchState(state: CasioIO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 
@@ -60,9 +58,9 @@ object TimeIO {
             CasioIO.writeCmd(0xE, shortStr)
         }
 
-        readAndWrite(::getDSTWatchState, BluetoothWatch.DTS_STATE.ZERO)
-        readAndWrite(::getDSTWatchState, BluetoothWatch.DTS_STATE.TWO)
-        readAndWrite(::getDSTWatchState, BluetoothWatch.DTS_STATE.FOUR)
+        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.ZERO)
+        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.TWO)
+        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.FOUR)
 
         readAndWrite(::getDSTForWorldCities, 0)
         readAndWrite(::getDSTForWorldCities, 1)
@@ -89,7 +87,7 @@ object TimeIO {
             CasioIO.writeCmd(0xE, shortStr)
         }
 
-        readAndWrite(::getDSTWatchState, BluetoothWatch.DTS_STATE.ZERO)
+        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.ZERO)
 
         readAndWrite(::getDSTForWorldCities, 0)
         readAndWrite(::getDSTForWorldCities, 1)
@@ -109,7 +107,7 @@ object TimeIO {
         var timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
-        WatchFactory.watch.writeCmd(0x000e, timeCommand)
+        CasioIO.writeCmd(0x000e, timeCommand)
     }
 
     object TimeEncoder {

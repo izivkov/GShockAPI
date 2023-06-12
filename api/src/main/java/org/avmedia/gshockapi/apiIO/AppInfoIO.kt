@@ -7,7 +7,7 @@ import org.json.JSONObject
 object AppInfoIO {
 
     suspend fun request(): String {
-        return ApiIO.request("22", ::getAppInfo) as String
+        return CachedIO.request("22", ::getAppInfo) as String
     }
 
     private suspend fun getAppInfo(key: String): String {
@@ -29,17 +29,17 @@ object AppInfoIO {
         }
 
         var deferredResult = CompletableDeferred<String>()
-        ApiIO.resultQueue.enqueue(
+        CachedIO.resultQueue.enqueue(
             ResultQueue.KeyedResult(
                 key, deferredResult as CompletableDeferred<Any>
             )
         )
 
-        ApiIO.subscribe("CASIO_APP_INFORMATION") { keyedData ->
+        CachedIO.subscribe("CASIO_APP_INFORMATION") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
-            ApiIO.resultQueue.dequeue(key)?.complete(data)
+            CachedIO.resultQueue.dequeue(key)?.complete(data)
             setAppInfo(data)
         }
 
@@ -48,7 +48,7 @@ object AppInfoIO {
 
     fun toJson(data: String): JSONObject {
         val json = JSONObject()
-        val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
+        val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
         json.put("CASIO_APP_INFORMATION", dataJson)
         return json
     }
