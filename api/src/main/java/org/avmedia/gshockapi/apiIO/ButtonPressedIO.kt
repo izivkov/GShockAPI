@@ -51,14 +51,15 @@ object ButtonPressedIO {
         return deferredResultButton.await()
     }
 
-    fun get (): BluetoothWatch.WATCH_BUTTON {
+    fun get(): BluetoothWatch.WATCH_BUTTON {
         return ApiIO.get("10") as BluetoothWatch.WATCH_BUTTON
     }
-    fun put (value: Any) {
+
+    fun put(value: Any) {
         ApiIO.put("10", value)
     }
 
-    fun toJson (data:String): JSONObject {
+    fun toJson(data: String): JSONObject {
         val json = JSONObject()
         val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
         json.put("BUTTON_PRESSED", dataJson)

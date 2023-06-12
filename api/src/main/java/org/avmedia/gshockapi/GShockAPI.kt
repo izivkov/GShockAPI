@@ -4,21 +4,14 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.apiIO.*
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.Connection.sendMessage
 import org.avmedia.gshockapi.casio.*
-import org.avmedia.gshockapi.apiIO.CasioIO.request
 import org.avmedia.gshockapi.utils.*
-import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
-import org.json.JSONObject
-import timber.log.Timber
-import java.time.Clock
 import java.util.*
-import kotlin.reflect.KSuspendFunction1
 
 /**
  * This class contains all the API functions. This should the the main interface to the library.
@@ -71,8 +64,9 @@ class GShockAPI(private val context: Context) {
      * ```
      */
 
-    suspend fun waitForConnection(deviceId: String? = "", deviceName:String? = "") {
-        val connectedStatus = WaitForConnectionIO.request(context, bleScannerLocal, deviceId, deviceName)
+    suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "") {
+        val connectedStatus =
+            WaitForConnectionIO.request(context, bleScannerLocal, deviceId, deviceName)
         if (connectedStatus == "OK") {
             init()
         }
@@ -80,7 +74,7 @@ class GShockAPI(private val context: Context) {
 
     private suspend fun init(): Boolean {
         WatchFactory.watch.init()
-        ApiIO.init ()
+        ApiIO.init()
         getPressedButton()
 
         ProgressEvents.onNext("ButtonPressedInfoReceived")
@@ -143,7 +137,7 @@ class GShockAPI(private val context: Context) {
     /* Do not get value from cache, because we do not want to
     get all values here. */
     suspend fun getPressedButton(): BluetoothWatch.WATCH_BUTTON {
-        val value = ButtonPressedIO.request() as BluetoothWatch.WATCH_BUTTON
+        val value = ButtonPressedIO.request()
         ButtonPressedIO.put(value)
         return value
     }
@@ -209,7 +203,7 @@ class GShockAPI(private val context: Context) {
      * @return Daylight Saving Time state of the requested World City as a String.
      */
     suspend fun getDSTForWorldCities(cityNumber: Int): String {
-        return DstForWorldCitiesIO.request(cityNumber) as String
+        return DstForWorldCitiesIO.request(cityNumber)
     }
 
     /**
@@ -221,7 +215,7 @@ class GShockAPI(private val context: Context) {
      * @return The name of the requested World City as a String.
      */
     suspend fun getWorldCities(cityNumber: Int): String {
-        return WorldCitiesIO.request(cityNumber) as String
+        return WorldCitiesIO.request(cityNumber)
     }
 
     /**
@@ -230,7 +224,7 @@ class GShockAPI(private val context: Context) {
      * @return The name of Home City as a String.
      */
     suspend fun getHomeTime(): String {
-       return HomeTimeIO.request()
+        return HomeTimeIO.request()
     }
 
     /**
@@ -239,7 +233,7 @@ class GShockAPI(private val context: Context) {
      * @return the battery level in percent as a String. E.g.: "83"
      */
     suspend fun getBatteryLevel(): String {
-        return BatteryLevelIO.request() as String
+        return BatteryLevelIO.request()
     }
 
     /**
@@ -257,7 +251,7 @@ class GShockAPI(private val context: Context) {
      * @param timerValue Timer number of seconds as an Int.  E.g.: 180 means the timer will be set for 3 minutes.
      */
     fun setTimer(timerValue: Int) {
-        TimerIO.set (timerValue)
+        TimerIO.set(timerValue)
     }
 
     /**
@@ -268,7 +262,7 @@ class GShockAPI(private val context: Context) {
      * @return appInfo string from the watch.
      */
     suspend fun getAppInfo(): String {
-        return AppInfoIO.request() as String
+        return AppInfoIO.request()
     }
 
 

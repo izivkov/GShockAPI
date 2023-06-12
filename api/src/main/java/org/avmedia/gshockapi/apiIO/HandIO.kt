@@ -1,16 +1,11 @@
 package org.avmedia.gshockapi.apiIO
 
-import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.casio.BluetoothWatch
-import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.WatchFactory
-import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.hexToBytes
-import org.json.JSONObject
 
 object HandIO {
 
-    fun sendToWatch(cmd:String) {
+    fun sendToWatch(cmd: String) {
         // placeholder
 
         WatchFactory.watch.writeCmd(

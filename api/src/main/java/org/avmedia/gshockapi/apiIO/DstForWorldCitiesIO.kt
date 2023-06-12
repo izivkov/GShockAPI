@@ -31,7 +31,7 @@ object DstForWorldCitiesIO {
     }
 
 
-    fun toJson (data:String): JSONObject {
+    fun toJson(data: String): JSONObject {
         val json = JSONObject()
         val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
         json.put("CASIO_DST_SETTING", dataJson)

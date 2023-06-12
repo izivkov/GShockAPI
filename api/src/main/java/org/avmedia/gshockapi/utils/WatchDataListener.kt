@@ -9,7 +9,6 @@ package org.avmedia.gshockapi.utils
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.IDataReceived
 import org.avmedia.gshockapi.casio.MessageDispatcher
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.json.JSONObject
 import timber.log.Timber
 

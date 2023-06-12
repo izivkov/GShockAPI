@@ -3,8 +3,6 @@ package org.avmedia.gshockapi.apiIO
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.TimerDecoder
-import org.avmedia.gshockapi.casio.TimerEncoder
 import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -51,14 +49,48 @@ object TimerIO {
         json.put("CASIO_TIMER", dataJson)
         return json
     }
-    fun sendToWatch(message:String) {
+
+    fun sendToWatch(message: String) {
         WatchFactory.watch.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
         )
     }
-    fun sendToWatchSet(message:String) {
+
+    fun sendToWatchSet(message: String) {
         val seconds = JSONObject(message).get("value").toString()
         WatchFactory.watch.writeCmd(0x000e, TimerEncoder.encode(seconds))
+    }
+
+    object TimerDecoder {
+
+        fun decodeValue(data: String): String {
+            val timerIntArray = Utils.toIntArray(data)
+
+            val hours = timerIntArray[1]
+            val minutes = timerIntArray[2]
+            val seconds = timerIntArray[3]
+
+            val inSeconds = hours * 3600 + minutes * 60 + seconds
+            return inSeconds.toString()
+        }
+    }
+
+    object TimerEncoder {
+        fun encode(secondsStr: String): ByteArray {
+            val inSeconds = secondsStr.toInt()
+            val hours = inSeconds / 3600
+            val minutesAndSeconds = inSeconds % 3600
+            val minutes = minutesAndSeconds / 60
+            val seconds = minutesAndSeconds % 60
+
+            val arr = ByteArray(7)
+            arr[0] = 0x18
+            arr[1] = hours.toByte()
+            arr[2] = minutes.toByte()
+            arr[3] = seconds.toByte()
+
+            return arr
+        }
     }
 }

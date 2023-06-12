@@ -35,7 +35,7 @@ object WatchInfo {
 
     fun getAddress(): String = address
 
-    fun reset () {
+    fun reset() {
         this.address = ""
         this.name = ""
     }

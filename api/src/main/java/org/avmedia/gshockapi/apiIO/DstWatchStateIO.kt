@@ -30,7 +30,8 @@ object DstWatchStateIO {
 
         return deferredResult.await()
     }
-    fun toJson (data:String): JSONObject {
+
+    fun toJson(data: String): JSONObject {
         val json = JSONObject()
         val dataJson = JSONObject().put("key", ApiIO.createKey(data)).put("value", data)
         json.put("CASIO_DST_WATCH_STATE", dataJson)

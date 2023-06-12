@@ -1,8 +1,5 @@
 package org.avmedia.gshockapi
 
-import org.avmedia.gshockapi.casio.AlarmDecoder
-import org.json.JSONObject
-
 open class Alarm(
     var hour: Int,
     var minute: Int,

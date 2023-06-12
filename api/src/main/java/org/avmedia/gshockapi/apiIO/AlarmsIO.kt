@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.casio.AlarmDecoder
 import org.avmedia.gshockapi.casio.Alarms
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.WatchFactory
@@ -12,7 +11,6 @@ import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
-import java.util.ArrayList
 
 object AlarmsIO {
 
@@ -69,7 +67,7 @@ object AlarmsIO {
         Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")
     }
 
-    fun toJson (data:String): JSONObject {
+    fun toJson(data: String): JSONObject {
         return JSONObject().put(
             "ALARMS",
             JSONObject().put("value", AlarmDecoder.toJson(data).get("ALARMS"))
@@ -78,7 +76,7 @@ object AlarmsIO {
     }
 
     // watch senders
-    fun sendToWatch(message:String) {
+    fun sendToWatch(message: String) {
         // get alarm 1
         WatchFactory.watch.writeCmd(
             0x000c,
@@ -92,11 +90,53 @@ object AlarmsIO {
         )
     }
 
-    fun sendToWatchSet(message:String) {
+    fun sendToWatchSet(message: String) {
         val alarmsJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
         val alarmCasio0 = Alarms.fromJsonAlarmFirstAlarm(alarmsJsonArr[0] as JSONObject)
         WatchFactory.watch.writeCmd(0x000e, alarmCasio0)
         var alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
         WatchFactory.watch.writeCmd(0x000e, alarmCasio)
+    }
+
+    object AlarmDecoder {
+        private const val HOURLY_CHIME_MASK = 0b10000000
+
+        fun toJson(command: String): JSONObject {
+            val jsonResponse = JSONObject()
+            val intArray = Utils.toIntArray(command)
+            val alarms = JSONArray()
+
+            when (intArray[0]) {
+                CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code -> {
+                    intArray.removeAt(0)
+                    alarms.put(createJsonAlarm(intArray))
+                    jsonResponse.put("ALARMS", alarms)
+                }
+                CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code -> {
+                    intArray.removeAt(0)
+                    val multipleAlarms = intArray.chunked(4)
+                    multipleAlarms.forEach {
+                        alarms.put(createJsonAlarm(it as ArrayList<Int>))
+                    }
+                    jsonResponse.put("ALARMS", alarms)
+                }
+                else -> {
+                    Timber.d("Unhandled Command [$command]")
+                }
+            }
+
+            return jsonResponse
+        }
+
+        private fun createJsonAlarm(intArray: ArrayList<Int>): JSONObject {
+            var alarm = Alarms.Alarm(
+                intArray[2],
+                intArray[3],
+                intArray[0] and Alarms.ENABLED_MASK != 0,
+                intArray[0] and HOURLY_CHIME_MASK != 0
+            )
+            val gson = Gson()
+            return JSONObject(gson.toJson(alarm))
+        }
     }
 }

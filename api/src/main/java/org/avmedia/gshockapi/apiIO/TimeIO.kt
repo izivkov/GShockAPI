@@ -1,17 +1,18 @@
 package org.avmedia.gshockapi.apiIO
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.BluetoothWatch
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.TimeEncoder
 import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
 import kotlin.reflect.KSuspendFunction1
@@ -19,7 +20,7 @@ import kotlin.reflect.KSuspendFunction1
 object TimeIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun set () {
+    suspend fun set() {
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) {
             initializeForSettingTimeForB2100()
         } else {
@@ -33,16 +34,16 @@ object TimeIO {
         )
     }
 
-    private suspend fun getWorldCities(cityNum: Int):String {
+    private suspend fun getWorldCities(cityNum: Int): String {
         return WorldCitiesIO.request(cityNum)
     }
 
-    private suspend fun getDSTWatchState(state: BluetoothWatch.DTS_STATE):String {
+    private suspend fun getDSTWatchState(state: BluetoothWatch.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 
     private suspend fun
-            getDSTForWorldCities(cityNum: Int):String {
+            getDSTForWorldCities(cityNum: Int): String {
         return DstForWorldCitiesIO.request(cityNum)
     }
 
@@ -96,8 +97,9 @@ object TimeIO {
         readAndWrite(::getWorldCities, 0)
         readAndWrite(::getWorldCities, 1)
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
-    fun sendToWatchSet(message:String) {
+    fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
 
         val dateTime = Instant.ofEpochMilli(dateTimeMs).atZone(ZoneId.systemDefault())
@@ -108,5 +110,24 @@ object TimeIO {
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
         WatchFactory.watch.writeCmd(0x000e, timeCommand)
+    }
+
+    object TimeEncoder {
+        @SuppressLint("NewApi")
+        fun prepareCurrentTime(date: LocalDateTime): ByteArray {
+            val arr = ByteArray(10)
+            val year = date.year
+            arr[0] = (year ushr 0 and 0xff).toByte()
+            arr[1] = (year ushr 8 and 0xff).toByte()
+            arr[2] = date.month.value.toByte()
+            arr[3] = date.dayOfMonth.toByte()
+            arr[4] = date.hour.toByte()
+            arr[5] = date.minute.toByte()
+            arr[6] = date.second.toByte()
+            arr[7] = date.dayOfWeek.value.toByte()
+            arr[8] = (date.nano / 1000000).toByte()
+            arr[9] = 1 // or 0?
+            return arr
+        }
     }
 }

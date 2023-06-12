@@ -7,7 +7,6 @@ import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
-import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.WatchDataListener
 import timber.log.Timber
 
@@ -15,14 +14,19 @@ object WaitForConnectionIO {
 
     suspend fun request(
         context: Context,
-        bleScannerLocal:BleScannerLocal,
+        bleScannerLocal: BleScannerLocal,
         deviceId: String? = "",
         deviceName: String? = ""
     ): String {
         return waitForConnection(context, bleScannerLocal, deviceId, deviceName)
     }
 
-    private suspend fun waitForConnection(context: Context, bleScannerLocal:BleScannerLocal, deviceId: String? = "", deviceName:String? = ""): String {
+    private suspend fun waitForConnection(
+        context: Context,
+        bleScannerLocal: BleScannerLocal,
+        deviceId: String? = "",
+        deviceName: String? = ""
+    ): String {
 
         if (Connection.isConnected() || Connection.isConnecting()) {
             return "Connecting"

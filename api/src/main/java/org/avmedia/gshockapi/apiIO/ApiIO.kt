@@ -1,9 +1,6 @@
 package org.avmedia.gshockapi.apiIO
 
-import android.bluetooth.BluetoothGattCharacteristic
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.ProgressEvents
-import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.WatchDataEvents
 import org.json.JSONObject
@@ -24,7 +21,7 @@ object ApiIO {
         cache.clear()
     }
 
-    suspend fun request(key:String, func: KSuspendFunction1<String, Any>): Any {
+    suspend fun request(key: String, func: KSuspendFunction1<String, Any>): Any {
         val value = cache.getCached(key)
         if (value == null) {
             val funcResult = func(key)
@@ -47,12 +44,12 @@ object ApiIO {
         }
     }
 
-    fun get(key:String) : Any? {
-        return cache.get (key)
+    fun get(key: String): Any? {
+        return cache.get(key)
     }
 
-    fun put(key:String, value: Any) : Any? {
-        return cache.put (key, value)
+    fun put(key: String, value: Any): Any? {
+        return cache.put(key, value)
     }
 
     fun createKey(data: String): String {

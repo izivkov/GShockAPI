@@ -12,7 +12,6 @@ import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.apiIO.CasioIO
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import org.avmedia.gshockapi.ble.DeviceCharacteristics.device
-import org.json.JSONObject
 import java.util.*
 
 object BluetoothWatch {

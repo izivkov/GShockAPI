@@ -7,10 +7,10 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.SettingsEncoder
 import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
+import kotlin.experimental.or
 
 object SettingsIO {
 
@@ -19,6 +19,7 @@ object SettingsIO {
         return ApiIO.request("GET_SETTINGS", ::getBasicSettings) as Settings
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
         Connection.sendMessage("{ action: '$key'}")
 
@@ -39,6 +40,7 @@ object SettingsIO {
         return deferredResult.await()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
         ApiIO.cache.remove("GET_SETTINGS")
@@ -157,15 +159,55 @@ pwr. saving off:00010000
         return JSONObject(Gson().toJson(settings))
     }
 
-    fun sendToWatch(message:String) {
+    fun sendToWatch(message: String) {
         WatchFactory.watch.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
         )
     }
 
-    fun sendToWatchSet(message:String) {
+    fun sendToWatchSet(message: String) {
         val settings = JSONObject(message).get("value") as JSONObject
         WatchFactory.watch.writeCmd(0x000e, SettingsEncoder.encode(settings))
+    }
+
+    object SettingsEncoder {
+        fun encode(settings: JSONObject): ByteArray {
+            val MASK_24_HOURS = 0b00000001
+            val MASK_BUTTON_TONE_OFF = 0b00000010
+            val MASK_LIGHT_OFF = 0b00000100
+            val POWER_SAVING_MODE = 0b00010000
+
+            val arr = ByteArray(12)
+            arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
+            if (settings.get("timeFormat") == "24h") {
+                arr[1] = (arr[1] or MASK_24_HOURS.toByte())
+            }
+            if (settings.get("buttonTone") == false) {
+                arr[1] = (arr[1] or MASK_BUTTON_TONE_OFF.toByte())
+            }
+            if (settings.get("autoLight") == false) {
+                arr[1] = (arr[1] or MASK_LIGHT_OFF.toByte())
+            }
+            if (settings.get("powerSavingMode") == false) {
+                arr[1] = (arr[1] or POWER_SAVING_MODE.toByte())
+            }
+
+            if (settings.get("lightDuration") == "4s") {
+                arr[2] = 1
+            }
+            if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
+
+            when (settings.get("language")) {
+                "English" -> arr[5] = 0
+                "Spanish" -> arr[5] = 1
+                "French" -> arr[5] = 2
+                "German" -> arr[5] = 3
+                "Italian" -> arr[5] = 4
+                "Russian" -> arr[5] = 5
+            }
+
+            return arr
+        }
     }
 }

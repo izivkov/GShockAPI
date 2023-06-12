@@ -1,16 +1,18 @@
 package org.avmedia.gshockapi.apiIO
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.SettingsEncoder
 import org.avmedia.gshockapi.casio.WatchFactory
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
 import org.json.JSONObject
 
+@RequiresApi(Build.VERSION_CODES.O)
 object TimeAdjustmentIO {
 
     suspend fun request(): Boolean {
@@ -64,7 +66,7 @@ object TimeAdjustmentIO {
         }
     }
 
-    fun isTimeAdjustmentSet(data: String): Boolean {
+    private fun isTimeAdjustmentSet(data: String): Boolean {
         // syncing off: 110f0f0f0600500004000100->80<-37d2
         // syncing on:  110f0f0f0600500004000100->00<-37d2
 
@@ -72,7 +74,7 @@ object TimeAdjustmentIO {
         return Utils.toIntArray(data)[12] == 0
     }
 
-    fun toJsonTimeAdjustment(isTimeAdjustmentSet: Boolean): JSONObject {
+    private fun toJsonTimeAdjustment(isTimeAdjustmentSet: Boolean): JSONObject {
         return JSONObject("{\"timeAdjustment\": ${isTimeAdjustmentSet} }")
     }
 
@@ -80,23 +82,51 @@ object TimeAdjustmentIO {
         var value = ""
     }
 
-    fun sendToWatch(message:String) {
+    fun sendToWatch(message: String) {
         WatchFactory.watch.writeCmd(
             0x000c,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
         )
     }
 
-    fun sendToWatchSet(message:String) {
+    fun sendToWatchSet(message: String) {
         val settings = JSONObject(message).get("value") as JSONObject
         // add the original string from Casio, so we do not mess up any ot the other settings.
         settings.put(
             "casioIsAutoTimeOriginalValue",
-            TimeAdjustmentIO.CasioIsAutoTimeOriginalValue.value
+            CasioIsAutoTimeOriginalValue.value
         )
-        val encodedTimeAdj = SettingsEncoder.encodeTimeAdjustment(settings)
+        val encodedTimeAdj = encodeTimeAdjustment(settings)
         if (encodedTimeAdj.isNotEmpty()) {
             WatchFactory.watch.writeCmd(0x000e, encodedTimeAdj)
+        }
+    }
+
+    private fun encodeTimeAdjustment(settings: JSONObject): ByteArray {
+
+        var casioIsAutoTimeOriginalValue = settings.getString("casioIsAutoTimeOriginalValue")
+        if (casioIsAutoTimeOriginalValue.isEmpty()) {
+            return "".toByteArray()
+        }
+
+        // syncing off: 110f0f0f0600500004000100->80<-37d2
+        // syncing on:  110f0f0f0600500004000100->00<-37d2
+
+        var intArray = Utils.toIntArray(casioIsAutoTimeOriginalValue)
+
+        if (settings.get("timeAdjustment") == true) {
+            intArray[12] = 0x00
+        } else {
+            intArray[12] = 0x80
+        }
+
+        return intArray.foldIndexed(ByteArray(intArray.size)) { i, a, v ->
+            a.apply {
+                set(
+                    i,
+                    v.toByte()
+                )
+            }
         }
     }
 }
