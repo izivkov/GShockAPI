@@ -27,7 +27,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.izivkov:GShockAPI:1.1.1'
+    implementation 'com.github.izivkov:GShockAPI:1.1.8'
 }
 ```
 
