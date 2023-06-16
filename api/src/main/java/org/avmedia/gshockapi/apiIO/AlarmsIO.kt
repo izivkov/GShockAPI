@@ -128,7 +128,7 @@ object AlarmsIO {
         }
 
         private fun createJsonAlarm(intArray: ArrayList<Int>): JSONObject {
-            var alarm = Alarms.Alarm(
+            val alarm = Alarms.Alarm(
                 intArray[2],
                 intArray[3],
                 intArray[0] and Alarms.ENABLED_MASK != 0,
