@@ -107,7 +107,7 @@ Characteristics:
 
     @SuppressLint("MissingPermission")
     fun stopBleScan() {
-        bleScanner.stopScan(scanCallback)
+        bleScanner?.stopScan(scanCallback)
         isScanning = false
     }
 

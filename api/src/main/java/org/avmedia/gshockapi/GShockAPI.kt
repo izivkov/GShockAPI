@@ -410,7 +410,7 @@ class GShockAPI(private val context: Context) {
     }
 
     fun stopScan() {
-        bleScannerLocal.stopBleScan()
+        bleScannerLocal?.stopBleScan()
     }
 
     fun preventReconnection() {
