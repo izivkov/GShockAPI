@@ -98,7 +98,7 @@ object ProgressEvents {
     /**
      * The application can broadcast built in events by calling this function.
      * ```
-     *  ProgressEvents.onNext("AllPermissionsAccepted")
+     *  ProgressEvents.onNext("AllPermissionsAccepted", [payload])
      * ```
      * Also, the app can add its own events by passing an arbitrary string to "onNext":
      *
@@ -115,6 +115,7 @@ object ProgressEvents {
     ```
      *
      * @param eventName: Name of event to broadcast
+     * @param payload: An optional parameter containing a payload of type `Any?`
      */
     fun onNext(eventName: String, payload: Any? = null) {
         // add it if not in map.
