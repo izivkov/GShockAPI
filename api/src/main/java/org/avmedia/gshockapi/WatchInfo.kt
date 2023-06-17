@@ -20,8 +20,7 @@ object WatchInfo {
             else -> WATCH_MODEL.B5600
         }
 
-        ProgressEvents.onNext("DeviceName")
-        ProgressEvents["DeviceName"]?.payload = name
+        ProgressEvents.onNext("DeviceName", name)
     }
 
     fun getName(): String = name
@@ -29,8 +28,7 @@ object WatchInfo {
     fun setAddress(address: String) {
         this.address = address
 
-        ProgressEvents.onNext("DeviceAddress")
-        ProgressEvents["DeviceAddress"]?.payload = address
+        ProgressEvents.onNext("DeviceAddress", address)
     }
 
     fun getAddress(): String = address

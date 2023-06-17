@@ -116,7 +116,7 @@ object ProgressEvents {
      *
      * @param eventName: Name of event to broadcast
      */
-    fun onNext(eventName: String) {
+    fun onNext(eventName: String, payload: Any? = null) {
         // add it if not in map.
         if (!eventMap.containsKey(eventName)) {
             addEvent(eventName)
@@ -124,6 +124,9 @@ object ProgressEvents {
 
         if (eventsProcessor.hasSubscribers()) {
             eventsProcessor.onNext(eventMap[eventName])
+            if (payload != null) {
+                eventMap[eventName]?.payload = payload
+            }
         }
     }
 

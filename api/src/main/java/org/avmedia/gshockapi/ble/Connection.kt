@@ -305,9 +305,7 @@ object Connection : IConnection {
                 gatt.close()
                 CurrentDevice.reset()
                 deviceGattMap.remove(device)
-                val event = ProgressEvents["Disconnect"]
-                event?.payload = device
-                ProgressEvents.onNext("Disconnect")
+                ProgressEvents.onNext("Disconnect", device)
                 signalEndOfOperation()
             }
             is CharacteristicWrite -> with(operation) {
@@ -462,9 +460,7 @@ object Connection : IConnection {
             }
 
             if (pendingOperation is Connect) {
-                val event = ProgressEvents["ConnectionSetupComplete"]
-                ProgressEvents["ConnectionSetupComplete"]?.payload = gatt.device
-                ProgressEvents.onNext("ConnectionSetupComplete")
+                ProgressEvents.onNext("ConnectionSetupComplete", gatt.device)
 
                 signalEndOfOperation()
             }
@@ -607,14 +603,10 @@ object Connection : IConnection {
             when {
                 notificationsEnabled -> {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
-                    val event = ProgressEvents["NotificationsEnabled"]
-                    event?.payload = characteristic
-                    ProgressEvents.onNext("NotificationsEnabled")
+                    ProgressEvents.onNext("NotificationsEnabled", characteristic)
                 }
                 notificationsDisabled -> {
-                    val event = ProgressEvents["NotificationsDisabled"]
-                    event?.payload = characteristic
-                    ProgressEvents.onNext("NotificationsDisabled")
+                    ProgressEvents.onNext("NotificationsDisabled", characteristic)
                 }
                 else -> {
                     Timber.e("Unexpected value ${value.toHexString()} on CCCD of $charUuid")

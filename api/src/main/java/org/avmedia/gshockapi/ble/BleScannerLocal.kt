@@ -43,34 +43,17 @@ data class BleScannerLocal(val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun startConnection(deviceId: String?, deviceName: String?) {
-
         foundDevices.clear()
-
-        var device: BluetoothDevice? = null
-
-        if (!deviceName.isNullOrEmpty()) {
-            WatchInfo.setNameAndModel(deviceName)
-        }
+        if (!deviceName.isNullOrEmpty()) WatchInfo.setNameAndModel(deviceName)
         if (!deviceId.isNullOrEmpty()) {
-            device = bluetoothAdapter.getRemoteDevice(deviceId)
+            val device = bluetoothAdapter.getRemoteDevice(deviceId)
             WatchInfo.setAddress(deviceId.toString())
+            if (device.type != BluetoothDevice.DEVICE_TYPE_UNKNOWN) Connection.connect(device, context)
         }
-
-        if (device == null || device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-            if (isScanning) {
-                return
-            }
-            scanSettings.describeContents()
-            if (!bluetoothAdapter.isEnabled || bleScanner == null) {
-                return
-            }
-
-            bleScanner.startScan(createFilters(), scanSettings, scanCallback)
-            isScanning = true
-        } else {
-            Connection.connect(device, context)
-        }
-
+        if (isScanning) return
+        if (!bluetoothAdapter.isEnabled || bleScanner == null) return
+        scanSettings.describeContents()
+        bleScanner.startScan(createFilters(), scanSettings, scanCallback)
         isScanning = true
     }
 
