@@ -124,9 +124,10 @@ object ProgressEvents {
         }
 
         if (eventsProcessor.hasSubscribers()) {
-            eventsProcessor.onNext(eventMap[eventName])
-            if (payload != null) {
-                eventMap[eventName]?.payload = payload
+            val event = eventMap[eventName]
+            if (event != null) {
+                eventsProcessor.onNext(event)
+                event?.payload = payload
             }
         }
     }
