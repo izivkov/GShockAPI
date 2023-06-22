@@ -4,7 +4,7 @@
  * Last modified 2022-03-29, 2:38 p.m.
  */
 
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic

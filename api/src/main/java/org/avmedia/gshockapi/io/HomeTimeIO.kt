@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import org.avmedia.gshockapi.casio.CasioTimeZone
 import org.avmedia.gshockapi.utils.Utils

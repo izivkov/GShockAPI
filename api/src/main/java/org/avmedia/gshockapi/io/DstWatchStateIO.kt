@@ -1,16 +1,15 @@
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
-object WorldCitiesIO {
+object DstWatchStateIO {
 
-    suspend fun request(cityNumber: Int): String {
-        return CachedIO.request("1f0$cityNumber", ::getWorldCities) as String
+    suspend fun request(state: CasioIO.DTS_STATE): String {
+        return CachedIO.request("1d0${state.state}", ::getDSTWatchState) as String
     }
 
-    private suspend fun getWorldCities(key: String): String {
+    private suspend fun getDSTWatchState(key: String): String {
 
         CasioIO.request(key)
 
@@ -21,7 +20,7 @@ object WorldCitiesIO {
             )
         )
 
-        CachedIO.subscribe("CASIO_WORLD_CITIES") { keyedData: JSONObject ->
+        CachedIO.subscribe("CASIO_DST_WATCH_STATE") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
@@ -34,13 +33,7 @@ object WorldCitiesIO {
     fun toJson(data: String): JSONObject {
         val json = JSONObject()
         val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
-        val characteristicsArray = Utils.toIntArray(data)
-        if (characteristicsArray[1] == 0) {
-            // 0x1F 00 ... Only the first World City contains the home time.
-            // Send this data on topic "HOME_TIME" to be received by HomeTime custom component.
-            json.put("HOME_TIME", dataJson)
-        }
-        json.put("CASIO_WORLD_CITIES", dataJson)
+        json.put("CASIO_DST_WATCH_STATE", dataJson)
         return json
     }
 }

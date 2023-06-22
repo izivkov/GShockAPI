@@ -5,7 +5,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.apiIO.*
+import org.avmedia.gshockapi.io.*
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.Connection.sendMessage

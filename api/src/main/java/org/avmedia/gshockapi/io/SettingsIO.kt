@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import android.os.Build
 import androidx.annotation.RequiresApi

@@ -8,7 +8,7 @@ package org.avmedia.gshockapi.casio
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.apiIO.*
+import org.avmedia.gshockapi.io.*
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import java.util.*

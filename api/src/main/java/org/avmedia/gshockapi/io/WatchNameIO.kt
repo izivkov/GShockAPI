@@ -1,15 +1,16 @@
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
-object DstForWorldCitiesIO {
+object WatchNameIO {
 
-    suspend fun request(cityNumber: Int): String {
-        return CachedIO.request("1e0$cityNumber", ::getDSTForWorldCities) as String
+    suspend fun request(): String {
+        return CachedIO.request("23", ::getWatchName) as String
     }
 
-    private suspend fun getDSTForWorldCities(key: String): String {
+    private suspend fun getWatchName(key: String): String {
 
         CasioIO.request(key)
 
@@ -20,21 +21,21 @@ object DstForWorldCitiesIO {
             )
         )
 
-        CachedIO.subscribe("CASIO_DST_SETTING") { keyedData: JSONObject ->
+        CachedIO.subscribe("CASIO_WATCH_NAME") { keyedData ->
             val data = keyedData.getString("value")
             val key = keyedData.getString("key")
 
-            CachedIO.resultQueue.dequeue(key)?.complete(data)
+            CachedIO.resultQueue.dequeue(key)
+                ?.complete(Utils.trimNonAsciiCharacters(Utils.toAsciiString(data, 1)))
         }
 
         return deferredResult.await()
     }
 
-
     fun toJson(data: String): JSONObject {
         val json = JSONObject()
         val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
-        json.put("CASIO_DST_SETTING", dataJson)
+        json.put("CASIO_WATCH_NAME", dataJson)
         return json
     }
 }

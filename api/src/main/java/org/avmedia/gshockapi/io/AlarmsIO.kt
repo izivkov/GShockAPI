@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi.apiIO
+package org.avmedia.gshockapi.io
 
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred

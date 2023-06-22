@@ -7,7 +7,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
-import org.avmedia.gshockapi.apiIO.CasioIO
+import org.avmedia.gshockapi.io.CasioIO
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
