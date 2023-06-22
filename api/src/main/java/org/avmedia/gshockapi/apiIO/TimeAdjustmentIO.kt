@@ -45,7 +45,7 @@ object TimeAdjustmentIO {
 
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
-        CachedIO.cache.remove("TIME_ADJUSTMENT")
+        CachedIO.cache.remove("GET_TIME_ADJUSTMENT")
         Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
     }
 
