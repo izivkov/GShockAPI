@@ -283,7 +283,6 @@ class GShockAPI(private val context: Context) {
         val city = CasioTimeZone.TimeZoneHelper.parseCity(TimeZone.getDefault().id)
         val homeTime = HomeTimeIO.request()
         if (changeHomeTime && homeTime.uppercase() != city.uppercase()) {
-            CasioTimeZone.setHomeTime(TimeZone.getDefault().id)
             setHomeTime(TimeZone.getDefault().id)
         }
     }

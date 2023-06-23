@@ -106,10 +106,10 @@ pwr. saving off:00010000
     }
 
     private fun createJsonSettings(settingString: String): JSONObject {
-        val MASK_24_HOURS = 0b00000001
-        val MASK_BUTTON_TONE_OFF = 0b00000010
-        val MASK_LIGHT_OFF = 0b00000100
-        val POWER_SAVING_MODE = 0b00010000
+        val MASK_24_HOURS =         0b00000001
+        val MASK_BUTTON_TONE_OFF =  0b00000010
+        val MASK_LIGHT_OFF =        0b00000100
+        val POWER_SAVING_MODE =     0b00010000
 
         val settings = Settings()
 
@@ -172,10 +172,10 @@ pwr. saving off:00010000
 
     object SettingsEncoder {
         fun encode(settings: JSONObject): ByteArray {
-            val MASK_24_HOURS = 0b00000001
-            val MASK_BUTTON_TONE_OFF = 0b00000010
-            val MASK_LIGHT_OFF = 0b00000100
-            val POWER_SAVING_MODE = 0b00010000
+            val MASK_24_HOURS =         0b00000001
+            val MASK_BUTTON_TONE_OFF =  0b00000010
+            val MASK_LIGHT_OFF =        0b00000100
+            val POWER_SAVING_MODE =     0b00010000
 
             val arr = ByteArray(12)
             arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
