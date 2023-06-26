@@ -277,14 +277,7 @@ class GShockAPI(private val context: Context) {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun setTime(changeHomeTime: Boolean = true) {
-        TimeIO.set()
-
-        // Update the HomeTime according to the current TimeZone
-        val city = CasioTimeZone.TimeZoneHelper.parseCity(TimeZone.getDefault().id)
-        val homeTime = HomeTimeIO.request()
-        if (changeHomeTime && homeTime.uppercase() != city.uppercase()) {
-            setHomeTime(TimeZone.getDefault().id)
-        }
+        TimeIO.set(changeHomeTime)
     }
 
     /**
