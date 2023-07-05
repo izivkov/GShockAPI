@@ -17,7 +17,7 @@ object CasioTimeZone {
         fun parseCity(timeZone: String): String? {
 
             // validate
-            if (!timeZone.contains("/") || !TimeZone.getAvailableIDs().contains(timeZone))
+            if (!timeZone.contains("/"))
                 return null
 
             return try {

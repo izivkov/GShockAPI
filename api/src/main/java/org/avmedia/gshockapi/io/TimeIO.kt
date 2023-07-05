@@ -26,8 +26,7 @@ object TimeIO {
             initializeForSettingTimeForB5600()
         }
 
-        // TimeZone.getDefault().id
-        if (timeZone != null) {
+        if (timeZone != null && TimeZone.getAvailableIDs().contains(timeZone)) {
             // Update the HomeTime according to the current TimeZone
             val city = CasioTimeZone.TimeZoneHelper.parseCity(timeZone)
             if (city != null) {
