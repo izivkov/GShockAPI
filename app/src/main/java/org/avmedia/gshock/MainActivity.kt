@@ -71,9 +71,7 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
 
-            for (i in 0..1) {
-                runCommands()
-            }
+            runCommands()
 
             api.disconnect(this@MainActivity)
             println("--------------- END ------------------")
@@ -98,7 +96,8 @@ class MainActivity : AppCompatActivity() {
 
         generateCustomEvent()
 
-        api.setTime()
+        api.setTime("Europe/Sofia")
+        api.setTime(TimeZone.getDefault().id)
 
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
@@ -157,6 +156,7 @@ class MainActivity : AppCompatActivity() {
         println("Events from Watch: $events")
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun handleSettings() {
         val settings: Settings = api.getSettings()
         settings.dateFormat = "MM:DD"

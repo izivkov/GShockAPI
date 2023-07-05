@@ -273,11 +273,17 @@ class GShockAPI(private val context: Context) {
      * to the current time zone. If timezone changes during travel, the watch will automatically be set to the
      * correct time and timezone after running this function.
      *
-     * @param changeHomeTime If *true*, the **Home Time** will be changed to the current timezone.
+     * @param timeZone Optional String parameter of form "region/city', i.e.: "Europe/Sofia".
+     * Example:
+     * ```
+     *      setTime()
+     *      setTime(TimeZone.getDefault().id)
+     *      setTime("Europe/Sofia")
+     *  ```
      */
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun setTime(changeHomeTime: Boolean = true) {
-        TimeIO.set(changeHomeTime)
+    suspend fun setTime(timeZone: String? = null) {
+        TimeIO.set(timeZone)
     }
 
     /**

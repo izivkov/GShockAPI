@@ -3,6 +3,7 @@ package org.avmedia.gshockapi.casio
 import org.avmedia.gshockapi.io.CasioIO
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
+import java.util.TimeZone
 
 object CasioTimeZone {
     class WorldCity(private val city: String, val index: Int) {
@@ -13,18 +14,23 @@ object CasioTimeZone {
     }
 
     object TimeZoneHelper {
-        fun parseCity(timeZone: String): String {
+        fun parseCity(timeZone: String): String? {
+
+            // validate
+            if (!timeZone.contains("/") || !TimeZone.getAvailableIDs().contains(timeZone))
+                return null
+
             return try {
                 val city = timeZone.split('/')[1]
                 city.uppercase().replace('_', ' ')
             } catch (e: Error) {
-                ""
+                null
             }
         }
     }
 
     fun setHomeTime(timeZone: String) {
-        val city = TimeZoneHelper.parseCity(timeZone)
+        val city = TimeZoneHelper.parseCity(timeZone) ?: return
 
         var worldCity = WorldCity(city, 0)
 

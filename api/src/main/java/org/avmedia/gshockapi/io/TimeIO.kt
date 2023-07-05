@@ -19,18 +19,23 @@ import kotlin.reflect.KSuspendFunction1
 object TimeIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun set(changeHomeTime: Boolean) {
+    suspend fun set(timeZone: String?) {
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) {
             initializeForSettingTimeForB2100()
         } else {
             initializeForSettingTimeForB5600()
         }
 
-        // Update the HomeTime according to the current TimeZone
-        val city = CasioTimeZone.TimeZoneHelper.parseCity(TimeZone.getDefault().id)
-        val homeTime = HomeTimeIO.request()
-        if (changeHomeTime && homeTime.uppercase() != city.uppercase()) {
-            HomeTimeIO.set(TimeZone.getDefault().id)
+        // TimeZone.getDefault().id
+        if (timeZone != null) {
+            // Update the HomeTime according to the current TimeZone
+            val city = CasioTimeZone.TimeZoneHelper.parseCity(timeZone)
+            if (city != null) {
+                val homeTime = HomeTimeIO.request()
+                if (homeTime.uppercase() != city.uppercase()) {
+                    HomeTimeIO.set(timeZone)
+                }
+            }
         }
 
         Connection.sendMessage(
