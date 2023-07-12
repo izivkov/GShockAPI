@@ -126,8 +126,8 @@ object ProgressEvents {
         if (eventsProcessor.hasSubscribers()) {
             val event = eventMap[eventName]
             if (event != null) {
+                event.payload = payload
                 eventsProcessor.onNext(event)
-                event?.payload = payload
             }
         }
     }

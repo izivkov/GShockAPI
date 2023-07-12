@@ -6,6 +6,8 @@
 
 package org.avmedia.gshockapi.utils
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.IDataReceived
 import org.avmedia.gshockapi.casio.MessageDispatcher
@@ -21,6 +23,7 @@ object WatchDataListener {
 
     fun init() {
         val dataReceived: IDataReceived = object : IDataReceived {
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun dataReceived(data: String?) {
                 if (data == null) {
                     return
