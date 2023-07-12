@@ -179,12 +179,27 @@ class GShockAPI(private val context: Context) {
     }
 
     /**
+     * This function tells us if the connection was initiated by ling-pressing the lower-right button on the
+     * watch, used to activate FIND PHONE action
+     *
+     * @return **true** if button pressed to activate FIND PHONE function, **false** otherwise.
+     */
+    fun isFindPhoneButtonPressed(): Boolean {
+        val button = ButtonPressedIO.get()
+        return button == CasioIO.WATCH_BUTTON.FIND_PHONE
+    }
+
+    /**
      * Get the name of the watch.
      *
      * @return returns the name of the watch as a String. i.e. "GW-B5600"
      */
     suspend fun getWatchName(): String {
         return WatchNameIO.request()
+    }
+
+    suspend fun getError(): String {
+        return ErrorIO.request()
     }
 
     /**
@@ -232,10 +247,19 @@ class GShockAPI(private val context: Context) {
     /**
      * Get Battery level.
      *
-     * @return the battery level in percent as a String. E.g.: "83"
+     * @return the battery level in percent as a String. E.g.: 83
      */
-    suspend fun getBatteryLevel(): String {
-        return BatteryLevelIO.request()
+    suspend fun getBatteryLevel(): Int {
+        return WatchConditionIO.request().batteryLevel
+    }
+
+    /**
+     * Get Watch Temperature.
+     *
+     * @return the watch's temperature in degree Celsius
+     */
+    suspend fun getWatchTemperature(): Int {
+        return WatchConditionIO.request().temperature
     }
 
     /**
@@ -410,7 +434,7 @@ class GShockAPI(private val context: Context) {
     }
 
     fun stopScan() {
-        bleScannerLocal?.stopBleScan()
+        bleScannerLocal.stopBleScan()
     }
 
     fun preventReconnection() {

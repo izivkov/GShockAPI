@@ -36,6 +36,7 @@ object MessageDispatcher {
         watchSenders[action]!!.invoke(message)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val toJsonConverters = mapOf<Int, (String) -> JSONObject>(
         CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code to AlarmsIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code to AlarmsIO::toJson,
@@ -46,16 +47,23 @@ object MessageDispatcher {
         CasioConstants.CHARACTERISTICS.CASIO_WORLD_CITIES.code to WorldCitiesIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_DST_WATCH_STATE.code to DstWatchStateIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_WATCH_NAME.code to WatchNameIO::toJson,
-        CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code to BatteryLevelIO::toJson,
+        CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code to WatchConditionIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_APP_INFORMATION.code to AppInfoIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_BLE_FEATURES.code to ButtonPressedIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code to SettingsIO::toJson,
         CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code to TimeAdjustmentIO::toJson,
+
+        CasioConstants.CHARACTERISTICS.ERROR.code to ErrorIO::toJson,
+        CasioConstants.CHARACTERISTICS.UNKNOWN.code to UnknownIO::toJson,
     )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun toJson(data: String): JSONObject {
         val intArray = Utils.toIntArray(data)
         val key = intArray[0]
+        if (toJsonConverters[key] == null) {
+            println("Unknown key: $key")
+        }
         return toJsonConverters[key]!!.invoke(data)
     }
 }
