@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
 
         listenToProgressEvents()
         run(this)
+        // runDownBattery(this)
     }
 
     private fun listenToProgressEvents() {
@@ -72,6 +73,23 @@ class MainActivity : AppCompatActivity() {
             api.waitForConnection()
 
             runCommands()
+
+            api.disconnect(this@MainActivity)
+            println("--------------- END ------------------")
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun runDownBattery(context: Context, toPercent: Int = -1) {
+
+        CoroutineScope(Dispatchers.Default).launch {
+            api.waitForConnection()
+
+            while (true) {
+                if (api.getBatteryLevel() <= toPercent) {
+                    break
+                }
+                runCommands()
+            }
 
             api.disconnect(this@MainActivity)
             println("--------------- END ------------------")

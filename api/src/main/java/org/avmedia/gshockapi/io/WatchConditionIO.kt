@@ -1,6 +1,7 @@
 package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
@@ -49,11 +50,13 @@ object WatchConditionIO {
             val bytes = Utils.byteArrayOfIntArray(intArr.drop(1).toIntArray())
 
             if (bytes != null && bytes.size >= 2) {
-                // Battery level between 14 and 20. Scale accordingly to %
-                val batteryLevel: Int  = (bytes[0].toInt() - 14) * 100 / (20-14).coerceIn(0, 100)
+                // Battery level between 15 and 20 fot B2100 and between 13 and 18 for B5600. Scale accordingly to %
+                var batteryLevel = bytes[0].toInt() - if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) 15 else 13
+
+                val batteryLevelPercent: Int = (batteryLevel * 20).coerceIn(0, 100)
                 val temperature: Int = bytes[1].toInt()
 
-                return WatchConditionValue(batteryLevel, temperature)
+                return WatchConditionValue(batteryLevelPercent, temperature)
             }
 
             return WatchConditionValue(0, 0)
