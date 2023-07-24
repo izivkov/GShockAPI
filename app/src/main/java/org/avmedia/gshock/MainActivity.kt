@@ -33,9 +33,9 @@ class MainActivity : AppCompatActivity() {
 
         listenToProgressEvents()
 
-        // run(this)
+        run(this)
         // runDownBattery(this)
-        testTimeZones()
+        // testTimeZones()
     }
 
     private fun listenToProgressEvents() {
