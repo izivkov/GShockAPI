@@ -177,6 +177,7 @@ object CasioTimeZoneHelper {
             }
         }
 
-        return CasioTimeZone(timeZoneName.split("/")[1].uppercase(), timeZoneName, 0x00)
+        val name = timeZoneName.split("/").lastOrNull()?.uppercase() ?: "UNKNOWN"
+        return CasioTimeZone(name, timeZoneName, 0x00)
     }
 }
