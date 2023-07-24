@@ -21,9 +21,26 @@ object Utils {
     fun byteArrayOfIntArray(intArray: IntArray) =
         ByteArray(intArray.size) { pos -> intArray[pos].toByte() }
 
-    fun toByteArray(string: String): ByteArray {
+    private fun toByteArray(string: String): ByteArray {
         val charset = Charsets.UTF_8
         return string.toByteArray(charset)
+    }
+
+    fun fromByteArrayToHexStr(byteArray: ByteArray): String {
+        val result = StringBuilder()
+        for (b in byteArray) {
+            result.append(String.format("%02X", b))
+        }
+        return result.toString()
+    }
+
+    fun fromByteArrayToHexStrWithSpaces(byteArray: ByteArray): String {
+        val result = StringBuilder()
+        result.append("0x")
+        for (b in byteArray) {
+            result.append(String.format("%02X ", b))
+        }
+        return result.toString()
     }
 
     fun toByteArray(string: String, maxLen: Int): ByteArray {
@@ -43,7 +60,6 @@ object Utils {
         var byteArr = toByteArray(asciiStr)
         var hexStr = ""
         byteArr.forEach {
-            // hexStr += it.toString(16)
             hexStr += "%02x".format(it)
         }
         return hexStr

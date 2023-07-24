@@ -7,9 +7,13 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
+import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.io.CasioIO
+import java.time.ZoneId
 import java.util.*
+import kotlin.system.measureTimeMillis
 
+@RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
 
     private val api = GShockAPI(this)
@@ -28,8 +32,10 @@ class MainActivity : AppCompatActivity() {
         permissionManager.setupPermissions()
 
         listenToProgressEvents()
+
         run(this)
         // runDownBattery(this)
+        // testTimeZones()
     }
 
     private fun listenToProgressEvents() {
@@ -66,7 +72,6 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun run(context: Context) {
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -78,7 +83,7 @@ class MainActivity : AppCompatActivity() {
             println("--------------- END ------------------")
         }
     }
-    @RequiresApi(Build.VERSION_CODES.O)
+
     private fun runDownBattery(context: Context, toPercent: Int = -1) {
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -96,7 +101,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun runCommands() {
         println("Button pressed: ${api.getPressedButton()}")
 
@@ -108,14 +112,16 @@ class MainActivity : AppCompatActivity() {
 
         println("Home Time: ${api.getHomeTime()}")
 
-        getDTSState()
+        getDSTState()
         getWorldCities()
-        getRTSForWorldCities()
+        getDSTForWorldCities()
 
         generateCustomEvent()
 
-        api.setTime("Europe/Sofia")
-        api.setTime(TimeZone.getDefault().id)
+        // api.setTime("Europe/Sofia")
+        // api.setTime("Asia/Yerevan")
+        // api.setTime("America/Toronto")
+        api.setTime()
 
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
@@ -133,15 +139,15 @@ class MainActivity : AppCompatActivity() {
         ProgressEvents.onNext(customEventName)
     }
 
-    private suspend fun getRTSForWorldCities() {
-        println("World DTS City 0: ${api.getDSTForWorldCities(0)}")
-        println("World DTS City 1: ${api.getDSTForWorldCities(1)}")
+    private suspend fun getDSTForWorldCities() {
+        println("World DST City 0: ${api.getDSTForWorldCities(0)}")
+        println("World DST City 1: ${api.getDSTForWorldCities(1)}")
 
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
-            println("World DTS City 2: ${api.getDSTForWorldCities(2)}")
-            println("World DTS City 3: ${api.getDSTForWorldCities(3)}")
-            println("World DTS City 4: ${api.getDSTForWorldCities(4)}")
-            println("World DTS City 5: ${api.getDSTForWorldCities(5)}")
+            println("World DST City 2: ${api.getDSTForWorldCities(2)}")
+            println("World DST City 3: ${api.getDSTForWorldCities(3)}")
+            println("World DST City 4: ${api.getDSTForWorldCities(4)}")
+            println("World DST City 5: ${api.getDSTForWorldCities(5)}")
         }
     }
 
@@ -157,16 +163,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun getDTSState() {
-        println("TDS STATE ZERO: ${api.getDSTWatchState(CasioIO.DTS_STATE.ZERO)}")
+    private suspend fun getDSTState() {
+        println("DST STATE ZERO: ${api.getDSTWatchState(CasioIO.DTS_STATE.ZERO)}")
 
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
-            println("TDS STATE TWO: ${api.getDSTWatchState(CasioIO.DTS_STATE.TWO)}")
-            println("TDS STATE FOUR: ${api.getDSTWatchState(CasioIO.DTS_STATE.FOUR)}")
+            println("DST STATE TWO: ${api.getDSTWatchState(CasioIO.DTS_STATE.TWO)}")
+            println("DST STATE FOUR: ${api.getDSTWatchState(CasioIO.DTS_STATE.FOUR)}")
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    private fun testTimeZones() {
+        var totalCount = 0
+        var unknown = 0
+        val elapsed = measureTimeMillis {
+            for (tz in ZoneId.getAvailableZoneIds()) {
+                val foundTZ = CasioTimeZoneHelper.findTimeZone(tz)
+                ++totalCount
+                if (foundTZ.name == "UNKNOWN") {
+                    ++unknown
+                }
+            }
+        }
+
+        println("elapsed time: size: ${ZoneId.getAvailableZoneIds().size}, $elapsed ms., total: $totalCount, unknown: $unknown")
+    }
+
     private suspend fun handleReminders() {
         var events = ArrayList<Event>()
 
@@ -174,7 +195,6 @@ class MainActivity : AppCompatActivity() {
         println("Events from Watch: $events")
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun handleSettings() {
         val settings: Settings = api.getSettings()
         settings.dateFormat = "MM:DD"

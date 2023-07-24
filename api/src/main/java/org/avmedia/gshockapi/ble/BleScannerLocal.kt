@@ -48,7 +48,10 @@ data class BleScannerLocal(val context: Context) {
         if (!deviceId.isNullOrEmpty()) {
             val device = bluetoothAdapter.getRemoteDevice(deviceId)
             WatchInfo.setAddress(deviceId.toString())
-            if (device.type != BluetoothDevice.DEVICE_TYPE_UNKNOWN) Connection.connect(device, context)
+            if (device.type != BluetoothDevice.DEVICE_TYPE_UNKNOWN) Connection.connect(
+                device,
+                context
+            )
         }
         if (isScanning) return
         if (!bluetoothAdapter.isEnabled || bleScanner == null) return

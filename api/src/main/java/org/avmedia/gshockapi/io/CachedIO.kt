@@ -44,6 +44,10 @@ object CachedIO {
         return cache.get(key)
     }
 
+    fun remove(key: String) {
+        cache.remove(key)
+    }
+
     fun put(key: String, value: Any): Any? {
         return cache.put(key, value)
     }
@@ -57,7 +61,6 @@ object CachedIO {
         if (startOfData in arrayOf("1D", "1E", "1F", "30", "31")) {
             keyLength = 4
         }
-        val key = shortStr.substring(0, keyLength).uppercase(Locale.getDefault())
-        return key
+        return shortStr.substring(0, keyLength).uppercase(Locale.getDefault())
     }
 }

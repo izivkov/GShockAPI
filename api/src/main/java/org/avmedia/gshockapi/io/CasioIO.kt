@@ -49,7 +49,6 @@ object CasioIO {
         )
     }
 
-
     fun writeCmd(handle: Int, cmd: String) {
         writeCmdFromString(handle, cmd)
     }
@@ -82,5 +81,10 @@ object CasioIO {
 
     private fun lookupHandle(handle: Int): BluetoothGattCharacteristic? {
         return DeviceCharacteristics.findCharacteristic(DeviceCharacteristics.handlesToCharacteristicsMap[handle])
+    }
+
+    fun removeFromCache(newValue: String) {
+        val key = CachedIO.createKey(newValue)
+        CachedIO.remove(key)
     }
 }

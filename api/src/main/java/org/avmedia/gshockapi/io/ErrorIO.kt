@@ -1,7 +1,5 @@
 package org.avmedia.gshockapi.io
 
-import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
 object ErrorIO {

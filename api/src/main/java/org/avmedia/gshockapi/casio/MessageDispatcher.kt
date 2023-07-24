@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.io.*
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
+import timber.log.Timber
 import java.util.*
 
 object MessageDispatcher {
@@ -62,7 +63,7 @@ object MessageDispatcher {
         val intArray = Utils.toIntArray(data)
         val key = intArray[0]
         if (toJsonConverters[key] == null) {
-            println("Unknown key: $key")
+            Timber.e("GShockAPI", "Unknown key: $key")
         }
         return toJsonConverters[key]!!.invoke(data)
     }

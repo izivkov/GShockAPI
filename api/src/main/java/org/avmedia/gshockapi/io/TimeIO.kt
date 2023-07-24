@@ -1,40 +1,35 @@
 package org.avmedia.gshockapi.io
 
-import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
-import org.avmedia.gshockapi.casio.CasioTimeZone
+import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
+import org.avmedia.gshockapi.io.DstWatchStateIO.DTS_VALUE.*
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.*
 import java.util.*
 import kotlin.reflect.KSuspendFunction1
 
+@RequiresApi(Build.VERSION_CODES.O)
 object TimeIO {
+    init {}
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun set(timeZone: String?) {
+    private var timeZone: String = TimeZone.getDefault().id
+    private var casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone)
+
+    fun setTimezone(timeZone: String) {
+        this.timeZone = timeZone
+        casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone)
+    }
+
+    suspend fun set() {
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) {
             initializeForSettingTimeForB2100()
         } else {
             initializeForSettingTimeForB5600()
-        }
-
-        if (timeZone != null && TimeZone.getAvailableIDs().contains(timeZone)) {
-            // Update the HomeTime according to the current TimeZone
-            val city = CasioTimeZone.TimeZoneHelper.parseCity(timeZone)
-            if (city != null) {
-                val homeTime = HomeTimeIO.request()
-                if (homeTime.uppercase() != city.uppercase()) {
-                    HomeTimeIO.set(timeZone)
-                }
-            }
         }
 
         Connection.sendMessage(
@@ -44,16 +39,35 @@ object TimeIO {
         )
     }
 
-    private suspend fun getWorldCities(cityNum: Int): String {
-        return WorldCitiesIO.request(cityNum)
-    }
-
     private suspend fun getDSTWatchState(state: CasioIO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 
+    private suspend fun getDSTWatchStateWithTZ(state: CasioIO.DTS_STATE): String {
+        val origDTS = getDSTWatchState(state)
+        val hasDST =
+            if (casioTimezone.dstOffset > 0) ON_AND_AUTO else OFF
+        return DstWatchStateIO.setDST(origDTS, hasDST)
+    }
+
     private suspend fun getDSTForWorldCities(cityNum: Int): String {
         return DstForWorldCitiesIO.request(cityNum)
+    }
+
+    private suspend fun getDSTForWorldCitiesWithTZ(cityNum: Int): String {
+        var origDSTForCity = getDSTForWorldCities(cityNum)
+        return DstForWorldCitiesIO.setDST(origDSTForCity, casioTimezone)
+    }
+
+    private suspend fun getWorldCities(cityNum: Int): String {
+        return WorldCitiesIO.request(cityNum)
+    }
+
+    private suspend fun getWorldCitiesWithTZ(cityNum: Int): String {
+        val newCity = WorldCitiesIO.parseCity(timeZone)
+        val encoded = WorldCitiesIO.encodeAndPad(newCity!!, cityNum)
+        CasioIO.removeFromCache(encoded)
+        return encoded
     }
 
     /**
@@ -69,18 +83,18 @@ object TimeIO {
             CasioIO.writeCmd(0xE, shortStr)
         }
 
-        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.ZERO)
+        readAndWrite(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO)
         readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.TWO)
         readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.FOUR)
 
-        readAndWrite(::getDSTForWorldCities, 0)
+        readAndWrite(::getDSTForWorldCitiesWithTZ, 0)
         readAndWrite(::getDSTForWorldCities, 1)
         readAndWrite(::getDSTForWorldCities, 2)
         readAndWrite(::getDSTForWorldCities, 3)
         readAndWrite(::getDSTForWorldCities, 4)
         readAndWrite(::getDSTForWorldCities, 5)
 
-        readAndWrite(::getWorldCities, 0)
+        readAndWrite(::getWorldCitiesWithTZ, 0)
         readAndWrite(::getWorldCities, 1)
         readAndWrite(::getWorldCities, 2)
         readAndWrite(::getWorldCities, 3)
@@ -98,16 +112,15 @@ object TimeIO {
             CasioIO.writeCmd(0xE, shortStr)
         }
 
-        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.ZERO)
+        readAndWrite(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO)
 
-        readAndWrite(::getDSTForWorldCities, 0)
+        readAndWrite(::getDSTForWorldCitiesWithTZ, 0)
         readAndWrite(::getDSTForWorldCities, 1)
 
-        readAndWrite(::getWorldCities, 0)
+        readAndWrite(::getWorldCitiesWithTZ, 0)
         readAndWrite(::getWorldCities, 1)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
 
@@ -122,7 +135,6 @@ object TimeIO {
     }
 
     object TimeEncoder {
-        @SuppressLint("NewApi")
         fun prepareCurrentTime(date: LocalDateTime): ByteArray {
             val arr = ByteArray(10)
             val year = date.year

@@ -14,9 +14,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.ProgressEvents
-import org.avmedia.gshockapi.io.CasioIO
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.MessageDispatcher
+import org.avmedia.gshockapi.io.CasioIO
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.*

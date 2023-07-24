@@ -1,5 +1,7 @@
 package org.avmedia.gshockapi.io
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Alarm
@@ -11,6 +13,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 
+@RequiresApi(Build.VERSION_CODES.O)
 object AlarmsIO {
 
     suspend fun request(): ArrayList<Alarm> {

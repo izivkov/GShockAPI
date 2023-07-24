@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 object WatchConditionIO {
 
-    class WatchConditionValue (val batteryLevel: Int, val temperature: Int)
+    class WatchConditionValue(val batteryLevel: Int, val temperature: Int)
 
     suspend fun request(): WatchConditionValue {
         return CachedIO.request("28", ::getWatchCondition) as WatchConditionValue
@@ -51,7 +51,8 @@ object WatchConditionIO {
 
             if (bytes != null && bytes.size >= 2) {
                 // Battery level between 15 and 20 fot B2100 and between 13 and 18 for B5600. Scale accordingly to %
-                var batteryLevel = bytes[0].toInt() - if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) 15 else 13
+                var batteryLevel =
+                    bytes[0].toInt() - if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) 15 else 13
 
                 val batteryLevelPercent: Int = (batteryLevel * 20).coerceIn(0, 100)
                 val temperature: Int = bytes[1].toInt()

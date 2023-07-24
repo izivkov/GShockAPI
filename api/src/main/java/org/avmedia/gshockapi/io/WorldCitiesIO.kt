@@ -43,4 +43,14 @@ object WorldCitiesIO {
         json.put("CASIO_WORLD_CITIES", dataJson)
         return json
     }
+
+    fun parseCity(timeZone: String): String? {
+        val city = timeZone.split('/')[1]
+        return city.uppercase().replace('_', ' ')
+    }
+
+    fun encodeAndPad(city: String, cityIndex: Int): String {
+        return ("1F" + "%02x".format(cityIndex) + Utils.toHexStr(city.take(18))
+            .padEnd(36, '0')) // pad to 40 chars
+    }
 }

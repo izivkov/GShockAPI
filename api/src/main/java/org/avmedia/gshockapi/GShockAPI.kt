@@ -5,12 +5,14 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.io.*
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.Connection.sendMessage
 import org.avmedia.gshockapi.casio.*
+import org.avmedia.gshockapi.io.*
 import org.avmedia.gshockapi.utils.*
+import timber.log.Timber
+import java.time.ZoneId
 import java.util.*
 
 /**
@@ -41,6 +43,8 @@ import java.util.*
  * }
  * ```
  */
+
+@RequiresApi(Build.VERSION_CODES.O)
 class GShockAPI(private val context: Context) {
 
     private var bleScannerLocal: BleScannerLocal = BleScannerLocal(context)
@@ -305,9 +309,15 @@ class GShockAPI(private val context: Context) {
      *      setTime("Europe/Sofia")
      *  ```
      */
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun setTime(timeZone: String? = null) {
-        TimeIO.set(timeZone)
+    suspend fun setTime(timeZone: String = TimeZone.getDefault().id) {
+        if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
+            Timber.e("GShockAPI", "setTime: Invalid timezone $timeZone passed")
+            ProgressEvents.onNext("ApiError")
+            return
+        }
+
+        TimeIO.setTimezone(timeZone)
+        TimeIO.set()
     }
 
     /**
@@ -334,7 +344,6 @@ class GShockAPI(private val context: Context) {
      *
      * @return ArrayList<[Event]>
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getEventsFromWatch(): ArrayList<Event> {
 
         val events = ArrayList<Event>()
@@ -354,7 +363,6 @@ class GShockAPI(private val context: Context) {
      * @param eventNumber The index of the event 1..5
      * @return [Event]
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getEventFromWatch(eventNumber: Int): Event {
         return EventsIO.request(eventNumber)
     }
@@ -380,7 +388,6 @@ class GShockAPI(private val context: Context) {
      * @return [Settings]
      */
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getSettings(): Settings {
         val settings = getBasicSettings()
         val timeAdjustment = getTimeAdjustment()
@@ -388,7 +395,6 @@ class GShockAPI(private val context: Context) {
         return settings
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(): Settings {
         return SettingsIO.request()
     }
@@ -396,7 +402,6 @@ class GShockAPI(private val context: Context) {
     private suspend fun getTimeAdjustment(): Boolean {
         return TimeAdjustmentIO.request()
     }
-
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:
@@ -439,10 +444,6 @@ class GShockAPI(private val context: Context) {
 
     fun preventReconnection() {
         Connection.oneTimeLock = true
-    }
-
-    private fun setHomeTime(id: String) {
-        HomeTimeIO.set(id)
     }
 
     /**

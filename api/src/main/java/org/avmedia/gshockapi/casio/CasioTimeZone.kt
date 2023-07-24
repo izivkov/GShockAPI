@@ -3,7 +3,6 @@ package org.avmedia.gshockapi.casio
 import org.avmedia.gshockapi.io.CasioIO
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
-import java.util.TimeZone
 
 object CasioTimeZone {
     class WorldCity(private val city: String, val index: Int) {
