@@ -118,10 +118,10 @@ class MainActivity : AppCompatActivity() {
 
         generateCustomEvent()
 
-        // api.setTime("Europe/Sofia")
-        // api.setTime("Asia/Yerevan")
-        // api.setTime("America/Toronto")
+        val currentTZ = TimeZone.getDefault().id
         api.setTime()
+        api.setTime("Europe/Sofia")
+        api.setTime(currentTZ)
 
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
@@ -131,7 +131,6 @@ class MainActivity : AppCompatActivity() {
         api.setAlarms(alarms)
 
         handleReminders()
-
         handleSettings()
     }
 

@@ -13,6 +13,54 @@ import java.time.*
 import java.util.*
 import kotlin.reflect.KSuspendFunction1
 
+/*
+We have now incorporated setting the Casio timezone and rules when setting time, in latest version of the API tagged 1.2.8. Here are some notes on the implementation.
+
+When using the API, the app doesn't need to keep a list of world cities to set the time on the watch. It can simply provide the current timezone
+and the API will set the timezone and any applicable Daylight Savings Time rules on the watch. This way, when a user travels from one city to another
+and adjusts the time accordingly, the timezone and DST rules will be set accordingly.
+
+In order to set timezone, we must provide data for register 0x1E, something like this:
+
+0x1E 00 02 76 10 00 00
+
+From the Gadgetbridge project, we have information on what these values mean:
+
+                   0x1E 00  A  B   OFF DSTOFF DSTRULES
+LOS ANGELES                 A1 00  E0  04     01
+DENVER                      54 00  E4  04     01
+CHICAGO                     42 00  E8  04     01
+NEW YORK                    CA 00  EC  04     01
+...
+The CasioTimeZone class handles the code for setting the values of time-zone, offset, and DST offset on the watch.
+It takes a time-zone string in the form of "Pacific/Pago_Pago" and a Casio-specific DST rules code, and
+calculates the corresponding offset and DST offset. A table is then created of all possible CasioTimeZone's
+that can be set on the watch.
+
+The findTimeZone function will take a standard timezone obtained from the Android Locale and try to find the
+Casio-equivalent from the table. If not found, we create a synthetic CasioTimeZone from the Offset and DST Offset
+of the passed timezone, and a value of 0 for the Casio Rules. Most of the timezones not in the Casio table have no DST,
+so this is a reasonable assumption.
+
+Since are are using ZoneId API to obtain the TZ offset and DST offset, we don't have to worry about changes in the timezones,
+since presumably the API will change accordingly.
+
+For setting DST value ON/OFF/AUTO, we update the 0x1D register. The data looks something like this:
+0x1D 00 01 00 03 0C 01 0C 01 FF FF FF FF FF FF
+
+From Gadgetbridge, we see:
+There are six clocks on the Casio GW-B5600
+0 is the main clock
+1-5 are the world clocks
+
+0x1d 00 01 DST0 DST1 TZ0A TZ0B TZ1A TZ1B ff ff ff ff ff
+0x1d 02 03 DST2 DST3 TZ2A TZ2B TZ3A TZ3B ff ff ff ff ff
+0x1d 04 05 DST4 DST5 TZ4A TZ4B TZ5A TZ5B ff ff ff ff ff
+DST: bitwise flags; bit0: DST on, bit1: DST auto
+Here again, are are only concerned with the main clock, so we need to update the value of DST0.
+If the timezone has DST, we set this flag to ON | AUTO, or 3
+If the timezone has no DST, we set the flag to 0
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeIO {
     init {}
@@ -45,8 +93,8 @@ object TimeIO {
 
     private suspend fun getDSTWatchStateWithTZ(state: CasioIO.DTS_STATE): String {
         val origDTS = getDSTWatchState(state)
-        val hasDST =
-            if (casioTimezone.dstOffset > 0) ON_AND_AUTO else OFF
+        CasioIO.removeFromCache(origDTS)
+        val hasDST = if (casioTimezone.dstOffset > 0) ON_AND_AUTO else OFF
         return DstWatchStateIO.setDST(origDTS, hasDST)
     }
 
@@ -56,6 +104,7 @@ object TimeIO {
 
     private suspend fun getDSTForWorldCitiesWithTZ(cityNum: Int): String {
         var origDSTForCity = getDSTForWorldCities(cityNum)
+        CasioIO.removeFromCache(origDSTForCity)
         return DstForWorldCitiesIO.setDST(origDSTForCity, casioTimezone)
     }
 

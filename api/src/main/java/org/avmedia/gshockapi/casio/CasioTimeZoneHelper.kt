@@ -83,19 +83,7 @@ object CasioTimeZoneHelper {
     class CasioTimeZone(val name: String, val zoneName: String, val dstRules: Int = 0) {
         val zoneId: ZoneId = ZoneId.of(zoneName)
         val dstOffset = zoneId.rules.getDaylightSavings(Instant.now()).seconds / 60 / 15
-        val offset = getTZOffset()
-
-        private fun getTZOffset(): Int {
-            return zoneId.rules.getStandardOffset(Instant.now()).totalSeconds / 60 / 15
-        }
-
-        override fun toString(): String {
-            return "CasioTimeZone(name='$name', zoneName='$zoneName', " + "offset=${
-                offset.toString(
-                    16
-                )
-            }, dstOffset=$dstOffset, " + "dstRules=${dstRules.toString(16)}"
-        }
+        val offset = zoneId.rules.getStandardOffset(Instant.now()).totalSeconds / 60 / 15
     }
 
     private val timeZoneTable = arrayOf(
