@@ -29,6 +29,7 @@ $dokka.location:org.avmedia.gshockapi.io/CachedIO/createKey/#kotlin.String/Point
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/get/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/get.html
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/init/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/init.html
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/put/#kotlin.String#kotlin.Any/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/put.html
+$dokka.location:org.avmedia.gshockapi.io/CachedIO/remove/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/remove.html
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/request/#kotlin.String#kotlin.reflect.KSuspendFunction1[kotlin.String,kotlin.Any]/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/request.html
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/resultQueue/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/result-queue.html
 $dokka.location:org.avmedia.gshockapi.io/CachedIO/subscribe/#kotlin.String#kotlin.Function1[org.json.JSONObject,kotlin.Unit]/PointingToDeclaration/api/org.avmedia.gshockapi.io/-cached-i-o/subscribe.html
@@ -51,6 +52,7 @@ $dokka.location:org.avmedia.gshockapi.io/CasioIO.WATCH_BUTTON/valueOf/#kotlin.St
 $dokka.location:org.avmedia.gshockapi.io/CasioIO.WATCH_BUTTON/values/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/-w-a-t-c-h_-b-u-t-t-o-n/values.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/init/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/init.html
+$dokka.location:org.avmedia.gshockapi.io/CasioIO/removeFromCache/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/remove-from-cache.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/request/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/request.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/setWriter/#kotlin.Function3[android.bluetooth.BluetoothDevice,android.bluetooth.BluetoothGattCharacteristic,kotlin.ByteArray,kotlin.Unit]/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/set-writer.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmd/#kotlin.Int#kotlin.ByteArray/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/write-cmd.html
@@ -58,9 +60,18 @@ $dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmd/#kotlin.Int#kotlin.Str
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmdFromString/#kotlin.Int#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/write-cmd-from-string.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO/request/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/request.html
+$dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO/setDST/#kotlin.String#org.avmedia.gshockapi.casio.CasioTimeZoneHelper.CasioTimeZone/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/set-d-s-t.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO/toJson/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/to-json.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE.AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/-a-u-t-o/index.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE.OFF///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/-o-f-f/index.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE.ON///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/-o-n/index.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE.ON_AND_AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/-o-n_-a-n-d_-a-u-t-o/index.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE///PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/index.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE/valueOf/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/value-of.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO.DTS_VALUE/values/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/-d-t-s_-v-a-l-u-e/values.html
 $dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO/request/#org.avmedia.gshockapi.io.CasioIO.DTS_STATE/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/request.html
+$dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO/setDST/#kotlin.String#org.avmedia.gshockapi.io.DstWatchStateIO.DTS_VALUE/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/set-d-s-t.html
 $dokka.location:org.avmedia.gshockapi.io/DstWatchStateIO/toJson/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-watch-state-i-o/to-json.html
 $dokka.location:org.avmedia.gshockapi.io/ErrorIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-error-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/ErrorIO/request/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-error-i-o/request.html
@@ -82,7 +93,6 @@ $dokka.location:org.avmedia.gshockapi.io/HandIO///PointingToDeclaration/api/org
 $dokka.location:org.avmedia.gshockapi.io/HandIO/sendToWatch/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-hand-i-o/send-to-watch.html
 $dokka.location:org.avmedia.gshockapi.io/HomeTimeIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-home-time-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/HomeTimeIO/request/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-home-time-i-o/request.html
-$dokka.location:org.avmedia.gshockapi.io/HomeTimeIO/set/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-home-time-i-o/set.html
 $dokka.location:org.avmedia.gshockapi.io/ResultQueue.KeyedResult///PointingToDeclaration/api/org.avmedia.gshockapi.io/-result-queue/-keyed-result/index.html
 $dokka.location:org.avmedia.gshockapi.io/ResultQueue.KeyedResult/KeyedResult/#kotlin.String#kotlinx.coroutines.CompletableDeferred[kotlin.Any]/PointingToDeclaration/api/org.avmedia.gshockapi.io/-result-queue/-keyed-result/-keyed-result.html
 $dokka.location:org.avmedia.gshockapi.io/ResultQueue.KeyedResult/key/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-result-queue/-keyed-result/key.html
@@ -115,7 +125,8 @@ $dokka.location:org.avmedia.gshockapi.io/TimeIO.TimeEncoder///PointingToDeclarat
 $dokka.location:org.avmedia.gshockapi.io/TimeIO.TimeEncoder/prepareCurrentTime/#java.time.LocalDateTime/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-time-encoder/prepare-current-time.html
 $dokka.location:org.avmedia.gshockapi.io/TimeIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/TimeIO/sendToWatchSet/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/send-to-watch-set.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO/set/#kotlin.String?/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/set.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO/set/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/set.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO/setTimezone/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/set-timezone.html
 $dokka.location:org.avmedia.gshockapi.io/TimerIO.TimerDecoder///PointingToDeclaration/api/org.avmedia.gshockapi.io/-timer-i-o/-timer-decoder/index.html
 $dokka.location:org.avmedia.gshockapi.io/TimerIO.TimerDecoder/decodeValue/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-timer-i-o/-timer-decoder/decode-value.html
 $dokka.location:org.avmedia.gshockapi.io/TimerIO.TimerEncoder///PointingToDeclaration/api/org.avmedia.gshockapi.io/-timer-i-o/-timer-encoder/index.html
@@ -152,6 +163,8 @@ $dokka.location:org.avmedia.gshockapi.io/WatchValuesCache/getCached/#kotlin.Stri
 $dokka.location:org.avmedia.gshockapi.io/WatchValuesCache/put/#kotlin.String#kotlin.Any/PointingToDeclaration/api/org.avmedia.gshockapi.io/-watch-values-cache/put.html
 $dokka.location:org.avmedia.gshockapi.io/WatchValuesCache/remove/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-watch-values-cache/remove.html
 $dokka.location:org.avmedia.gshockapi.io/WorldCitiesIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-world-cities-i-o/index.html
+$dokka.location:org.avmedia.gshockapi.io/WorldCitiesIO/encodeAndPad/#kotlin.String#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi.io/-world-cities-i-o/encode-and-pad.html
+$dokka.location:org.avmedia.gshockapi.io/WorldCitiesIO/parseCity/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-world-cities-i-o/parse-city.html
 $dokka.location:org.avmedia.gshockapi.io/WorldCitiesIO/request/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi.io/-world-cities-i-o/request.html
 $dokka.location:org.avmedia.gshockapi.io/WorldCitiesIO/toJson/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-world-cities-i-o/to-json.html
 $dokka.location:org.avmedia.gshockapi////PointingToDeclaration/api/org.avmedia.gshockapi/index.html
@@ -213,7 +226,7 @@ $dokka.location:org.avmedia.gshockapi/GShockAPI/resetHand/#/PointingToDeclaratio
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setAlarms/#java.util.ArrayList[org.avmedia.gshockapi.Alarm]/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-alarms.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setEvents/#java.util.ArrayList[org.avmedia.gshockapi.Event]/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-events.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setSettings/#org.avmedia.gshockapi.Settings/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-settings.html
-$dokka.location:org.avmedia.gshockapi/GShockAPI/setTime/#kotlin.String?/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-time.html
+$dokka.location:org.avmedia.gshockapi/GShockAPI/setTime/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-time.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/setTimer/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/set-timer.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/stopScan/#/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/stop-scan.html
 $dokka.location:org.avmedia.gshockapi/GShockAPI/teardownConnection/#android.bluetooth.BluetoothDevice/PointingToDeclaration/api/org.avmedia.gshockapi/-g-shock-a-p-i/teardown-connection.html
