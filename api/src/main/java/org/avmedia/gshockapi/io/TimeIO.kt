@@ -93,6 +93,7 @@ object TimeIO {
 
     private suspend fun getDSTWatchStateWithTZ(state: CasioIO.DTS_STATE): String {
         val origDTS = getDSTWatchState(state)
+        // CasioIO.removeFromCache(origDTS)
         val hasDST = if (casioTimezone.dstOffset > 0) ON_AND_AUTO else OFF
         return DstWatchStateIO.setDST(origDTS, hasDST)
     }
@@ -103,6 +104,7 @@ object TimeIO {
 
     private suspend fun getDSTForWorldCitiesWithTZ(cityNum: Int): String {
         var origDSTForCity = getDSTForWorldCities(cityNum)
+        // CasioIO.removeFromCache(origDSTForCity)
         return DstForWorldCitiesIO.setDST(origDSTForCity, casioTimezone)
     }
 
@@ -112,7 +114,9 @@ object TimeIO {
 
     private suspend fun getWorldCitiesWithTZ(cityNum: Int): String {
         val newCity = WorldCitiesIO.parseCity(timeZone)
-        return WorldCitiesIO.encodeAndPad(newCity!!, cityNum)
+        val encoded = WorldCitiesIO.encodeAndPad(newCity!!, cityNum)
+        CasioIO.removeFromCache(encoded)
+        return encoded
     }
 
     /**
@@ -125,7 +129,6 @@ object TimeIO {
         suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
             val ret: String = function(param)
             val shortStr = Utils.toCompactString(ret)
-            CasioIO.removeFromCache(shortStr)
             CasioIO.writeCmd(0xE, shortStr)
         }
 
