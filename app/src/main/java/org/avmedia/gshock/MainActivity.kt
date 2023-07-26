@@ -35,9 +35,9 @@ class MainActivity : AppCompatActivity() {
 
         listenToProgressEvents()
 
-        // run(this)
+        run(this)
         // runDownBattery(this)
-        testTimeZones()
+        // testTimeZones()
     }
 
     private fun listenToProgressEvents() {
@@ -121,8 +121,9 @@ class MainActivity : AppCompatActivity() {
         generateCustomEvent()
 
         val currentTZ = TimeZone.getDefault().id
-        api.setTime()
         api.setTime("Europe/Sofia")
+        api.setTime("Asia/Kolkata")
+        api.setTime("Pacific/Kiritimati")
         api.setTime(currentTZ)
 
         val alarms = api.getAlarms()

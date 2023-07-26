@@ -42,26 +42,11 @@ object DstWatchStateIO {
     DST: bitwise flags; bit0: DST on, bit1: DST auto
     */
 
-    enum class DTS_VALUE {
-        OFF,
-        ON,
-        AUTO,
-        ON_AND_AUTO
-    }
-
-    suspend fun setDST(dstState: String, dst: DTS_VALUE): String {
-        val DST_OFF_MASK = 0b00
-        val DST_ON_MASK = 0b01
-        val DST_AUTO_MASK = 0b10
+    suspend fun setDST(dstState: String, dst: Int): String {
 
         val intArray = Utils.toIntArray(dstState)
-        intArray[3] = 0
-        when (dst) {
-            DTS_VALUE.OFF -> intArray[3] = intArray[3] or DST_OFF_MASK or DST_AUTO_MASK
-            DTS_VALUE.ON -> intArray[3] = intArray[3] or DST_ON_MASK
-            DTS_VALUE.ON_AND_AUTO -> intArray[3] = intArray[3] or DST_ON_MASK or DST_AUTO_MASK
-            else -> intArray[3] = intArray[3] or DST_AUTO_MASK
-        }
+        intArray[3] = dst
+
         val newValue = Utils.byteArrayOfIntArray(intArray.toIntArray())
         return Utils.fromByteArrayToHexStrWithSpaces(newValue)
     }

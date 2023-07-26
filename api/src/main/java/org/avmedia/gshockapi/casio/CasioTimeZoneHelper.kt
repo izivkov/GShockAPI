@@ -91,6 +91,9 @@ object CasioTimeZoneHelper {
         // since the Casio table might be outdated, i.e for TEHRAN.
         val dstRules = adjustRules(dstOffset, _dstRules)
 
+        fun hasDST() = dstOffset > 0
+        fun hasRules() = dstRules != 0
+
         private fun adjustRules(dstOffset: Long, dstRules: Int) = if (dstOffset == 0L) 0 else dstRules
 
         private fun getDTSDuration(): Duration {

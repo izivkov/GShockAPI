@@ -6,7 +6,6 @@ import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
-import org.avmedia.gshockapi.io.DstWatchStateIO.DTS_VALUE.*
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import java.time.*
@@ -89,11 +88,18 @@ object TimeIO {
         return DstWatchStateIO.request(state)
     }
 
+    enum class DTS_MASK(mask:Int) {
+        OFF(0b00),
+        ON(0b01),
+        AUTO(0b10),
+    }
+
     private suspend fun getDSTWatchStateWithTZ(state: CasioIO.DTS_STATE): String {
         val origDTS = getDSTWatchState(state)
         // CasioIO.removeFromCache(origDTS)
-        val hasDST = if (casioTimezone.dstOffset > 0) ON_AND_AUTO else OFF
-        return DstWatchStateIO.setDST(origDTS, hasDST)
+
+        val dstValue = (if (casioTimezone.hasDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
+        return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
     private suspend fun getDSTForWorldCities(cityNum: Int): String {
