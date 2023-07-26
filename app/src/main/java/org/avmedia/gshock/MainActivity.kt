@@ -9,6 +9,8 @@ import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.io.CasioIO
+import java.time.Duration
+import java.time.Instant
 import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -33,9 +35,9 @@ class MainActivity : AppCompatActivity() {
 
         listenToProgressEvents()
 
-        run(this)
+        // run(this)
         // runDownBattery(this)
-        // testTimeZones()
+        testTimeZones()
     }
 
     private fun listenToProgressEvents() {
@@ -172,19 +174,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun testTimeZones() {
-        var totalCount = 0
-        var unknown = 0
-        val elapsed = measureTimeMillis {
-            for (tz in ZoneId.getAvailableZoneIds()) {
-                val foundTZ = CasioTimeZoneHelper.findTimeZone(tz)
-                ++totalCount
-                if (foundTZ.name == "UNKNOWN") {
-                    ++unknown
-                }
-            }
-        }
+//        var totalCount = 0
+//        var unknown = 0
+//        val elapsed = measureTimeMillis {
+//            for (tz in ZoneId.getAvailableZoneIds()) {
+//                val foundTZ = CasioTimeZoneHelper.findTimeZone(tz)
+//                ++totalCount
+//                if (foundTZ.name == "UNKNOWN") {
+//                    ++unknown
+//                }
+//            }
+//        }
+//
+//        println("elapsed time: size: ${ZoneId.getAvailableZoneIds().size}, $elapsed ms., total: $totalCount, unknown: $unknown")
 
-        println("elapsed time: size: ${ZoneId.getAvailableZoneIds().size}, $elapsed ms., total: $totalCount, unknown: $unknown")
+        for (tz in CasioTimeZoneHelper.timeZoneMap.values) {
+            println("$tz")
+        }
     }
 
     private suspend fun handleReminders() {

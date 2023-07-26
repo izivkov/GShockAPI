@@ -2,8 +2,10 @@ package org.avmedia.gshockapi.casio
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import java.time.zone.ZoneOffsetTransition
 import java.util.*
 
 /*
@@ -80,10 +82,31 @@ PONTA DELGADA      E4 00  FC  04     02
 
 @RequiresApi(Build.VERSION_CODES.O)
 object CasioTimeZoneHelper {
-    class CasioTimeZone(val name: String, val zoneName: String, val dstRules: Int = 0) {
+    class CasioTimeZone(val name: String, val zoneName: String, private val _dstRules: Int = 0) {
         val zoneId: ZoneId = ZoneId.of(zoneName)
-        val dstOffset = zoneId.rules.getDaylightSavings(Instant.now()).seconds / 60 / 15
+        val dstOffset = getDTSDuration().seconds / 60 / 15
         val offset = zoneId.rules.getStandardOffset(Instant.now()).totalSeconds / 60 / 15
+
+        // If we have no DST for this timezone, override the dstRules with a 0,
+        // since the Casio table might be outdated, i.e for TEHRAN.
+        val dstRules = adjustRules(dstOffset, _dstRules)
+
+        private fun adjustRules(dstOffset: Long, dstRules: Int) = if (dstOffset == 0L) 0 else dstRules
+
+        private fun getDTSDuration(): Duration {
+            val rules = zoneId.rules ?: return Duration.ZERO
+            val now = Instant.now()
+            val next: ZoneOffsetTransition? = rules.nextTransition(now) ?: return Duration.ZERO
+            return Duration.ofSeconds(
+                rules.getDaylightSavings(
+                    if (rules.isDaylightSavings(now)) now else next?.instant?.plusSeconds(1)
+                ).seconds
+            )
+        }
+
+        override fun toString(): String {
+            return "CasioTimeZone(name='$name', zoneName='$zoneName', zoneId=$zoneId, dstOffset=$dstOffset, offset=$offset, dstRules: $dstRules)"
+        }
     }
 
     private val timeZoneTable = arrayOf(
@@ -147,9 +170,9 @@ object CasioTimeZoneHelper {
         val rules1 = tz1.normalized().rules
         val rules2 = tz2.normalized().rules
 
-        return rules1.getStandardOffset(Instant.now()) == rules2.getStandardOffset(Instant.now())
-                && rules1.getDaylightSavings(Instant.now()) == rules1.getDaylightSavings(Instant.now())
-                && rules1.transitionRules == rules2.transitionRules
+        return rules1.getStandardOffset(Instant.now()).equals(rules2.getStandardOffset(Instant.now()))
+                && rules1.getDaylightSavings(Instant.now()).equals(rules1.getDaylightSavings(Instant.now()))
+                && rules1.transitionRules.equals(rules2.transitionRules)
     }
 
     fun findTimeZone(timeZoneName: String): CasioTimeZone {

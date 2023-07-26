@@ -14,8 +14,6 @@ import java.util.*
 import kotlin.reflect.KSuspendFunction1
 
 /*
-We have now incorporated setting the Casio timezone and rules when setting time, in latest version of the API tagged 1.2.8. Here are some notes on the implementation.
-
 When using the API, the app doesn't need to keep a list of world cities to set the time on the watch. It can simply provide the current timezone
 and the API will set the timezone and any applicable Daylight Savings Time rules on the watch. This way, when a user travels from one city to another
 and adjusts the time accordingly, the timezone and DST rules will be set accordingly.

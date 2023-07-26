@@ -57,7 +57,7 @@ object DstWatchStateIO {
         val intArray = Utils.toIntArray(dstState)
         intArray[3] = 0
         when (dst) {
-            DTS_VALUE.OFF -> intArray[3] = intArray[3] or DST_OFF_MASK
+            DTS_VALUE.OFF -> intArray[3] = intArray[3] or DST_OFF_MASK or DST_AUTO_MASK
             DTS_VALUE.ON -> intArray[3] = intArray[3] or DST_ON_MASK
             DTS_VALUE.ON_AND_AUTO -> intArray[3] = intArray[3] or DST_ON_MASK or DST_AUTO_MASK
             else -> intArray[3] = intArray[3] or DST_AUTO_MASK
