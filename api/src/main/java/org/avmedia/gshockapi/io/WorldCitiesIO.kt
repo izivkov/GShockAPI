@@ -45,8 +45,8 @@ object WorldCitiesIO {
     }
 
     fun parseCity(timeZone: String): String? {
-        val city = timeZone.split('/')[1]
-        return city.uppercase().replace('_', ' ')
+        val city = timeZone.split('/').lastOrNull()
+        return city?.uppercase()?.replace('_', ' ')
     }
 
     fun encodeAndPad(city: String, cityIndex: Int): String {
