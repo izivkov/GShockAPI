@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         run(this)
         // runDownBattery(this)
         // testTimeZones()
+        // runTimezonesTest()
     }
 
     private fun listenToProgressEvents() {
@@ -138,6 +139,26 @@ class MainActivity : AppCompatActivity() {
         handleSettings()
     }
 
+    private fun runTimezonesTest () {
+        val all = ZoneId.getAvailableZoneIds().size
+        var current = 0
+
+        suspend fun runAllTimezones() {
+            for (tz in ZoneId.getAvailableZoneIds()) {
+                api.setTime(tz)
+                ++current
+                println ("tz: $tz, $current of $all")
+            }
+        }
+
+        CoroutineScope(Dispatchers.Default).launch {
+            api.waitForConnection()
+            runAllTimezones()
+            api.disconnect(this@MainActivity)
+            println("--------------- End of runTimezonesTest ------------------")
+        }
+    }
+
     private fun generateCustomEvent() {
         ProgressEvents.onNext(customEventName)
     }
@@ -190,9 +211,9 @@ class MainActivity : AppCompatActivity() {
 //
 //        println("elapsed time: size: ${ZoneId.getAvailableZoneIds().size}, $elapsed ms., total: $totalCount, unknown: $unknown")
 
-        for (tz in CasioTimeZoneHelper.timeZoneMap.values) {
-            println("$tz")
-        }
+//        for (tz in CasioTimeZoneHelper.timeZoneMap.values) {
+//            println("$tz")
+//        }
     }
 
     private suspend fun handleReminders() {
