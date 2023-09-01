@@ -4,8 +4,8 @@ import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import java.time.Duration
 
 /**
- * This class keeps track of what is the model and name of the Watch.
- * Currently supported models are: B2100, B5600 (which also includes the B5000, but they have identical functionality)
+ * This class keeps information about the characteristics of the currently connected watch.
+ * Based on that, the application can display different information.
  */
 object WatchInfo {
     enum class WATCH_MODEL {
@@ -24,6 +24,9 @@ object WatchInfo {
     var hasAutoLight = false
     var hasReminders = false
 
+    /**
+     * Info about the model.
+     */
     data class ModelInfo(
         var model: WATCH_MODEL,
         var worldCitiesCount: Int,
@@ -44,6 +47,10 @@ object WatchInfo {
 
     private val modelMap = models.associateBy { it.model }
 
+    /**
+     * When we obtain the name of the watch from the BLE connection, we need to call this method.
+     * From here, we can determine and set all the model's characteristics.
+     */
     fun setNameAndModel(name: String) {
         this.name = name
 
