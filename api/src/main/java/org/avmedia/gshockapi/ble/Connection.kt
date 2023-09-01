@@ -474,6 +474,7 @@ object Connection : IConnection {
             }
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -523,6 +524,7 @@ object Connection : IConnection {
             }
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -532,6 +534,7 @@ object Connection : IConnection {
             }
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onDescriptorRead(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,

@@ -1,11 +1,14 @@
 package org.avmedia.gshockapi.io
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
+@RequiresApi(Build.VERSION_CODES.O)
 object TimerIO {
 
     suspend fun request(): Int {

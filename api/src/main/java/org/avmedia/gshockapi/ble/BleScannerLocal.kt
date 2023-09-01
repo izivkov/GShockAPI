@@ -44,7 +44,9 @@ data class BleScannerLocal(val context: Context) {
     @SuppressLint("MissingPermission")
     fun startConnection(deviceId: String?, deviceName: String?) {
         foundDevices.clear()
-        if (!deviceName.isNullOrEmpty()) WatchInfo.setNameAndModel(deviceName)
+        if (!deviceName.isNullOrEmpty()) {
+            WatchInfo.setNameAndModel(deviceName)
+        }
         if (!deviceId.isNullOrEmpty()) {
             val device = bluetoothAdapter.getRemoteDevice(deviceId)
             WatchInfo.setAddress(deviceId.toString())
@@ -107,6 +109,7 @@ Characteristics:
             foundDevices.add(result.device.toString())
 
             val name = result.scanRecord?.deviceName
+
             if (name != null) {
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             }

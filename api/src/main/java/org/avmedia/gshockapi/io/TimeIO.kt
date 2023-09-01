@@ -8,6 +8,7 @@ import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
+import timber.log.Timber
 import java.time.*
 import java.util.*
 import kotlin.reflect.KSuspendFunction1
@@ -71,11 +72,7 @@ object TimeIO {
     }
 
     suspend fun set() {
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B2100) {
-            initializeForSettingTimeForB2100()
-        } else {
-            initializeForSettingTimeForB5600()
-        }
+        initializeForSettingTime()
 
         Connection.sendMessage(
             "{action: \"SET_TIME\", value: ${
@@ -88,7 +85,7 @@ object TimeIO {
         return DstWatchStateIO.request(state)
     }
 
-    enum class DTS_MASK(mask:Int) {
+    enum class DTS_MASK(mask: Int) {
         OFF(0b00),
         ON(0b01),
         AUTO(0b10),
@@ -98,7 +95,8 @@ object TimeIO {
         val origDTS = getDSTWatchState(state)
         // CasioIO.removeFromCache(origDTS)
 
-        val dstValue = (if (casioTimezone.hasDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
+        val dstValue =
+            (if (casioTimezone.hasDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
@@ -107,7 +105,7 @@ object TimeIO {
     }
 
     private suspend fun getDSTForWorldCitiesWithTZ(cityNum: Int): String {
-        var origDSTForCity = getDSTForWorldCities(cityNum)
+        val origDSTForCity = getDSTForWorldCities(cityNum)
         // CasioIO.removeFromCache(origDSTForCity)
         return DstForWorldCitiesIO.setDST(origDSTForCity, casioTimezone)
     }
@@ -126,39 +124,78 @@ object TimeIO {
     /**
      * This function is internally called by [setTime] to initialize some values.
      */
-    private suspend fun initializeForSettingTimeForB5600() {
-        // Before we can set time, we must read and write back these values.
-        // Why? Not sure, ask Casio
+    private suspend fun initializeForSettingTime() {
+        writeDST()
+        writeDSTForWorldCities()
+        writeWorldCities()
+    }
 
-        suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
-            val ret: String = function(param)
-            val shortStr = Utils.toCompactString(ret)
-            CasioIO.writeCmd(0xE, shortStr)
+    private suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
+        val ret: String = function(param)
+        val shortStr = Utils.toCompactString(ret)
+        CasioIO.writeCmd(0xE, shortStr)
+    }
+
+    private suspend fun writeDST() {
+        data class Dts(
+            val function: KSuspendFunction1<CasioIO.DTS_STATE, String>,
+            val param: CasioIO.DTS_STATE
+        )
+
+        val dtsStates = arrayOf(
+            Dts(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO),
+            Dts(::getDSTWatchState, CasioIO.DTS_STATE.TWO),
+            Dts(::getDSTWatchState, CasioIO.DTS_STATE.FOUR)
+        )
+
+        for (i in 0 until WatchInfo.dstCount) {
+            readAndWrite(dtsStates[i].function, dtsStates[i].param)
         }
+    }
 
-        readAndWrite(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO)
-        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.TWO)
-        readAndWrite(::getDSTWatchState, CasioIO.DTS_STATE.FOUR)
+    private suspend fun writeDSTForWorldCities() {
+        data class DstForWorldCities(
+            val function: KSuspendFunction1<Int, String>,
+            val param: Int
+        )
 
-        readAndWrite(::getDSTForWorldCitiesWithTZ, 0)
-        readAndWrite(::getDSTForWorldCities, 1)
-        readAndWrite(::getDSTForWorldCities, 2)
-        readAndWrite(::getDSTForWorldCities, 3)
-        readAndWrite(::getDSTForWorldCities, 4)
-        readAndWrite(::getDSTForWorldCities, 5)
+        val dstForWorldCities = arrayOf(
+            DstForWorldCities(::getDSTForWorldCitiesWithTZ, 0),
+            DstForWorldCities(::getDSTForWorldCities, 1),
+            DstForWorldCities(::getDSTForWorldCities, 2),
+            DstForWorldCities(::getDSTForWorldCities, 3),
+            DstForWorldCities(::getDSTForWorldCities, 4),
+            DstForWorldCities(::getDSTForWorldCities, 5),
+        )
 
-        readAndWrite(::getWorldCitiesWithTZ, 0)
-        readAndWrite(::getWorldCities, 1)
-        readAndWrite(::getWorldCities, 2)
-        readAndWrite(::getWorldCities, 3)
-        readAndWrite(::getWorldCities, 4)
-        readAndWrite(::getWorldCities, 5)
+        for (i in 0 until WatchInfo.worldCitiesCount) {
+            readAndWrite(dstForWorldCities[i].function, dstForWorldCities[i].param)
+            Timber.i("writeDSTForWorldCities: $i")
+        }
+    }
+
+    private suspend fun writeWorldCities() {
+        data class WorldCities(
+            val function: KSuspendFunction1<Int, String>,
+            val param: Int
+        )
+
+        val worldCities = arrayOf(
+            WorldCities(::getWorldCitiesWithTZ, 0),
+            WorldCities(::getWorldCities, 1),
+            WorldCities(::getWorldCities, 2),
+            WorldCities(::getWorldCities, 3),
+            WorldCities(::getWorldCities, 4),
+            WorldCities(::getWorldCities, 5),
+        )
+
+        for (i in 0 until WatchInfo.worldCitiesCount) {
+            readAndWrite(worldCities[i].function, worldCities[i].param)
+            Timber.i("writeWorldCities: $i")
+        }
     }
 
     private suspend fun initializeForSettingTimeForB2100() {
-        // Before we can set time, we must read and write back these values.
-        // Why? Not sure, ask Casio
-
         suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
             val ret: String = function(param)
             val shortStr = Utils.toCompactString(ret)

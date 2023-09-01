@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
         println("World DST City 0: ${api.getDSTForWorldCities(0)}")
         println("World DST City 1: ${api.getDSTForWorldCities(1)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
             println("World DST City 2: ${api.getDSTForWorldCities(2)}")
             println("World DST City 3: ${api.getDSTForWorldCities(3)}")
             println("World DST City 4: ${api.getDSTForWorldCities(4)}")
@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         println("World City 0: ${api.getWorldCities(0)}")
         println("World City 1: ${api.getWorldCities(1)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
             println("World City 2: ${api.getWorldCities(2)}")
             println("World City 3: ${api.getWorldCities(3)}")
             println("World City 4: ${api.getWorldCities(4)}")
@@ -190,7 +190,7 @@ class MainActivity : AppCompatActivity() {
     private suspend fun getDSTState() {
         println("DST STATE ZERO: ${api.getDSTWatchState(CasioIO.DTS_STATE.ZERO)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.B5600) {
+        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
             println("DST STATE TWO: ${api.getDSTWatchState(CasioIO.DTS_STATE.TWO)}")
             println("DST STATE FOUR: ${api.getDSTWatchState(CasioIO.DTS_STATE.FOUR)}")
         }
