@@ -107,10 +107,11 @@ Characteristics:
                 return
             }
             foundDevices.add(result.device.toString())
-
             val name = result.scanRecord?.deviceName
 
             if (name != null) {
+                // TEST
+                // WatchInfo.setNameAndModel("CASIO DW-B5600".trimEnd('\u0000'))
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             }
             WatchInfo.setAddress(result.device.toString())

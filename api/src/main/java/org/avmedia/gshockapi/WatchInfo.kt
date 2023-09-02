@@ -23,6 +23,8 @@ object WatchInfo {
     var alarmCount = 5
     var hasAutoLight = false
     var hasReminders = false
+    var shortLightDuration = ""
+    var longLightDuration = ""
 
     /**
      * Info about the model.
@@ -34,15 +36,15 @@ object WatchInfo {
         var alarmCount: Int,
         var hasAutoLight: Boolean,
         var hasReminders: Boolean,
-        var shortLightDuration: Float,
-        val longLightDuration: Float,
+        var shortLightDuration: String,
+        val longLightDuration: String,
     )
 
     private val models  = listOf(
-        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = 2f, longLightDuration = 4f),
-        ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = 1.5f, longLightDuration = 3f),
-        ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = 1.5f, longLightDuration = 3f),
-        ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = false, hasReminders = false, shortLightDuration = 1.5f, longLightDuration = 3f)
+        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s"),
+        ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = false, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s")
     )
 
     private val modelMap = models.associateBy { it.model }
@@ -72,6 +74,8 @@ object WatchInfo {
         this.alarmCount = modelMap[model]!!.alarmCount
         this.worldCitiesCount = modelMap[model]!!.worldCitiesCount
         this.dstCount = modelMap[model]!!.dstCount
+        this.shortLightDuration = modelMap[model]!!.shortLightDuration
+        this.longLightDuration = modelMap[model]!!.longLightDuration
 
         ProgressEvents.onNext("DeviceName", this.name)
     }
