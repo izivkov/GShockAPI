@@ -1,1 +1,1 @@
-sourceset_dependencies='{":api:dokkaHtml/androidTestRelease":[],":api:dokkaHtml/debug":[],":api:dokkaHtml/main":[],":api:dokkaHtml/release":[],":api:dokkaHtml/testFixtures":[],":api:dokkaHtml/testFixturesDebug":[],":api:dokkaHtml/testFixturesRelease":[]}'
+sourceset_dependencies='{":api:dokkaHtml/debug":[],":api:dokkaHtml/main":[],":api:dokkaHtml/release":[]}'

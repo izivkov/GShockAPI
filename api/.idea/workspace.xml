@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32297cb1-3076-4c85-80a8-0782abe4abe4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/io/ErrorIO.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/GShockAPI.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/GShockAPI.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/ProgressEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/ProgressEvent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/casio/CasioConstants.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/casio/CasioConstants.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/casio/MessageDispatcher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/casio/MessageDispatcher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/io/BatteryLevelIO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/io/BatteryLevelIO.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/io/CasioIO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/io/CasioIO.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/utils/WatchDataListener.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/avmedia/gshockapi/utils/WatchDataListener.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../app/src/main/java/org/avmedia/gshock/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../app/src/main/java/org/avmedia/gshock/MainActivity.kt" afterDir="false" />
-    </list>
+    <list default="true" id="32297cb1-3076-4c85-80a8-0782abe4abe4" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -46,6 +36,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
+    "android.gradle.sync.needed": "true",
     "cidr.known.project.marker": "true"
   }
 }]]></component>
