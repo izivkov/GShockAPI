@@ -94,12 +94,13 @@ object CasioTimeZoneHelper {
         fun hasDST() = dstOffset > 0
         fun hasRules() = dstRules != 0
 
-        private fun adjustRules(dstOffset: Long, dstRules: Int) = if (dstOffset == 0L) 0 else dstRules
+        private fun adjustRules(dstOffset: Long, dstRules: Int) =
+            if (dstOffset == 0L) 0 else dstRules
 
         private fun getDTSDuration(): Duration {
             val rules = zoneId.rules ?: return Duration.ZERO
             val now = Instant.now()
-            val next: ZoneOffsetTransition? = rules.nextTransition(now) ?: return Duration.ZERO
+            val next: ZoneOffsetTransition = rules.nextTransition(now) ?: return Duration.ZERO
             return Duration.ofSeconds(
                 rules.getDaylightSavings(
                     if (rules.isDaylightSavings(now)) now else next?.instant?.plusSeconds(1)
@@ -173,9 +174,11 @@ object CasioTimeZoneHelper {
         val rules1 = tz1.normalized().rules
         val rules2 = tz2.normalized().rules
 
-        return rules1.getStandardOffset(Instant.now()).equals(rules2.getStandardOffset(Instant.now()))
-                && rules1.getDaylightSavings(Instant.now()).equals(rules1.getDaylightSavings(Instant.now()))
-                && rules1.transitionRules.equals(rules2.transitionRules)
+        return rules1.getStandardOffset(Instant.now())
+            .equals(rules2.getStandardOffset(Instant.now())) && rules1.getDaylightSavings(Instant.now())
+            .equals(rules1.getDaylightSavings(Instant.now())) && rules1.transitionRules.equals(
+            rules2.transitionRules
+        )
     }
 
     fun findTimeZone(timeZoneName: String): CasioTimeZone {
@@ -190,6 +193,9 @@ object CasioTimeZoneHelper {
                 return entry
             }
         }
+
+        // Sometimes, text comes as "LON:LONDON". Get the last part.
+        // val name = timeZoneName.split("/").lastOrNull()?.split(":")?.lastOrNull()?.uppercase() ?: "UNKNOWN"
 
         val name = timeZoneName.split("/").lastOrNull()?.uppercase() ?: "UNKNOWN"
         return CasioTimeZone(name, timeZoneName, 0x00)
