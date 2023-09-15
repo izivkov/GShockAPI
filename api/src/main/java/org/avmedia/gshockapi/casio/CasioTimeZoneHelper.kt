@@ -103,7 +103,7 @@ object CasioTimeZoneHelper {
             val next: ZoneOffsetTransition = rules.nextTransition(now) ?: return Duration.ZERO
             return Duration.ofSeconds(
                 rules.getDaylightSavings(
-                    if (rules.isDaylightSavings(now)) now else next?.instant?.plusSeconds(1)
+                    if (rules.isDaylightSavings(now)) now else next.instant?.plusSeconds(1)
                 ).seconds
             )
         }

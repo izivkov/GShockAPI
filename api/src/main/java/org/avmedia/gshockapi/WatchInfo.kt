@@ -9,7 +9,7 @@ import java.time.Duration
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, UNKNOWN
+        GA, GW, DW, GMW, UNKNOWN
     }
 
     var name: String = ""
@@ -42,6 +42,7 @@ object WatchInfo {
 
     private val models  = listOf(
         ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s"),
+        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s"),
         ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = false, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s")
@@ -66,6 +67,7 @@ object WatchInfo {
             shortName.startsWith("GA") -> WATCH_MODEL.GA
             shortName.startsWith("GW") -> WATCH_MODEL.GW
             shortName.startsWith("DW") -> WATCH_MODEL.DW
+            shortName.startsWith("GMW") -> WATCH_MODEL.GMW
             else -> WATCH_MODEL.UNKNOWN
         }
 
