@@ -50,6 +50,7 @@ Characteristics:
 I/BleExtensionsKt: Service 00001804-0000-1000-8000-00805f9b34fb
 Characteristics:
 |--00002a07-0000-1000-8000-00805f9b34fb: READABLE
+
 I/BleExtensionsKt: Service 26eb000d-b012-49a8-b1f8-394fb2032b0f
 Characteristics:
 |--26eb002c-b012-49a8-b1f8-394fb2032b0f: WRITABLE WITHOUT RESPONSE

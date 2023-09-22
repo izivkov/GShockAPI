@@ -9,17 +9,6 @@ class WatchValuesCache {
         return get(key.uppercase())
     }
 
-    suspend fun getCached(key: String, func: KSuspendFunction1<String, Any>): Any {
-        val cachedResult = get(key)
-        if (cachedResult == null) {
-            val funcResult = func(key)
-            put(key.uppercase(), funcResult)
-            return funcResult
-        }
-
-        return cachedResult
-    }
-
     fun put(key: String, value: Any) {
         map[key.uppercase()] = value
     }
