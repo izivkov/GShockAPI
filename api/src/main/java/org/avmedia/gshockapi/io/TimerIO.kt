@@ -11,8 +11,8 @@ import org.json.JSONObject
 @RequiresApi(Build.VERSION_CODES.O)
 object TimerIO {
 
-    suspend fun request(): Int {
-        return CachedIO.request("18", ::getTimer) as Int
+    suspend fun request(): String {
+        return CachedIO.request("18", TimerIO::getTimer) as String
     }
 
     private suspend fun getTimer(key: String): Int {

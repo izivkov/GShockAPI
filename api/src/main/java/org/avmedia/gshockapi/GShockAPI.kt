@@ -272,7 +272,7 @@ class GShockAPI(private val context: Context) {
      * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3 minutes.
      */
     suspend fun getTimer(): Int {
-        return TimerIO.request()
+        return TimerIO.request().toInt()
     }
 
     /**
