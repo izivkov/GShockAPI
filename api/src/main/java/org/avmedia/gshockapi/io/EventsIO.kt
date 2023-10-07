@@ -116,18 +116,17 @@ object EventsIO {
     }
 
     fun clearAll () {
-        var index = 0
+        var index = 1
         repeat(5) {
-            CasioIO.writeCmd(0x000e, Utils.byteArrayOfIntArray(intArrayOf(0,0,0,0,0,0,0,0,0)))
             CasioIO.writeCmd(
                 0x000e, Utils.byteArrayOfInts(
-                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index + 1
+                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index
                 ) + ByteArray(18)
             )
 
             CasioIO.writeCmd(
                 0x000e, Utils.byteArrayOfInts(
-                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index + 1
+                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index
                 ) + ByteArray(9)
             )
 

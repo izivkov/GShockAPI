@@ -218,6 +218,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun handleReminders() {
+        println("""Clear all events ${api.clearEvents()}""")
+
         var events = ArrayList<Event>()
 
         events.addAll(api.getEventsFromWatch())
