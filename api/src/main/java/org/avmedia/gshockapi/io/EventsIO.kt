@@ -17,14 +17,13 @@ import org.json.JSONObject
 import timber.log.Timber
 import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.O)
 object EventsIO {
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun request(eventNumber: Int): Event {
         return CachedIO.request(eventNumber.toString(), ::getEventFromWatch) as Event
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getEventFromWatch(eventNumber: String): Event {
         CasioIO.request("30${eventNumber}") // reminder title
         CasioIO.request("31${eventNumber}") // reminder time
@@ -114,6 +113,26 @@ object EventsIO {
         }
 
         Timber.i("Got reminders $remindersJsonArr")
+    }
+
+    fun clearAll () {
+        var index = 0
+        repeat(5) {
+            CasioIO.writeCmd(0x000e, Utils.byteArrayOfIntArray(intArrayOf(0,0,0,0,0,0,0,0,0)))
+            CasioIO.writeCmd(
+                0x000e, Utils.byteArrayOfInts(
+                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index + 1
+                ) + ByteArray(18)
+            )
+
+            CasioIO.writeCmd(
+                0x000e, Utils.byteArrayOfInts(
+                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index + 1
+                ) + ByteArray(9)
+            )
+
+            index += 1
+        }
     }
 
     object ReminderDecoder {

@@ -105,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
+        /*
         println("Button pressed: ${api.getPressedButton()}")
 
         println("Name returned: ${api.getWatchName()}")
@@ -127,7 +128,6 @@ class MainActivity : AppCompatActivity() {
         api.setTime("Pacific/Kiritimati")
         api.setTime("UTC")
         api.setTime(currentTZ)
-
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
 
@@ -136,6 +136,7 @@ class MainActivity : AppCompatActivity() {
         api.setAlarms(alarms)
 
         handleReminders()
+        */
         handleSettings()
     }
 

@@ -272,7 +272,7 @@ class GShockAPI(private val context: Context) {
      * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3 minutes.
      */
     suspend fun getTimer(): Int {
-        return TimerIO.request().toInt()
+        return TimerIO.request()
     }
 
     /**
@@ -374,6 +374,15 @@ class GShockAPI(private val context: Context) {
      */
     fun setEvents(events: ArrayList<Event>) {
         EventsIO.set(events)
+    }
+
+    /**
+     * Clears all  events (reminders) from the watch. Up to 5 events are supported.
+     *
+     * @param none
+     */
+    fun clearEvents() {
+        EventsIO.clearAll()
     }
 
     /**

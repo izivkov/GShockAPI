@@ -1,12 +1,17 @@
 package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
 object WatchNameIO {
 
     suspend fun request(): String {
+        return WatchInfo.name
+    }
+
+    suspend fun requestLong(): String {
         return CachedIO.request("23", ::getWatchName) as String
     }
 
