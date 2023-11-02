@@ -105,7 +105,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
-        /*
         println("Button pressed: ${api.getPressedButton()}")
 
         println("Name returned: ${api.getWatchName()}")
@@ -136,7 +135,6 @@ class MainActivity : AppCompatActivity() {
         api.setAlarms(alarms)
 
         handleReminders()
-        */
         handleSettings()
     }
 

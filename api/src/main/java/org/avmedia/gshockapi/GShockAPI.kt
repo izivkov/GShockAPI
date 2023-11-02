@@ -467,4 +467,8 @@ class GShockAPI(private val context: Context) {
     fun resetHand() {
         sendMessage("{action: \"RESET_HAND\", value: \"\"}")
     }
+
+    fun validate(deviceAddress: String?): Boolean {
+        return Connection.validateAddress(deviceAddress)
+    }
 }

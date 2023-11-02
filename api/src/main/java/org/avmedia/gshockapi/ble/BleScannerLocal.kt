@@ -51,8 +51,7 @@ data class BleScannerLocal(val context: Context) {
             val device = bluetoothAdapter.getRemoteDevice(deviceId)
             WatchInfo.setAddress(deviceId.toString())
             if (device.type != BluetoothDevice.DEVICE_TYPE_UNKNOWN) Connection.connect(
-                device,
-                context
+                device, context
             )
         }
         if (isScanning) return
@@ -62,27 +61,27 @@ data class BleScannerLocal(val context: Context) {
         isScanning = true
     }
 
-/*
-I/BleExtensionsKt: Service 00001801-0000-1000-8000-00805f9b34fb
-Characteristics:
-|--
-I/BleExtensionsKt: Service 00001800-0000-1000-8000-00805f9b34fb
-Characteristics:
-|--00002a00-0000-1000-8000-00805f9b34fb: READABLE
-|--00002a01-0000-1000-8000-00805f9b34fb: READABLE
-I/BleExtensionsKt: Service 00001804-0000-1000-8000-00805f9b34fb
-Characteristics:
-|--00002a07-0000-1000-8000-00805f9b34fb: READABLE
-I/BleExtensionsKt: Service 26eb000d-b012-49a8-b1f8-394fb2032b0f
-Characteristics:
-|--26eb002c-b012-49a8-b1f8-394fb2032b0f: WRITABLE WITHOUT RESPONSE
-|--26eb002d-b012-49a8-b1f8-394fb2032b0f: WRITABLE, NOTIFIABLE
-|------00002902-0000-1000-8000-00805f9b34fb: EMPTY
-|--26eb0023-b012-49a8-b1f8-394fb2032b0f: WRITABLE, NOTIFIABLE
-|------00002902-0000-1000-8000-00805f9b34fb: EMPTY
-|--26eb0024-b012-49a8-b1f8-394fb2032b0f: WRITABLE WITHOUT RESPONSE, NOTIFIABLE
-|------00002902-0000-1000-8000-00805f9b34fb: EMPTY
-*/
+    /*
+    I/BleExtensionsKt: Service 00001801-0000-1000-8000-00805f9b34fb
+    Characteristics:
+    |--
+    I/BleExtensionsKt: Service 00001800-0000-1000-8000-00805f9b34fb
+    Characteristics:
+    |--00002a00-0000-1000-8000-00805f9b34fb: READABLE
+    |--00002a01-0000-1000-8000-00805f9b34fb: READABLE
+    I/BleExtensionsKt: Service 00001804-0000-1000-8000-00805f9b34fb
+    Characteristics:
+    |--00002a07-0000-1000-8000-00805f9b34fb: READABLE
+    I/BleExtensionsKt: Service 26eb000d-b012-49a8-b1f8-394fb2032b0f
+    Characteristics:
+    |--26eb002c-b012-49a8-b1f8-394fb2032b0f: WRITABLE WITHOUT RESPONSE
+    |--26eb002d-b012-49a8-b1f8-394fb2032b0f: WRITABLE, NOTIFIABLE
+    |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
+    |--26eb0023-b012-49a8-b1f8-394fb2032b0f: WRITABLE, NOTIFIABLE
+    |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
+    |--26eb0024-b012-49a8-b1f8-394fb2032b0f: WRITABLE WITHOUT RESPONSE, NOTIFIABLE
+    |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
+    */
 
     private fun createFilters(): ArrayList<ScanFilter> {
         val filter = ScanFilter.Builder()
@@ -110,8 +109,6 @@ Characteristics:
             val name = result.scanRecord?.deviceName
 
             if (name != null) {
-                // TEST
-                // WatchInfo.setNameAndModel("CASIO DW-B5600".trimEnd('\u0000'))
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             }
             WatchInfo.setAddress(result.device.toString())
