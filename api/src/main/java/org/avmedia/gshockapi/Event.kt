@@ -183,6 +183,7 @@ class Event(
             RepeatPeriod.WEEKLY -> {
                 formattedFreq = getDaysOfWeekFormatted()
             }
+
             RepeatPeriod.YEARLY -> {
                 formattedFreq = "${
                     capitalizeFirstAndTrim(
@@ -191,13 +192,16 @@ class Event(
                     )
                 }-${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!.toInt())} each year"
             }
+
             RepeatPeriod.MONTHLY -> {
                 formattedFreq =
                     "${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!.toInt())} each month"
             }
+
             RepeatPeriod.NEVER -> {
                 Timber.i("Single-time event...")
             }
+
             else -> {
                 Timber.i("Invalid frequency format")
             }

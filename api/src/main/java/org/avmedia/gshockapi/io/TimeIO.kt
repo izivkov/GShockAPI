@@ -96,7 +96,8 @@ object TimeIO {
         // CasioIO.removeFromCache(origDTS)
 
         val dstValue =
-            (if (casioTimezone.hasDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
+            (if (casioTimezone.isInDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
+
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
@@ -214,14 +215,32 @@ object TimeIO {
     fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
 
-        val dateTime =
-            Instant.ofEpochMilli(dateTimeMs).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        val timeData = TimeEncoder.prepareCurrentTime(adjustTimeAccordingToRules())
 
-        val timeData = TimeEncoder.prepareCurrentTime(dateTime)
         var timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
         CasioIO.writeCmd(0x000e, timeCommand)
+    }
+
+    private fun adjustTimeAccordingToRules(): LocalDateTime {
+        val utcTime = Instant.now()
+
+        fun convertInstantToLocalDateTime(instant: Instant, zoneId: ZoneId): LocalDateTime {
+            return LocalDateTime.ofInstant(instant, zoneId)
+        }
+
+        fun addSecondsToInstant(originalInstant: Instant, secondsToAdd: Long): Instant {
+            val duration = Duration.ofSeconds(secondsToAdd)
+            return originalInstant.plus(duration)
+        }
+
+        val offsetInSeconds = casioTimezone.offset * 3600 / 4L
+        val dstDurationToAdd = if (casioTimezone.isInDST()) casioTimezone.dstOffset * 60 * 15 else 0
+        val secondsToAdd = offsetInSeconds + dstDurationToAdd
+
+        val timeToSet = addSecondsToInstant(utcTime, secondsToAdd)
+        return convertInstantToLocalDateTime(timeToSet, ZoneId.of("UTC"))
     }
 
     object TimeEncoder {

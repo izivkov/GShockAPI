@@ -114,6 +114,7 @@ object AlarmsIO {
                     alarms.put(createJsonAlarm(intArray))
                     jsonResponse.put("ALARMS", alarms)
                 }
+
                 CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code -> {
                     intArray.removeAt(0)
                     val multipleAlarms = intArray.chunked(4)
@@ -122,6 +123,7 @@ object AlarmsIO {
                     }
                     jsonResponse.put("ALARMS", alarms)
                 }
+
                 else -> {
                     Timber.d("Unhandled Command [$command]")
                 }

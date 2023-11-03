@@ -8,7 +8,7 @@ package org.avmedia.gshockapi.utils
 
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 
 object Utils {
 

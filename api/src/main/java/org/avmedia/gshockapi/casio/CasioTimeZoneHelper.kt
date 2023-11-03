@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.zone.ZoneOffsetTransition
 import java.util.*
 
@@ -89,7 +90,13 @@ object CasioTimeZoneHelper {
 
         // If we have no DST for this timezone, override the dstRules with a 0,
         // since the Casio table might be outdated, i.e for TEHRAN.
+
         val dstRules = adjustRules(dstOffset, _dstRules)
+
+        fun isInDST(): Boolean {
+            val now = ZonedDateTime.now(zoneId)
+            return zoneId.rules.isDaylightSavings(now.toInstant())
+        }
 
         fun hasDST() = dstOffset > 0
         fun hasRules() = dstRules != 0

@@ -468,7 +468,7 @@ class GShockAPI(private val context: Context) {
         sendMessage("{action: \"RESET_HAND\", value: \"\"}")
     }
 
-    fun validate(deviceAddress: String?): Boolean {
+    fun validateBluetoothAddress(deviceAddress: String?): Boolean {
         return Connection.validateAddress(deviceAddress)
     }
 }

@@ -4,7 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.WatchDataEvents
 import org.json.JSONObject
-import java.util.*
+import java.util.Locale
 import kotlin.reflect.KSuspendFunction1
 
 object CachedIO {
@@ -48,7 +48,7 @@ object CachedIO {
         cache.remove(key)
     }
 
-    fun put(key: String, value: Any): Any? {
+    fun put(key: String, value: Any): Any {
         return cache.put(key, value)
     }
 

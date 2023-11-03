@@ -163,6 +163,7 @@ object Connection : IConnection {
             characteristic.isWritableWithoutResponse() -> {
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             }
+
             else -> {
                 Timber.e("Characteristic ${characteristic.uuid} cannot be written to")
                 return
@@ -317,6 +318,7 @@ object Connection : IConnection {
                 ProgressEvents.onNext("Disconnect", device)
                 signalEndOfOperation()
             }
+
             is CharacteristicWrite -> with(operation) {
                 gatt.findCharacteristic(characteristicUuid)?.let { characteristic ->
                     characteristic.writeType = writeType
@@ -328,6 +330,7 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is CharacteristicRead -> with(operation) {
                 gatt.findCharacteristic(characteristicUuid)?.let { characteristic ->
                     gatt.readCharacteristic(characteristic)
@@ -337,6 +340,7 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is DescriptorWrite -> with(operation) {
                 gatt.findDescriptor(descriptorUuid)?.let { descriptor ->
                     descriptor.value = payload
@@ -346,6 +350,7 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is DescriptorRead -> with(operation) {
                 gatt.findDescriptor(descriptorUuid)?.let { descriptor ->
                     Timber.d("==============> descriptor: $descriptor")
@@ -355,14 +360,17 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is EnableNotifications -> with(operation) {
                 gatt.findCharacteristic(characteristicUuid)?.let { characteristic ->
                     val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
                     val payload = when {
                         characteristic.isIndicatable() ->
                             BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+
                         characteristic.isNotifiable() ->
                             BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+
                         else ->
                             error("${characteristic.uuid} doesn't support notifications/indications")
                     }
@@ -385,6 +393,7 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is DisableNotifications -> with(operation) {
                 gatt.findCharacteristic(characteristicUuid)?.let { characteristic ->
                     val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
@@ -406,9 +415,11 @@ object Connection : IConnection {
                     signalEndOfOperation()
                 }
             }
+
             is MtuRequest -> with(operation) {
                 gatt.requestMtu(mtu)
             }
+
             else -> {}
         }
     }
@@ -494,9 +505,11 @@ object Connection : IConnection {
                     BluetoothGatt.GATT_SUCCESS -> {
                         Timber.i("Read characteristic $uuid | value: ${value.toHexString()}")
                     }
+
                     BluetoothGatt.GATT_READ_NOT_PERMITTED -> {
                         Timber.e("Read not permitted for $uuid!")
                     }
+
                     else -> {
                         Timber.e("Characteristic read failed for $uuid, error: $status")
                     }
@@ -522,6 +535,7 @@ object Connection : IConnection {
                     BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> {
                         Timber.e("Write not permitted for $uuid!")
                     }
+
                     else -> {
                         Timber.e("Characteristic write failed for $uuid, error: $status")
                     }
@@ -554,9 +568,11 @@ object Connection : IConnection {
                     BluetoothGatt.GATT_SUCCESS -> {
                         Timber.i("Read descriptor $uuid | value: ${value.toHexString()}")
                     }
+
                     BluetoothGatt.GATT_READ_NOT_PERMITTED -> {
                         Timber.e("Read not permitted for $uuid!")
                     }
+
                     else -> {
                         Timber.e("Descriptor read failed for $uuid, error: $status")
                     }
@@ -582,9 +598,11 @@ object Connection : IConnection {
                             onCccdWrite(gatt, value, characteristic)
                         }
                     }
+
                     BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> {
                         Timber.e("Write not permitted for $uuid!")
                     }
+
                     else -> {
                         Timber.e("Descriptor write failed for $uuid, error: $status")
                     }
@@ -617,9 +635,11 @@ object Connection : IConnection {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
                     ProgressEvents.onNext("NotificationsEnabled", characteristic)
                 }
+
                 notificationsDisabled -> {
                     ProgressEvents.onNext("NotificationsDisabled", characteristic)
                 }
+
                 else -> {
                     Timber.e("Unexpected value ${value.toHexString()} on CCCD of $charUuid")
                 }

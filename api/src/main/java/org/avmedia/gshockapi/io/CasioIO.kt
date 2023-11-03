@@ -11,7 +11,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
-import java.util.*
+import java.util.UUID
 
 object CasioIO {
 

@@ -1,8 +1,5 @@
 package org.avmedia.gshockapi
 
-import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
-import java.time.Duration
-
 /**
  * This class keeps information about the characteristics of the currently connected watch.
  * Based on that, the application can display different information.
@@ -40,12 +37,57 @@ object WatchInfo {
         val longLightDuration: String,
     )
 
-    private val models  = listOf(
-        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s"),
-        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s"),
-        ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = false, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s")
+    private val models = listOf(
+        ModelInfo(
+            WATCH_MODEL.GW,
+            6,
+            3,
+            5,
+            hasAutoLight = true,
+            hasReminders = true,
+            shortLightDuration = "2s",
+            longLightDuration = "4s"
+        ),
+        ModelInfo(
+            WATCH_MODEL.GMW,
+            6,
+            3,
+            5,
+            hasAutoLight = true,
+            hasReminders = true,
+            shortLightDuration = "2s",
+            longLightDuration = "4s"
+        ),
+        ModelInfo(
+            WATCH_MODEL.GA,
+            2,
+            1,
+            5,
+            hasAutoLight = false,
+            hasReminders = true,
+            shortLightDuration = "1.5s",
+            longLightDuration = "3s"
+        ),
+        ModelInfo(
+            WATCH_MODEL.DW,
+            2,
+            1,
+            5,
+            hasAutoLight = true,
+            hasReminders = false,
+            shortLightDuration = "1.5s",
+            longLightDuration = "3s"
+        ),
+        ModelInfo(
+            WATCH_MODEL.UNKNOWN,
+            2,
+            1,
+            5,
+            hasAutoLight = false,
+            hasReminders = false,
+            shortLightDuration = "1.5s",
+            longLightDuration = "3s"
+        )
     )
 
     private val modelMap = models.associateBy { it.model }

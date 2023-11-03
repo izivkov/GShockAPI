@@ -1,7 +1,5 @@
 package org.avmedia.gshockapi.io
 
-import kotlin.reflect.KSuspendFunction1
-
 class WatchValuesCache {
     private val map = mutableMapOf<String, Any>()
 

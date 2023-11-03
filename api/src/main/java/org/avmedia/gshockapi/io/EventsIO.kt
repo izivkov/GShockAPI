@@ -45,6 +45,7 @@ object EventsIO {
                 "title" -> {
                     title = reminderJson["title"] as String
                 }
+
                 "time" -> {
                     reminderJson.put("title", title)
                     val event = Event(reminderJson)
@@ -115,7 +116,7 @@ object EventsIO {
         Timber.i("Got reminders $remindersJsonArr")
     }
 
-    fun clearAll () {
+    fun clearAll() {
         var index = 1
         repeat(5) {
             CasioIO.writeCmd(
@@ -335,6 +336,7 @@ object EventsIO {
 
                     encodeDate(timeDetail, startDate, endDate)
                 }
+
                 "WEEKLY" -> {
                     /*
                 05 01 01 01 01 01 01 20 00 - every friday
@@ -362,11 +364,13 @@ object EventsIO {
                     timeDetail[6] = dayOfWeek
                     timeDetail[7] = 0
                 }
+
                 "MONTHLY" -> {
                     // Monthly, may 3
                     // 31 05 11 22 05 03 22 05 03 00 00
                     encodeDate(timeDetail, startDate, endDate)
                 }
+
                 "YEARLY" -> {
                     /*
                 09 22 05 02 22 05 02 00 00 - once every year May 2
@@ -377,6 +381,7 @@ object EventsIO {
                  */
                     encodeDate(timeDetail, startDate, endDate)
                 }
+
                 else -> {
                     Timber.d("Cannot handle Repeat Period: $repeatPeriod!!!")
                 }
