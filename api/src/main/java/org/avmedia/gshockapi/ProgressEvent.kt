@@ -69,6 +69,10 @@ object ProgressEvents {
     val subscriber = Subscriber()
     private val eventsProcessor: PublishProcessor<Events> = PublishProcessor.create()
 
+    fun runEventActions(name: String, eventActions: Array<EventAction>) {
+        subscriber.runEventActions(name, eventActions)
+    }
+
     class Subscriber {
         private val subscribers: Set<String> = LinkedHashSet<String>()
 
