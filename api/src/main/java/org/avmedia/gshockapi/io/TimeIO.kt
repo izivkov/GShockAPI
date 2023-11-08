@@ -61,7 +61,6 @@ If the timezone has no DST, we set the flag to 0
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeIO {
-    init {}
 
     private var timeZone: String = TimeZone.getDefault().id
     private var casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone)
@@ -215,32 +214,18 @@ object TimeIO {
     fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
 
-        val timeData = TimeEncoder.prepareCurrentTime(adjustTimeAccordingToRules())
+        val dstDurationToAdd = if (casioTimezone.isInDST()) casioTimezone.dstOffset * 60 * 15 else 0
+        val msAdjustedForDST = dateTimeMs + dstDurationToAdd
+
+        val instant = Instant.ofEpochMilli(msAdjustedForDST)
+        val adjustedDateTime = LocalDateTime.ofInstant(instant, casioTimezone.zoneId)
+
+        val timeData = TimeEncoder.prepareCurrentTime(adjustedDateTime)
 
         var timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
         CasioIO.writeCmd(0x000e, timeCommand)
-    }
-
-    private fun adjustTimeAccordingToRules(): LocalDateTime {
-        val utcTime = Instant.now()
-
-        fun convertInstantToLocalDateTime(instant: Instant, zoneId: ZoneId): LocalDateTime {
-            return LocalDateTime.ofInstant(instant, zoneId)
-        }
-
-        fun addSecondsToInstant(originalInstant: Instant, secondsToAdd: Long): Instant {
-            val duration = Duration.ofSeconds(secondsToAdd)
-            return originalInstant.plus(duration)
-        }
-
-        val offsetInSeconds = casioTimezone.offset * 3600 / 4L
-        val dstDurationToAdd = if (casioTimezone.isInDST()) casioTimezone.dstOffset * 60 * 15 else 0
-        val secondsToAdd = offsetInSeconds + dstDurationToAdd
-
-        val timeToSet = addSecondsToInstant(utcTime, secondsToAdd)
-        return convertInstantToLocalDateTime(timeToSet, ZoneId.of("UTC"))
     }
 
     object TimeEncoder {

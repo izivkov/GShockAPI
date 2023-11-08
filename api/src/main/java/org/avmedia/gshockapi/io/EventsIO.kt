@@ -20,40 +20,26 @@ import java.util.*
 @RequiresApi(Build.VERSION_CODES.O)
 object EventsIO {
 
+    private object DeferredValueHolder {
+        lateinit var deferredResult: CompletableDeferred<Event>
+    }
+
+    private object AccumulatedValueHolder {
+        var title = ""
+    }
+
     suspend fun request(eventNumber: Int): Event {
+        AccumulatedValueHolder.title = ""
         return CachedIO.request(eventNumber.toString(), ::getEventFromWatch) as Event
     }
 
-    suspend fun getEventFromWatch(eventNumber: String): Event {
+    private suspend fun getEventFromWatch(eventNumber: String): Event {
+        DeferredValueHolder.deferredResult = CompletableDeferred<Event>()
+
         CasioIO.request("30${eventNumber}") // reminder title
         CasioIO.request("31${eventNumber}") // reminder time
 
-        var deferredResult = CompletableDeferred<Event>()
-        CachedIO.resultQueue.enqueue(
-            ResultQueue.KeyedResult(
-                "310${eventNumber}", deferredResult as CompletableDeferred<Any>
-            )
-        )
-
-        var title = ""
-        CachedIO.subscribe("REMINDERS") { keyedData ->
-            val data = keyedData.getString("value")
-            val key = keyedData.getString("key")
-
-            val reminderJson = JSONObject(data)
-            when (reminderJson.keys().next()) {
-                "title" -> {
-                    title = reminderJson["title"] as String
-                }
-
-                "time" -> {
-                    reminderJson.put("title", title)
-                    val event = Event(reminderJson)
-                    CachedIO.resultQueue.dequeue(key)?.complete(event)
-                }
-            }
-        }
-        return deferredResult.await()
+        return DeferredValueHolder.deferredResult.await()
     }
 
     fun set(events: ArrayList<Event>) {
@@ -77,22 +63,17 @@ object EventsIO {
         Connection.sendMessage("{action: \"SET_REMINDERS\", value: ${getSelectedEvents(events)} }")
     }
 
-    fun toJson(data: String): JSONObject {
-        val reminderJson = JSONObject()
-        val value = ReminderDecoder.reminderTimeToJson(data + 2)
-        reminderJson.put(
-            "REMINDERS",
-            JSONObject().put("key", CachedIO.createKey(data)).put("value", value)
-        )
-        return reminderJson
+    fun onReceived(data: String) {
+
+        val decoded = ReminderDecoder.reminderTimeToJson(data + 2)
+        decoded.put("title", AccumulatedValueHolder.title)
+        val event = Event(decoded)
+        DeferredValueHolder.deferredResult.complete(event)
     }
 
-    fun toJsonTitle(data: String): JSONObject {
-        return JSONObject().put(
-            "REMINDERS",
-            JSONObject().put("key", CachedIO.createKey(data))
-                .put("value", ReminderDecoder.reminderTitleToJson(data))
-        )
+    fun onReceivedTitle(data: String) {
+        val decoded = ReminderDecoder.reminderTitleToJson(data + 2)
+        AccumulatedValueHolder.title = decoded.get("title") as String
     }
 
     fun sendToWatchSet(message: String) {

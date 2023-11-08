@@ -2,17 +2,24 @@ package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.utils.Utils
-import org.json.JSONObject
 
 object AppInfoIO {
+
+    private object DeferredValueHolder {
+        lateinit var deferredResult: CompletableDeferred<String>
+    }
 
     suspend fun request(): String {
         return CachedIO.request("22", ::getAppInfo) as String
     }
 
     private suspend fun getAppInfo(key: String): String {
-
+        DeferredValueHolder.deferredResult = CompletableDeferred()
         CasioIO.request(key)
+        return DeferredValueHolder.deferredResult.await()
+    }
+
+    fun onReceived(data: String) {
 
         fun setAppInfo(data: String): Unit {
             // App info:
@@ -28,28 +35,7 @@ object AppInfoIO {
             }
         }
 
-        var deferredResult = CompletableDeferred<String>()
-        CachedIO.resultQueue.enqueue(
-            ResultQueue.KeyedResult(
-                key, deferredResult as CompletableDeferred<Any>
-            )
-        )
-
-        CachedIO.subscribe("CASIO_APP_INFORMATION") { keyedData ->
-            val data = keyedData.getString("value")
-            val key = keyedData.getString("key")
-
-            CachedIO.resultQueue.dequeue(key)?.complete(data)
-            setAppInfo(data)
-        }
-
-        return deferredResult.await()
-    }
-
-    fun toJson(data: String): JSONObject {
-        val json = JSONObject()
-        val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
-        json.put("CASIO_APP_INFORMATION", dataJson)
-        return json
+        setAppInfo(data)
+        DeferredValueHolder.deferredResult.complete(data)
     }
 }

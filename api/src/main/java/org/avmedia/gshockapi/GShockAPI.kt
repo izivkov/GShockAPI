@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.Connection.sendMessage
@@ -48,7 +47,6 @@ import java.util.*
 class GShockAPI(private val context: Context) {
 
     private var bleScannerLocal: BleScannerLocal = BleScannerLocal(context)
-    private val resultQueue = ResultQueue<CompletableDeferred<Any>>()
 
     /**
      * This function waits for the watch to connect to the phone.
@@ -310,6 +308,7 @@ class GShockAPI(private val context: Context) {
      *  ```
      */
     suspend fun setTime(timeZone: String = TimeZone.getDefault().id) {
+
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("GShockAPI", "setTime: Invalid timezone $timeZone passed")
             ProgressEvents.onNext("ApiError")
@@ -348,7 +347,7 @@ class GShockAPI(private val context: Context) {
 
         val events = ArrayList<Event>()
 
-        events.add(EventsIO.request(1))
+        events.add(getEventFromWatch(1))
         events.add(getEventFromWatch(2))
         events.add(getEventFromWatch(3))
         events.add(getEventFromWatch(4))
@@ -363,7 +362,7 @@ class GShockAPI(private val context: Context) {
      * @param eventNumber The index of the event 1..5
      * @return [Event]
      */
-    suspend fun getEventFromWatch(eventNumber: Int): Event {
+    private suspend fun getEventFromWatch(eventNumber: Int): Event {
         return EventsIO.request(eventNumber)
     }
 

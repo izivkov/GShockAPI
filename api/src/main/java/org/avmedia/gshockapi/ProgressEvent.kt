@@ -54,10 +54,19 @@ import timber.log.Timber
  *
  */
 
+interface IEventAction {
+    val label: String
+    val action: () -> Unit
+}
+
+data class EventAction(
+    override val label: String,
+    override val action: () -> Unit
+) : IEventAction
+
 object ProgressEvents {
 
     val subscriber = Subscriber()
-
     private val eventsProcessor: PublishProcessor<Events> = PublishProcessor.create()
 
     class Subscriber {
@@ -69,17 +78,69 @@ object ProgressEvents {
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
          * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
          */
+
         @SuppressLint("CheckResult")
-        fun start(name: String, onNextStr: Consumer<in Events>, onError: Consumer<in Throwable>) {
+        @Deprecated("This method is deprecated. Use runEventActions() instead.")
+        fun start(
+            name: String,
+            onNextStr: Consumer<in Events>,
+            onError: Consumer<in Throwable>,
+            filter: (Events) -> Boolean = { true }
+        ) {
             if (subscribers.contains(name)) {
                 return // do not allow multiple subscribers with same name
             }
-
-            eventsProcessor.observeOn(AndroidSchedulers.mainThread()).doOnNext(onNextStr)
-                .doOnError(onError).subscribe({}, onError)
-
             (subscribers as LinkedHashSet).add(name)
+
+            eventsProcessor.observeOn(AndroidSchedulers.mainThread())
+                .filter { event -> filter(event) }
+                .doOnNext(onNextStr)
+                .doOnError(onError)
+                .subscribe({}, onError)
         }
+
+        /**
+         * Call this from anywhere to start listening to [ProgressEvents].
+         *
+         * @param name This should be a unique name to prevent multiple subscriptions. Only one
+         * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
+         */
+        @SuppressLint("CheckResult")
+        fun runEventActions(name: String, eventActions: Array<EventAction>) {
+
+            if (subscribers.contains(name)) {
+                return // do not allow multiple subscribers with same name
+            }
+            (subscribers as LinkedHashSet).add(name)
+
+            val runActions: () -> Unit = {
+                eventActions.forEach { eventAction ->
+
+                    val filter = { event: Events ->
+                        val nameOfEvent = reverseEventMap[event]
+                        nameOfEvent != null && nameOfEvent == eventAction.label
+                    }
+
+                    val onNext = { _: Events ->
+                        eventAction.action()
+                    }
+
+                    val onError = { throwable: Throwable ->
+                        Timber.d("Got error on subscribe: $throwable")
+                        throwable.printStackTrace()
+                    }
+
+                    eventsProcessor.observeOn(AndroidSchedulers.mainThread())
+                        .filter { event -> filter(event) }
+                        .doOnNext(onNext)
+                        .doOnError(onError)
+                        .subscribe({}, onError)
+                }
+            }
+
+            runActions()
+        }
+
 
         /**
          * Stop listening on [ProgressEvents]
@@ -142,7 +203,9 @@ object ProgressEvents {
             return
         }
 
-        eventMap[eventName] = Events()
+        val newEvent = Events()
+        eventMap[eventName] = newEvent
+        reverseEventMap[newEvent] = eventName
     }
 
     fun getPayload(eventName: String): Any? {
@@ -200,4 +263,7 @@ object ProgressEvents {
         Pair("HomeTimeUpdated", Events()),
         Pair("ApiError", Events()),
     )
+
+    private var reverseEventMap =
+        eventMap.entries.associateBy({ it.value }, { it.key }).toMutableMap()
 }

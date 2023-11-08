@@ -3,11 +3,14 @@ package org.avmedia.gshockapi.io
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.utils.Utils
-import org.json.JSONObject
 import timber.log.Timber
 import kotlin.math.roundToInt
 
 object WatchConditionIO {
+
+    private object DeferredValueHolder {
+        lateinit var deferredResult: CompletableDeferred<WatchConditionValue>
+    }
 
     class WatchConditionValue(val batteryLevel: Int, val temperature: Int)
 
@@ -16,31 +19,13 @@ object WatchConditionIO {
     }
 
     private suspend fun getWatchCondition(key: String): WatchConditionValue {
-
+        DeferredValueHolder.deferredResult = CompletableDeferred()
         CasioIO.request(key)
-
-        val deferredResult = CompletableDeferred<WatchConditionValue>()
-        CachedIO.resultQueue.enqueue(
-            ResultQueue.KeyedResult(
-                key, deferredResult as CompletableDeferred<Any>
-            )
-        )
-
-        CachedIO.subscribe("CASIO_WATCH_CONDITION") { keyedData: JSONObject ->
-            val data = keyedData.getString("value")
-            val key = keyedData.getString("key")
-
-            CachedIO.resultQueue.dequeue(key)?.complete(WatchConditionDecoder.decodeValue(data))
-        }
-
-        return deferredResult.await()
+        return DeferredValueHolder.deferredResult.await()
     }
 
-    fun toJson(data: String): JSONObject {
-        val json = JSONObject()
-        val dataJson = JSONObject().put("key", CachedIO.createKey(data)).put("value", data)
-        json.put("CASIO_WATCH_CONDITION", dataJson)
-        return json
+    fun onReceived(data: String) {
+        DeferredValueHolder.deferredResult.complete(WatchConditionDecoder.decodeValue(data))
     }
 
     object WatchConditionDecoder {
@@ -52,11 +37,11 @@ object WatchConditionIO {
             val bytes = Utils.byteArrayOfIntArray(intArr.drop(1).toIntArray())
 
             if (bytes.size >= 2) {
-                // Battery level between 15 and 20 fot B2100 and between 13 and 19 for B5600. Scale accordingly to %
+                // Battery level between 15 and 20 fot B2100 and between 12 and 19 for B5600. Scale accordingly to %
                 Timber.i("battery level row value: ${bytes[0].toInt()}")
 
                 val batteryLevelLowerLimit =
-                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 15 else 13
+                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 15 else 12
                 val batteryLevelUpperLimit =
                     if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 20 else 19
                 val multiplier: Int =

@@ -3,14 +3,18 @@ package org.avmedia.gshockapi.io
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.BleScannerLocal
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import org.avmedia.gshockapi.utils.WatchDataListener
-import timber.log.Timber
 
 object WaitForConnectionIO {
+
+    private object DeferredValueHolder {
+        lateinit var deferredResult: CompletableDeferred<String>
+    }
 
     suspend fun request(
         context: Context,
@@ -32,39 +36,30 @@ object WaitForConnectionIO {
             return "Connecting"
         }
 
+        DeferredValueHolder.deferredResult = CompletableDeferred()
+
         Connection.init(context)
         WatchDataListener.init()
 
         // TODO: remove  bleScannerLocal = BleScannerLocal(context)
         bleScannerLocal.startConnection(deviceId, deviceName)
 
-        val deferredResult = CompletableDeferred<String>()
-        CachedIO.resultQueue.enqueue(
-            ResultQueue.KeyedResult(
-                "waitForConnection", deferredResult as CompletableDeferred<Any>
-            )
-        )
-
         fun waitForConnectionSetupComplete() {
-            ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
-                when (it) {
-                    ProgressEvents["ConnectionSetupComplete"] -> {
-                        val device =
-                            ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
-                        DeviceCharacteristics.init(device)
+            val eventActions = arrayOf(
+                EventAction("ConnectionSetupComplete") {
+                    val device =
+                        ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
+                    DeviceCharacteristics.init(device)
 
-                        CachedIO.clearCache()
-                        CachedIO.resultQueue.dequeue("waitForConnection")?.complete("OK")
-                    }
-                }
-            }, { throwable ->
-                Timber.d("Got error on subscribe: $throwable")
-                throwable.printStackTrace()
-            })
+                    CachedIO.clearCache()
+                    DeferredValueHolder.deferredResult.complete("OK")
+                },
+            )
+
+            ProgressEvents.subscriber.runEventActions(this.javaClass.canonicalName, eventActions)
         }
 
         waitForConnectionSetupComplete()
-
-        return deferredResult.await()
+        return DeferredValueHolder.deferredResult.await()
     }
 }
