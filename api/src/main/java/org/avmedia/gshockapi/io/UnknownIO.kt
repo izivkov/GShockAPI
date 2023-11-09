@@ -6,6 +6,7 @@ object UnknownIO {
         return "UNKNOWN"
     }
 
-    fun onReceived(data: String) {
+    @Suppress("UNUSED_PARAMETER")
+    fun onReceived(message: String) {
     }
 }

@@ -146,6 +146,7 @@ pwr. saving off:00010000
         return JSONObject(Gson().toJson(settings))
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         CasioIO.writeCmd(
             0x000c,

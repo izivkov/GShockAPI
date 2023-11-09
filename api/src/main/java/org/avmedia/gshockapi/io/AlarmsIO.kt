@@ -20,6 +20,7 @@ object AlarmsIO {
         lateinit var deferredResult: CompletableDeferred<ArrayList<Alarm>>
     }
 
+    @Suppress("UNCHECKED_CAST")
     suspend fun request(): ArrayList<Alarm> {
         return CachedIO.request("GET_ALARMS", ::getAlarms) as ArrayList<Alarm>
     }
@@ -64,7 +65,7 @@ object AlarmsIO {
         }
     }
 
-    // watch senders
+    @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         // get alarm 1
         CasioIO.writeCmd(

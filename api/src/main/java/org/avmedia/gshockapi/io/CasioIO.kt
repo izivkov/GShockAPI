@@ -37,14 +37,14 @@ object CasioIO {
     }
 
     fun writeCmd(handle: Int, bytesArray: ByteArray) {
-        val handle = lookupHandle(handle)
-        if (handle == null) {
+        val handleLocal = lookupHandle(handle)
+        if (handleLocal == null) {
             ProgressEvents.onNext("ApiError")
             return
         }
         writer.invoke(
             DeviceCharacteristics.device,
-            handle,
+            handleLocal,
             bytesArray
         )
     }
@@ -54,15 +54,15 @@ object CasioIO {
     }
 
     /// new
-    fun writeCmdFromString(handle: Int, bytesStr: String) {
-        val handle = lookupHandle(handle)
-        if (handle == null) {
+    private fun writeCmdFromString(handle: Int, bytesStr: String) {
+        val handleLocal = lookupHandle(handle)
+        if (handleLocal == null) {
             ProgressEvents.onNext("ApiError")
             return
         }
         writer.invoke(
             DeviceCharacteristics.device,
-            handle,
+            handleLocal,
             toCasioCmd(bytesStr)
         )
     }

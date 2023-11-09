@@ -38,6 +38,7 @@ object TimerIO {
         DeferredValueHolder.deferredResult.complete(decodedInt)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         CasioIO.writeCmd(
             0x000c,

@@ -55,6 +55,7 @@ object TimeAdjustmentIO {
         var value = ""
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         CasioIO.writeCmd(
             0x000c,

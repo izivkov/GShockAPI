@@ -13,7 +13,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.*
-import kotlin.system.measureTimeMillis
+import android.annotation.SuppressLint
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
@@ -42,6 +42,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun listenToProgressEvents() {
+
+        val eventActions = arrayOf(
+            EventAction("ConnectionSetupComplete") {
+                println("Got \"ConnectionSetupComplete\" event")
+            },
+            EventAction("Disconnect") {
+                println("Got \"Disconnect\" event")
+            },
+            EventAction("ConnectionFailed") {
+                println("Got \"ConnectionFailed\" event")
+            },
+            EventAction(customEventName) {
+                println("Got \"$customEventName\" event")
+            },
+        )
+
+        ProgressEvents.runEventActions(this.javaClass.simpleName, eventActions)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun listenToProgressEventsDepicated() {
         ProgressEvents.subscriber.start(this.javaClass.simpleName,
 
             {
@@ -75,6 +96,7 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun run(context: Context) {
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -87,6 +109,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun runDownBattery(context: Context, toPercent: Int = -1) {
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -138,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         handleSettings()
     }
 
-    private fun runTimezonesTest () {
+    private fun runTimezonesTest() {
         val all = ZoneId.getAvailableZoneIds().size
         var current = 0
 
@@ -146,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             for (tz in ZoneId.getAvailableZoneIds()) {
                 api.setTime(tz)
                 ++current
-                println ("tz: $tz, $current of $all")
+                println("tz: $tz, $current of $all")
             }
         }
 

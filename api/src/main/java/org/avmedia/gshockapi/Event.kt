@@ -212,7 +212,7 @@ class Event(
     private fun capitalizeFirstAndTrim(inStr: String, len: Int): String {
         return inStr.lowercase(Locale.getDefault())
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            .substring(0, 3)
+            .substring(0, len)
     }
 
     @SuppressLint("RestrictedApi")

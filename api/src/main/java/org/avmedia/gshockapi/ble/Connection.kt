@@ -28,6 +28,12 @@ private const val GATT_MIN_MTU_SIZE = 23
 /** Maximum BLE MTU size as defined in gatt_api.h. */
 private const val GATT_MAX_MTU_SIZE = 517
 
+/**
+ * I copied this code from another project. It would be too painful to fix all the deprecation errors,
+ * so I just ignored them. This should be replaced with another high-level library.
+ */
+
+@Suppress("DEPRECATION")
 object Connection : IConnection {
 
     private lateinit var device: BluetoothDevice
@@ -325,7 +331,8 @@ object Connection : IConnection {
                     characteristic.value = payload
                     gatt.writeCharacteristic(characteristic)
 
-                } ?: this@Connection.run {
+                }
+                    ?: this@Connection.run {
                     Timber.e("Cannot find $characteristicUuid to write to")
                     signalEndOfOperation()
                 }
@@ -617,6 +624,7 @@ object Connection : IConnection {
             }
         }
 
+        @Suppress("UNUSED_PARAMETER")
         private fun onCccdWrite(
             gatt: BluetoothGatt,
             value: ByteArray,

@@ -7,5 +7,5 @@
 package org.avmedia.gshockapi.ble
 
 interface IDataReceived {
-    fun dataReceived(command: String?)
+    fun dataReceived(data: String?)
 }

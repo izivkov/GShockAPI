@@ -84,7 +84,8 @@ object TimeIO {
         return DstWatchStateIO.request(state)
     }
 
-    enum class DTS_MASK(mask: Int) {
+    @Suppress("UNUSED_PARAMETER")
+    enum class DtsMask(val mask: Int) {
         OFF(0b00),
         ON(0b01),
         AUTO(0b10),
@@ -95,7 +96,7 @@ object TimeIO {
         // CasioIO.removeFromCache(origDTS)
 
         val dstValue =
-            (if (casioTimezone.isInDST()) DTS_MASK.ON.ordinal else DTS_MASK.OFF.ordinal) or (if (casioTimezone.hasRules()) DTS_MASK.AUTO.ordinal else 0)
+            (if (casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or (if (casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
 
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }

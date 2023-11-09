@@ -30,9 +30,6 @@ object WatchConditionIO {
 
     object WatchConditionDecoder {
         fun decodeValue(data: String): WatchConditionValue {
-            if (data == null) {
-                return WatchConditionValue(0, 0)
-            }
             val intArr = Utils.toIntArray(data)
             val bytes = Utils.byteArrayOfIntArray(intArr.drop(1).toIntArray())
 

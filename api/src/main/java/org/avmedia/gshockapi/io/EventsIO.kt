@@ -131,10 +131,6 @@ object EventsIO {
                 return JSONObject("{\"end\": \"\"}")
             }
 
-            val shortStr = Utils.toCompactString(reminderStr)
-            // get the first byte of the returned data, which indicates the data content.
-            val key = shortStr.substring(0, 4).uppercase(Locale.getDefault())
-
             val reminderAll: IntArray = Utils.toIntArray(reminderStr).toIntArray()
 
             // Remove the first 2 chars:
@@ -151,6 +147,8 @@ object EventsIO {
 
             reminderJson.put("startDate", timeDetailMap["startDate"])
             reminderJson.put("endDate", timeDetailMap["endDate"])
+
+            @Suppress ("UNCHECKED_CAST")
             reminderJson.put(
                 "daysOfWeek",
                 convertArrayListToJSONArray(timeDetailMap["daysOfWeek"] as ArrayList<String>)
@@ -169,13 +167,12 @@ object EventsIO {
 
         private fun decodeTimePeriod(timePeriod: Int): Pair<Boolean?, String?> {
             var enabled: Boolean = false
-            var repeatPeriod: String = ""
 
             if (timePeriod and ReminderMasks.ENABLED_MASK == ReminderMasks.ENABLED_MASK) {
                 enabled = true
             }
 
-            repeatPeriod = when {
+            var repeatPeriod = when {
                 timePeriod and ReminderMasks.WEEKLY_MASK == ReminderMasks.WEEKLY_MASK -> "WEEKLY"
                 timePeriod and ReminderMasks.MONTHLY_MASK == ReminderMasks.MONTHLY_MASK -> "MONTHLY"
                 timePeriod and ReminderMasks.YEARLY_MASK == ReminderMasks.YEARLY_MASK -> "YEARLY"
