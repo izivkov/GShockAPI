@@ -333,9 +333,9 @@ object Connection : IConnection {
 
                 }
                     ?: this@Connection.run {
-                    Timber.e("Cannot find $characteristicUuid to write to")
-                    signalEndOfOperation()
-                }
+                        Timber.e("Cannot find $characteristicUuid to write to")
+                        signalEndOfOperation()
+                    }
             }
 
             is CharacteristicRead -> with(operation) {

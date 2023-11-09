@@ -7,13 +7,9 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
-import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.io.CasioIO
-import java.time.Duration
-import java.time.Instant
 import java.time.ZoneId
 import java.util.*
-import android.annotation.SuppressLint
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
@@ -86,6 +82,7 @@ class MainActivity : AppCompatActivity() {
                     ProgressEvents[customEventName] -> {
                         println("Got \"$customEventName\" event")
                     }
+
                     else -> {
                         println("Got \"${it.javaClass}\" event")
                     }

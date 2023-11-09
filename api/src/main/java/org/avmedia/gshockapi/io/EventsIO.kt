@@ -148,7 +148,7 @@ object EventsIO {
             reminderJson.put("startDate", timeDetailMap["startDate"])
             reminderJson.put("endDate", timeDetailMap["endDate"])
 
-            @Suppress ("UNCHECKED_CAST")
+            @Suppress("UNCHECKED_CAST")
             reminderJson.put(
                 "daysOfWeek",
                 convertArrayListToJSONArray(timeDetailMap["daysOfWeek"] as ArrayList<String>)
