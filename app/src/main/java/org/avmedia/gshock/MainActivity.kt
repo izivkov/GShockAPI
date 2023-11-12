@@ -126,7 +126,6 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun runCommands() {
         println("Button pressed: ${api.getPressedButton()}")
-
         println("Name returned: ${api.getWatchName()}")
 
         println("Battery Level: ${api.getBatteryLevel()}")
