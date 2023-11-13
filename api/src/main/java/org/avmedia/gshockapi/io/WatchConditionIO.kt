@@ -38,7 +38,7 @@ object WatchConditionIO {
                 Timber.i("battery level row value: ${bytes[0].toInt()}")
 
                 val batteryLevelLowerLimit =
-                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 15 else 12
+                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 15 else 9
                 val batteryLevelUpperLimit =
                     if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 20 else 19
                 val multiplier: Int =
