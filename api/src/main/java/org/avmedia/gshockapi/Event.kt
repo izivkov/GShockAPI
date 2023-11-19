@@ -22,17 +22,15 @@ class Event(
     private var daysOfWeek: ArrayList<DayOfWeek>?,
     var enabled: Boolean,
     var incompatible: Boolean,
-    var selected: Boolean
 ) {
     init {
         if (endDate == null) {
             endDate = startDate
         }
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     constructor(json: JSONObject) : this(
-        "", null, null, RepeatPeriod.NEVER, null, false, false, false
+        "", null, null, RepeatPeriod.NEVER, null, false, false
     ) {
         val event = createEvent(json)
 
@@ -42,7 +40,6 @@ class Event(
         this.repeatPeriod = event.repeatPeriod
         this.daysOfWeek = event.daysOfWeek
         this.enabled = event.enabled
-        this.selected = event.selected
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -111,7 +108,6 @@ class Event(
         val weekDays = timeObj.getJSONArray("daysOfWeek")
         val enabled = timeObj.getBooleanSafe("enabled") ?: false
         val incompatible = timeObj.getBooleanSafe("incompatible") ?: false
-        val selected = timeObj.getBooleanSafe("selected") ?: false
         val repeatPeriod = stringToRepeatPeriod(timeObj.getStringSafe("repeatPeriod") as String)
 
         return Event(
@@ -130,7 +126,6 @@ class Event(
             getArrayListFromJSONArray(weekDays),
             enabled,
             incompatible,
-            selected
         )
     }
 
@@ -229,6 +224,6 @@ class Event(
     }
 
     override fun toString(): String {
-        return "Event(title='$title', startDate=$startDate, endDate=$endDate, repeatPeriod=$repeatPeriod, daysOfWeek=$daysOfWeek, enabled=$enabled, incompatible=$incompatible, selected=$selected)"
+        return "Event(title='$title', startDate=$startDate, endDate=$endDate, repeatPeriod=$repeatPeriod, daysOfWeek=$daysOfWeek, enabled=$enabled, incompatible=$incompatible)"
     }
 }

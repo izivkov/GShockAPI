@@ -44,6 +44,8 @@ object EventsIO {
 
     fun set(events: ArrayList<Event>) {
 
+        val MAX_REMINDERS = 5
+
         if (events.isEmpty()) {
             Timber.d("Events model not initialised! Cannot set reminders")
             return
@@ -55,12 +57,36 @@ object EventsIO {
             return gson.toJson(events)
         }
 
-        fun getSelectedEvents(events: ArrayList<Event>): String {
-            val selectedEvents = events.filter { it.selected } as ArrayList<Event>
-            return toJson(selectedEvents)
+        fun <T> appendAndTruncate(
+            arr1: ArrayList<T>,
+            arr2: ArrayList<T>,
+            maxSize: Int
+        ): ArrayList<T> {
+            val result = ArrayList<T>()
+
+            // Append elements from arr1 and arr2
+            result.addAll(arr1)
+            result.addAll(arr2)
+
+            // Truncate the result to the specific size
+            while (result.size > maxSize) {
+                result.removeLast()
+            }
+
+            return result
         }
 
-        Connection.sendMessage("{action: \"SET_REMINDERS\", value: ${getSelectedEvents(events)} }")
+        fun getEnabledEvents(events: ArrayList<Event>): ArrayList<Event> {
+            return events.filter { it.enabled } as ArrayList<Event>
+        }
+
+        // send all enabled events and not-enabled if enabled less then MAX_REMINDERS
+        fun getEventsToSend() : ArrayList<Event> {
+            return appendAndTruncate(getEnabledEvents(events), events.filter { !it.enabled } as ArrayList<Event>, MAX_REMINDERS)
+        }
+
+        val eventsToSend = toJson(getEventsToSend())
+        Connection.sendMessage("{action: \"SET_REMINDERS\", value: $eventsToSend }")
     }
 
     fun onReceived(data: String) {
