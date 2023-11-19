@@ -52,7 +52,6 @@ $dokka.location:org.avmedia.gshockapi.io/CasioIO/request/#kotlin.String/Pointing
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/setWriter/#kotlin.Function3[android.bluetooth.BluetoothDevice,android.bluetooth.BluetoothGattCharacteristic,kotlin.ByteArray,kotlin.Unit]/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/set-writer.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmd/#kotlin.Int#kotlin.ByteArray/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/write-cmd.html
 $dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmd/#kotlin.Int#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/write-cmd.html
-$dokka.location:org.avmedia.gshockapi.io/CasioIO/writeCmdFromString/#kotlin.Int#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-casio-i-o/write-cmd-from-string.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/index.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO/onReceived/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/on-received.html
 $dokka.location:org.avmedia.gshockapi.io/DstForWorldCitiesIO/request/#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi.io/-dst-for-world-cities-i-o/request.html
@@ -95,13 +94,14 @@ $dokka.location:org.avmedia.gshockapi.io/TimeAdjustmentIO/request/#/PointingToDe
 $dokka.location:org.avmedia.gshockapi.io/TimeAdjustmentIO/sendToWatch/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-adjustment-i-o/send-to-watch.html
 $dokka.location:org.avmedia.gshockapi.io/TimeAdjustmentIO/sendToWatchSet/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-adjustment-i-o/send-to-watch-set.html
 $dokka.location:org.avmedia.gshockapi.io/TimeAdjustmentIO/set/#org.avmedia.gshockapi.Settings/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-adjustment-i-o/set.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK.AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/-a-u-t-o/index.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK.OFF///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/-o-f-f/index.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK.ON///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/-o-n/index.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK///PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/index.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK/entries/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/entries.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK/valueOf/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/value-of.html
-$dokka.location:org.avmedia.gshockapi.io/TimeIO.DTS_MASK/values/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-d-t-s_-m-a-s-k/values.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask.AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/-a-u-t-o/index.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask.OFF///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/-o-f-f/index.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask.ON///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/-o-n/index.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask///PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/index.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask/entries/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/entries.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask/mask/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/mask.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask/valueOf/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/value-of.html
+$dokka.location:org.avmedia.gshockapi.io/TimeIO.DtsMask/values/#/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-dts-mask/values.html
 $dokka.location:org.avmedia.gshockapi.io/TimeIO.TimeEncoder///PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-time-encoder/index.html
 $dokka.location:org.avmedia.gshockapi.io/TimeIO.TimeEncoder/prepareCurrentTime/#java.time.LocalDateTime/PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/-time-encoder/prepare-current-time.html
 $dokka.location:org.avmedia.gshockapi.io/TimeIO///PointingToDeclaration/api/org.avmedia.gshockapi.io/-time-i-o/index.html
@@ -159,7 +159,7 @@ $dokka.location:org.avmedia.gshockapi/Alarm/hour/#/PointingToDeclaration/api/or
 $dokka.location:org.avmedia.gshockapi/Alarm/minute/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/minute.html
 $dokka.location:org.avmedia.gshockapi/Alarm/toString/#/PointingToDeclaration/api/org.avmedia.gshockapi/-alarm/to-string.html
 $dokka.location:org.avmedia.gshockapi/Event///PointingToDeclaration/api/org.avmedia.gshockapi/-event/index.html
-$dokka.location:org.avmedia.gshockapi/Event/Event/#kotlin.String#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.RepeatPeriod#java.util.ArrayList[java.time.DayOfWeek]?#kotlin.Boolean#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-event/-event.html
+$dokka.location:org.avmedia.gshockapi/Event/Event/#kotlin.String#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.EventDate?#org.avmedia.gshockapi.RepeatPeriod#java.util.ArrayList[java.time.DayOfWeek]?#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/api/org.avmedia.gshockapi/-event/-event.html
 $dokka.location:org.avmedia.gshockapi/Event/Event/#org.json.JSONObject/PointingToDeclaration/api/org.avmedia.gshockapi/-event/-event.html
 $dokka.location:org.avmedia.gshockapi/Event/enabled/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/enabled.html
 $dokka.location:org.avmedia.gshockapi/Event/endDate/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/end-date.html
@@ -167,7 +167,6 @@ $dokka.location:org.avmedia.gshockapi/Event/getDayOfMonthSuffix/#kotlin.Int/Poin
 $dokka.location:org.avmedia.gshockapi/Event/getFrequencyFormatted/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/get-frequency-formatted.html
 $dokka.location:org.avmedia.gshockapi/Event/getPeriodFormatted/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/get-period-formatted.html
 $dokka.location:org.avmedia.gshockapi/Event/incompatible/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/incompatible.html
-$dokka.location:org.avmedia.gshockapi/Event/selected/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/selected.html
 $dokka.location:org.avmedia.gshockapi/Event/title/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/title.html
 $dokka.location:org.avmedia.gshockapi/Event/toString/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event/to-string.html
 $dokka.location:org.avmedia.gshockapi/EventAction///PointingToDeclaration/api/org.avmedia.gshockapi/-event-action/index.html
@@ -175,7 +174,7 @@ $dokka.location:org.avmedia.gshockapi/EventAction/EventAction/#kotlin.String#kot
 $dokka.location:org.avmedia.gshockapi/EventAction/action/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event-action/action.html
 $dokka.location:org.avmedia.gshockapi/EventAction/label/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event-action/label.html
 $dokka.location:org.avmedia.gshockapi/EventDate///PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/index.html
-$dokka.location:org.avmedia.gshockapi/EventDate/EventDate/#kotlin.Int?#java.time.Month?#kotlin.Int?/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/-event-date.html
+$dokka.location:org.avmedia.gshockapi/EventDate/EventDate/#kotlin.Int#java.time.Month#kotlin.Int/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/-event-date.html
 $dokka.location:org.avmedia.gshockapi/EventDate/day/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/day.html
 $dokka.location:org.avmedia.gshockapi/EventDate/equals/#org.avmedia.gshockapi.EventDate/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/equals.html
 $dokka.location:org.avmedia.gshockapi/EventDate/month/#/PointingToDeclaration/api/org.avmedia.gshockapi/-event-date/month.html
@@ -232,6 +231,7 @@ $dokka.location:org.avmedia.gshockapi/ProgressEvents/connectionEventsFlowable/#/
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/get/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/get.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/getPayload/#kotlin.String/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/get-payload.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/onNext/#kotlin.String#kotlin.Any?/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/on-next.html
+$dokka.location:org.avmedia.gshockapi/ProgressEvents/runEventActions/#kotlin.String#kotlin.Array[org.avmedia.gshockapi.EventAction]/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/run-event-actions.html
 $dokka.location:org.avmedia.gshockapi/ProgressEvents/subscriber/#/PointingToDeclaration/api/org.avmedia.gshockapi/-progress-events/subscriber.html
 $dokka.location:org.avmedia.gshockapi/RepeatPeriod.DAILY///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi/-repeat-period/-d-a-i-l-y/index.html
 $dokka.location:org.avmedia.gshockapi/RepeatPeriod.MONTHLY///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}api/org.avmedia.gshockapi/-repeat-period/-m-o-n-t-h-l-y/index.html
