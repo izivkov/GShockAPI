@@ -64,7 +64,6 @@ object EventsIO {
         ): ArrayList<T> {
             val result = ArrayList<T>()
 
-            // Append elements from arr1 and arr2
             result.addAll(arr1)
             result.addAll(arr2)
 
@@ -80,9 +79,55 @@ object EventsIO {
             return events.filter { it.enabled } as ArrayList<Event>
         }
 
-        // send all enabled events and not-enabled if enabled less then MAX_REMINDERS
-        fun getEventsToSend() : ArrayList<Event> {
-            return appendAndTruncate(getEnabledEvents(events), events.filter { !it.enabled } as ArrayList<Event>, MAX_REMINDERS)
+        fun padToMax(currentEvents: ArrayList<Event>, maxReminders: Int): ArrayList<Event> {
+            if (currentEvents.size >= maxReminders) {
+                // If the current list is already equal to or greater than the desired size, return it as is
+                return currentEvents
+            }
+
+            val paddedEvents = ArrayList<Event>(currentEvents)
+
+            val emptyEvent = JSONObject(
+                """
+                 {
+                    "title": "",
+                    "time": {
+                        "daysOfWeek": [],
+                        "enabled": false,
+                        "startDate": {
+                            "day": 1,
+                            "month": "JANUARY",
+                            "year": 2000
+                        },
+                        "endDate": {
+                            "day": 1,
+                            "month": "JANUARY",
+                            "year": 2000
+                        },
+                        "incompatible": false,
+                        "repeatPeriod": "NEVER"
+                    }
+                }
+                """.trimIndent()
+            )
+
+            // Add placeholder or empty Event objects to reach the specified maxReminders count
+            repeat(maxReminders - currentEvents.size) {
+                paddedEvents.add(Event(emptyEvent))
+            }
+
+            return paddedEvents
+        }
+
+        fun getEventsToSend(): ArrayList<Event> {
+            // send all enabled events and not-enabled if enabled less then MAX_REMINDERS
+            val currentEvents = appendAndTruncate(
+                getEnabledEvents(events),
+                events.filter { !it.enabled } as ArrayList<Event>,
+                MAX_REMINDERS)
+
+            // if less then MAX_REMINDERS, pad with empty events
+            return padToMax(currentEvents, MAX_REMINDERS)
         }
 
         val eventsToSend = toJson(getEventsToSend())

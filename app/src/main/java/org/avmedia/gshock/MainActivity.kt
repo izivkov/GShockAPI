@@ -236,11 +236,12 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun handleReminders() {
         println("""Clear all events ${api.clearEvents()}""")
-
         var events = ArrayList<Event>()
 
-        events.addAll(api.getEventsFromWatch())
-        println("Events from Watch: $events")
+        val watchEvents = api.getEventsFromWatch()
+
+        events.addAll(watchEvents)
+        println("New Events: $events")
     }
 
     private suspend fun handleSettings() {
