@@ -130,6 +130,8 @@ object WatchInfo {
 
         model = when {
             shortName.startsWith("GA") -> WATCH_MODEL.GA
+            shortName.startsWith("GB") -> WATCH_MODEL.GA
+            shortName.startsWith("GMB") -> WATCH_MODEL.GA
             shortName.startsWith("GW") -> WATCH_MODEL.GW
             shortName.startsWith("DW") -> WATCH_MODEL.DW
             shortName.startsWith("GMW") -> WATCH_MODEL.GMW
