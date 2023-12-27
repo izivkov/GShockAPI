@@ -10,18 +10,20 @@ import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
+class TimeAdjustmentInfo (var isTimeAdjustmentSet: Boolean = false, var adjustmentTimeMinutes: Int = 0)
+
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeAdjustmentIO {
 
     private object DeferredValueHolder {
-        lateinit var deferredResult: CompletableDeferred<Boolean>
+        lateinit var deferredResult: CompletableDeferred<TimeAdjustmentInfo>
     }
 
-    suspend fun request(): Boolean {
-        return CachedIO.request("GET_TIME_ADJUSTMENT", ::getTimeAdjustment) as Boolean
+    suspend fun request(): TimeAdjustmentInfo {
+        return CachedIO.request("GET_TIME_ADJUSTMENT", ::getTimeAdjustment) as TimeAdjustmentInfo
     }
 
-    private suspend fun getTimeAdjustment(key: String): Boolean {
+    private suspend fun getTimeAdjustment(key: String): TimeAdjustmentInfo {
         DeferredValueHolder.deferredResult = CompletableDeferred()
         Connection.sendMessage("{ action: '$key'}")
         return DeferredValueHolder.deferredResult.await()
@@ -35,8 +37,9 @@ object TimeAdjustmentIO {
 
     fun onReceived(data: String) {
         val timeAdjustmentSet = isTimeAdjustmentSet(data)
+        val adjustmentTimeMinutes = timeOfAdjustmentMinutes(data)
         CasioIsAutoTimeOriginalValue.value = data
-        DeferredValueHolder.deferredResult.complete(timeAdjustmentSet)
+        DeferredValueHolder.deferredResult.complete(TimeAdjustmentInfo (timeAdjustmentSet, adjustmentTimeMinutes))
     }
 
     private fun isTimeAdjustmentSet(data: String): Boolean {
@@ -47,8 +50,18 @@ object TimeAdjustmentIO {
         return Utils.toIntArray(data)[12] == 0
     }
 
-    private fun toJsonTimeAdjustment(isTimeAdjustmentSet: Boolean): JSONObject {
-        return JSONObject("{\"timeAdjustment\": $isTimeAdjustmentSet }")
+    private fun timeOfAdjustmentMinutes(data: String): Int {
+        // syncing off: 110f0f0f060050000400010080->37<-d2
+        val minutesRead = Utils.toIntArray(data)[13]
+
+        val range = 0..59
+        val minutes = if (minutesRead in range) {
+            minutesRead
+        } else {
+            30
+        }
+
+        return minutes
     }
 
     object CasioIsAutoTimeOriginalValue {
@@ -93,6 +106,9 @@ object TimeAdjustmentIO {
         } else {
             intArray[12] = 0x80
         }
+
+        val adjustmentTimeMinutes = settings.getInt("adjustmentTimeMinutes")
+        intArray[13] = adjustmentTimeMinutes
 
         return intArray.foldIndexed(ByteArray(intArray.size)) { i, a, v ->
             a.apply {

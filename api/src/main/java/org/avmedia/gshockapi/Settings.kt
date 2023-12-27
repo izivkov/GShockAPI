@@ -40,4 +40,6 @@ class Settings {
      * true or false
      */
     var timeAdjustment = true
+
+    var adjustmentTimeMinutes = 30
 }

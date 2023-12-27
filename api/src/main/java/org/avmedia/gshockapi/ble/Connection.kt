@@ -45,7 +45,6 @@ object Connection : IConnection {
     var oneTimeLock = false
     lateinit var applicationContext: Context
     private var isConnecting = false
-
     fun validateAddress(address: String?): Boolean {
         return if (address != null && BluetoothAdapter.checkBluetoothAddress(address)) {
             true
@@ -54,7 +53,6 @@ object Connection : IConnection {
             false
         }
     }
-
     object CurrentDevice {
         private var gatt: BluetoothGatt? = null
         fun set(gatt: BluetoothGatt?) {

@@ -399,7 +399,8 @@ class GShockAPI(private val context: Context) {
     suspend fun getSettings(): Settings {
         val settings = getBasicSettings()
         val timeAdjustment = getTimeAdjustment()
-        settings.timeAdjustment = timeAdjustment
+        settings.timeAdjustment = timeAdjustment.isTimeAdjustmentSet
+        settings.adjustmentTimeMinutes = timeAdjustment.adjustmentTimeMinutes
         return settings
     }
 
@@ -407,7 +408,7 @@ class GShockAPI(private val context: Context) {
         return SettingsIO.request()
     }
 
-    private suspend fun getTimeAdjustment(): Boolean {
+    private suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
         return TimeAdjustmentIO.request()
     }
 
@@ -469,5 +470,10 @@ class GShockAPI(private val context: Context) {
 
     fun validateBluetoothAddress(deviceAddress: String?): Boolean {
         return Connection.validateAddress(deviceAddress)
+    }
+
+    fun getAdjustmentTime(): Int {
+        // return TimeAdjustmentIO.request().adjustment
+        return 23
     }
 }
