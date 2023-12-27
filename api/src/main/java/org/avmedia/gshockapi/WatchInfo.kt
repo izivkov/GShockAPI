@@ -127,7 +127,7 @@ object WatchInfo {
             1,
             5,
             hasAutoLight = false,
-            hasReminders = true,
+            hasReminders = false,
             shortLightDuration = "1.5s",
             longLightDuration = "3s"
         )
