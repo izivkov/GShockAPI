@@ -10,7 +10,10 @@ import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 
-class TimeAdjustmentInfo (var isTimeAdjustmentSet: Boolean = false, var adjustmentTimeMinutes: Int = 0)
+class TimeAdjustmentInfo(
+    var isTimeAdjustmentSet: Boolean = false,
+    var adjustmentTimeMinutes: Int = 0
+)
 
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeAdjustmentIO {
@@ -39,7 +42,12 @@ object TimeAdjustmentIO {
         val timeAdjustmentSet = isTimeAdjustmentSet(data)
         val adjustmentTimeMinutes = timeOfAdjustmentMinutes(data)
         CasioIsAutoTimeOriginalValue.value = data
-        DeferredValueHolder.deferredResult.complete(TimeAdjustmentInfo (timeAdjustmentSet, adjustmentTimeMinutes))
+        DeferredValueHolder.deferredResult.complete(
+            TimeAdjustmentInfo(
+                timeAdjustmentSet,
+                adjustmentTimeMinutes
+            )
+        )
     }
 
     private fun isTimeAdjustmentSet(data: String): Boolean {

@@ -28,6 +28,7 @@ class Event(
             endDate = startDate
         }
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     constructor(json: JSONObject) : this(
         "", null, null, RepeatPeriod.NEVER, null, false, false

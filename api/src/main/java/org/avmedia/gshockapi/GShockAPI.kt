@@ -471,9 +471,4 @@ class GShockAPI(private val context: Context) {
     fun validateBluetoothAddress(deviceAddress: String?): Boolean {
         return Connection.validateAddress(deviceAddress)
     }
-
-    fun getAdjustmentTime(): Int {
-        // return TimeAdjustmentIO.request().adjustment
-        return 23
-    }
 }

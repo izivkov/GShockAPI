@@ -53,6 +53,7 @@ object Connection : IConnection {
             false
         }
     }
+
     object CurrentDevice {
         private var gatt: BluetoothGatt? = null
         fun set(gatt: BluetoothGatt?) {
