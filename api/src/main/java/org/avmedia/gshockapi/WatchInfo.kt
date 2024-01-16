@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, UNKNOWN
     }
 
     var name: String = ""
@@ -23,6 +23,8 @@ object WatchInfo {
     var shortLightDuration = ""
     var longLightDuration = ""
     var weekLanguageSupported = true
+    var worldCities = true
+    var temperature = true
 
     /**
      * Info about the model.
@@ -37,6 +39,8 @@ object WatchInfo {
         var shortLightDuration: String,
         val longLightDuration: String,
         val weekLanguageSupported: Boolean = true,
+        val worldCities: Boolean = true,
+        val temperature: Boolean = true
     )
 
     private val models = listOf(
@@ -122,11 +126,23 @@ object WatchInfo {
             longLightDuration = "3s"
         ),
         ModelInfo(
+            WATCH_MODEL.GBD,
+            2,
+            1,
+            5,
+            hasAutoLight = true,
+            hasReminders = false,
+            shortLightDuration = "1.5s",
+            longLightDuration = "3s",
+            worldCities = false,
+            temperature = false,
+        ),
+        ModelInfo(
             WATCH_MODEL.UNKNOWN,
             2,
             1,
             5,
-            hasAutoLight = false,
+            hasAutoLight = true,
             hasReminders = true,
             shortLightDuration = "1.5s",
             longLightDuration = "3s"
@@ -148,17 +164,19 @@ object WatchInfo {
             shortName = parts[1]
         }
 
+        // *** Order matters. Long names should be checked before short names ***
         model = when {
+            shortName.startsWith("G-B001") -> WATCH_MODEL.GB001
+            shortName.startsWith("GMW") -> WATCH_MODEL.GMW
+            shortName.startsWith("GST") -> WATCH_MODEL.GST
+            shortName.startsWith("GPR") -> WATCH_MODEL.GPR
+            shortName.startsWith("MSG") -> WATCH_MODEL.MSG
+            shortName.startsWith("GBD") -> WATCH_MODEL.GBD
             shortName.startsWith("GA") -> WATCH_MODEL.GA
             shortName.startsWith("GB") -> WATCH_MODEL.GA
             shortName.startsWith("GMB") -> WATCH_MODEL.GA
             shortName.startsWith("GW") -> WATCH_MODEL.GW
             shortName.startsWith("DW") -> WATCH_MODEL.DW
-            shortName.startsWith("GMW") -> WATCH_MODEL.GMW
-            shortName.startsWith("GST") -> WATCH_MODEL.GST
-            shortName.startsWith("GPR") -> WATCH_MODEL.GPR
-            shortName.startsWith("MSG") -> WATCH_MODEL.MSG
-            shortName.startsWith("G-B001") -> WATCH_MODEL.GB001
             else -> WATCH_MODEL.UNKNOWN
         }
 
@@ -170,6 +188,8 @@ object WatchInfo {
         this.shortLightDuration = modelMap[model]!!.shortLightDuration
         this.longLightDuration = modelMap[model]!!.longLightDuration
         this.weekLanguageSupported = modelMap[model]!!.weekLanguageSupported
+        this.worldCities = modelMap[model]!!.worldCities
+        this.temperature = modelMap[model]!!.temperature
 
         ProgressEvents.onNext("DeviceName", this.name)
     }

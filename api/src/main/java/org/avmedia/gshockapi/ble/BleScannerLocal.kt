@@ -106,8 +106,8 @@ data class BleScannerLocal(val context: Context) {
                 return
             }
             foundDevices.add(result.device.toString())
-            val name = result.scanRecord?.deviceName
 
+            val name = result.scanRecord?.deviceName
             if (name != null) {
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             }

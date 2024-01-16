@@ -59,11 +59,9 @@ object Connection : IConnection {
         fun set(gatt: BluetoothGatt?) {
             this.gatt = gatt
         }
-
         fun reset() {
             this.gatt = null
         }
-
         fun isSet(): Boolean {
             return gatt != null
         }
