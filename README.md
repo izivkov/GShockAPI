@@ -9,6 +9,7 @@ and [B2100](https://amzn.to/3MUDCGY) series of watches via the Bluetooth interfa
 - Set watch's settings.
 - Get watch's name
 - Get watch's battery level
+- Get Watch's temperature
 - Set watch's Timer
 
 ## Documentation
