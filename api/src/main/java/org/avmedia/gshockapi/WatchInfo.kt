@@ -26,6 +26,11 @@ object WatchInfo {
     var worldCities = true
     var temperature = true
 
+    //  Battery level between 15 and 20 for B2100 and between 9 and 19 for B5600. Scale accordingly to %
+    var batteryLevelLowerLimit = 15
+    var batteryLevelUpperLimit = 20
+
+
     /**
      * Info about the model.
      */
@@ -40,7 +45,9 @@ object WatchInfo {
         val longLightDuration: String,
         val weekLanguageSupported: Boolean = true,
         val worldCities: Boolean = true,
-        val temperature: Boolean = true
+        val temperature: Boolean = true,
+        val batteryLevelLowerLimit:Int = 15,
+        val batteryLevelUpperLimit:Int = 20
     )
 
     private val models = listOf(
@@ -53,6 +60,8 @@ object WatchInfo {
             hasReminders = true,
             shortLightDuration = "2s",
             longLightDuration = "4s",
+            batteryLevelLowerLimit = 9,
+            batteryLevelUpperLimit = 19,
         ),
         ModelInfo(
             WATCH_MODEL.GST,

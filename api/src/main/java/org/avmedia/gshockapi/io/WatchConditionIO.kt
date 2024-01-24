@@ -34,13 +34,10 @@ object WatchConditionIO {
             val bytes = Utils.byteArrayOfIntArray(intArr.drop(1).toIntArray())
 
             if (bytes.size >= 2) {
-                // Battery level between 15 and 20 fot B2100 and between 12 and 19 for B5600. Scale accordingly to %
                 Timber.i("battery level row value: ${bytes[0].toInt()}")
 
-                val batteryLevelLowerLimit =
-                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 15 else 9
-                val batteryLevelUpperLimit =
-                    if (WatchInfo.model == WatchInfo.WATCH_MODEL.GA) 20 else 19
+                val batteryLevelLowerLimit = WatchInfo.batteryLevelLowerLimit
+                val batteryLevelUpperLimit = WatchInfo.batteryLevelUpperLimit
                 val multiplier: Int =
                     (100.0 / (batteryLevelUpperLimit - batteryLevelLowerLimit)).roundToInt()
                 val batteryLevel = (bytes[0].toInt() - batteryLevelLowerLimit)
