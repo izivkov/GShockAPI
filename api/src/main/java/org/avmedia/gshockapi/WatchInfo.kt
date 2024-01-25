@@ -30,7 +30,6 @@ object WatchInfo {
     var batteryLevelLowerLimit = 15
     var batteryLevelUpperLimit = 20
 
-
     /**
      * Info about the model.
      */
@@ -81,7 +80,9 @@ object WatchInfo {
             hasAutoLight = true,
             hasReminders = true,
             shortLightDuration = "2s",
-            longLightDuration = "4s"
+            longLightDuration = "4s",
+            batteryLevelLowerLimit = 9,
+            batteryLevelUpperLimit = 19,
         ),
         ModelInfo(
             WATCH_MODEL.GA,
@@ -199,6 +200,8 @@ object WatchInfo {
         this.weekLanguageSupported = modelMap[model]!!.weekLanguageSupported
         this.worldCities = modelMap[model]!!.worldCities
         this.temperature = modelMap[model]!!.temperature
+        this.batteryLevelLowerLimit = modelMap[model]!!.batteryLevelLowerLimit
+        this.batteryLevelUpperLimit = modelMap[model]!!.batteryLevelUpperLimit
 
         ProgressEvents.onNext("DeviceName", this.name)
     }
