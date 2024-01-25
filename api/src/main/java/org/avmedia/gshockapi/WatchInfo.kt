@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, UNKNOWN
     }
 
     var name: String = ""
@@ -52,18 +52,6 @@ object WatchInfo {
     private val models = listOf(
         ModelInfo(
             WATCH_MODEL.GW,
-            6,
-            3,
-            5,
-            hasAutoLight = true,
-            hasReminders = true,
-            shortLightDuration = "2s",
-            longLightDuration = "4s",
-            batteryLevelLowerLimit = 9,
-            batteryLevelUpperLimit = 19,
-        ),
-        ModelInfo(
-            WATCH_MODEL.MRG,
             6,
             3,
             5,
@@ -194,7 +182,6 @@ object WatchInfo {
             shortName.startsWith("GPR") -> WATCH_MODEL.GPR
             shortName.startsWith("MSG") -> WATCH_MODEL.MSG
             shortName.startsWith("GBD") -> WATCH_MODEL.GBD
-            shortName.startsWith("MRG") -> WATCH_MODEL.MRG
             shortName.startsWith("GA") -> WATCH_MODEL.GA
             shortName.startsWith("GB") -> WATCH_MODEL.GA
             shortName.startsWith("GMB") -> WATCH_MODEL.GA
