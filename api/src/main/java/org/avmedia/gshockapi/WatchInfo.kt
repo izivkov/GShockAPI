@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, UNKNOWN
     }
 
     var name: String = ""
@@ -63,7 +63,19 @@ object WatchInfo {
             batteryLevelUpperLimit = 19,
         ),
         ModelInfo(
-            WATCH_MODEL.GST,
+            WATCH_MODEL.MRG_B5000,
+            6,
+            3,
+            5,
+            hasAutoLight = true,
+            hasReminders = true,
+            shortLightDuration = "2s",
+            longLightDuration = "4s",
+            batteryLevelLowerLimit = 9,
+            batteryLevelUpperLimit = 19,
+        ),
+        ModelInfo(
+            WATCH_MODEL.MRG,
             2,
             1,
             5,
@@ -176,6 +188,7 @@ object WatchInfo {
 
         // *** Order matters. Long names should be checked before short names ***
         model = when {
+            shortName.startsWith("MRG-B5000") -> WATCH_MODEL.MRG_B5000
             shortName.startsWith("G-B001") -> WATCH_MODEL.GB001
             shortName.startsWith("GMW") -> WATCH_MODEL.GMW
             shortName.startsWith("GST") -> WATCH_MODEL.GST
