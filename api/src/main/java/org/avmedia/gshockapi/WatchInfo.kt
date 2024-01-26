@@ -75,7 +75,7 @@ object WatchInfo {
             batteryLevelUpperLimit = 19,
         ),
         ModelInfo(
-            WATCH_MODEL.MRG,
+            WATCH_MODEL.GST,
             2,
             1,
             5,
