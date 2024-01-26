@@ -195,9 +195,9 @@ object WatchInfo {
             shortName.startsWith("GPR") -> WATCH_MODEL.GPR
             shortName.startsWith("MSG") -> WATCH_MODEL.MSG
             shortName.startsWith("GBD") -> WATCH_MODEL.GBD
+            shortName.startsWith("GMB") -> WATCH_MODEL.GA
             shortName.startsWith("GA") -> WATCH_MODEL.GA
             shortName.startsWith("GB") -> WATCH_MODEL.GA
-            shortName.startsWith("GMB") -> WATCH_MODEL.GA
             shortName.startsWith("GW") -> WATCH_MODEL.GW
             shortName.startsWith("DW") -> WATCH_MODEL.DW
             else -> WATCH_MODEL.UNKNOWN
