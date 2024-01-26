@@ -49,127 +49,21 @@ object WatchInfo {
         val batteryLevelUpperLimit:Int = 20
     )
 
-    private val models = listOf(
-        ModelInfo(
-            WATCH_MODEL.GW,
-            6,
-            3,
-            5,
-            hasAutoLight = true,
-            hasReminders = true,
-            shortLightDuration = "2s",
-            longLightDuration = "4s",
-            batteryLevelLowerLimit = 9,
-            batteryLevelUpperLimit = 19,
-        ),
-        ModelInfo(
-            WATCH_MODEL.MRG_B5000,
-            6,
-            3,
-            5,
-            hasAutoLight = true,
-            hasReminders = true,
-            shortLightDuration = "2s",
-            longLightDuration = "4s",
-            batteryLevelLowerLimit = 9,
-            batteryLevelUpperLimit = 19,
-        ),
-        ModelInfo(
-            WATCH_MODEL.GST,
-            2,
-            1,
-            5,
-            hasAutoLight = false,
-            hasReminders = true,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s",
-        ),
-        ModelInfo(
-            WATCH_MODEL.GMW,
-            6,
-            3,
-            5,
-            hasAutoLight = true,
-            hasReminders = true,
-            shortLightDuration = "2s",
-            longLightDuration = "4s",
-            batteryLevelLowerLimit = 9,
-            batteryLevelUpperLimit = 19,
-        ),
-        ModelInfo(
-            WATCH_MODEL.GA,
-            2,
-            1,
-            5,
-            hasAutoLight = false,
-            hasReminders = true,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s"
-        ),
-        ModelInfo(
-            WATCH_MODEL.GB001,
-            2,
-            1,
-            5,
-            hasAutoLight = true,
-            hasReminders = false,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s"
-        ),
-        ModelInfo(
-            WATCH_MODEL.MSG,
-            2,
-            1,
-            5,
-            hasAutoLight = false,
-            hasReminders = true,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s"
-        ),
-        ModelInfo(
-            WATCH_MODEL.GPR,
-            2,
-            1,
-            5,
-            hasAutoLight = true,
-            hasReminders = false,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s",
-            weekLanguageSupported = false
-        ),
-        ModelInfo(
-            WATCH_MODEL.DW,
-            2,
-            1,
-            5,
-            hasAutoLight = true,
-            hasReminders = false,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s"
-        ),
-        ModelInfo(
-            WATCH_MODEL.GBD,
-            2,
-            1,
-            5,
-            hasAutoLight = true,
-            hasReminders = false,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s",
-            worldCities = false,
-            temperature = false,
-        ),
-        ModelInfo(
-            WATCH_MODEL.UNKNOWN,
-            2,
-            1,
-            5,
-            hasAutoLight = true,
-            hasReminders = true,
-            shortLightDuration = "1.5s",
-            longLightDuration = "3s"
-        )
+    // @formatter:off
+    private val models = listOf (
+        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
+        ModelInfo(WATCH_MODEL.MRG_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
+        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
+        ModelInfo(WATCH_MODEL.GST, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.GB001, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.MSG, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.GPR, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", weekLanguageSupported = false),
+        ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WATCH_MODEL.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, temperature = false,),
+        ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s")
     )
+    // @formatter:on
 
     private val modelMap = models.associateBy { it.model }
 
