@@ -45,8 +45,8 @@ object WatchInfo {
         val weekLanguageSupported: Boolean = true,
         val worldCities: Boolean = true,
         val temperature: Boolean = true,
-        val batteryLevelLowerLimit:Int = 15,
-        val batteryLevelUpperLimit:Int = 20
+        val batteryLevelLowerLimit: Int = 15,
+        val batteryLevelUpperLimit: Int = 20
     )
 
     // @formatter:off
