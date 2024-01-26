@@ -11,7 +11,7 @@ This library provides an API to communicate to the Casio G-Shock watches via the
 - Get Watch's temperature
 - Set watch's Timer
 
-# Supported Watches
+**Supported Watches:**
 [G(M)W-5600](https://amzn.to/3Mt68Qb), [G(M)W-5000](https://amzn.to/4194M13), [GA-B2100](https://amzn.to/3MUDCGY), GST-B500, MSG-B100, G-B001, GBD-800 (Partial support), MRG-B5000
 
 
