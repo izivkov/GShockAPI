@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, UNKNOWN
     }
 
     var name: String = ""
@@ -51,9 +51,10 @@ object WatchInfo {
 
     // @formatter:off
     private val models = listOf (
-        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
-        ModelInfo(WATCH_MODEL.MRG_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
-        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,),
+        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WATCH_MODEL.MRG_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WATCH_MODEL.GCW_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
         ModelInfo(WATCH_MODEL.GST, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.GB001, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
@@ -83,6 +84,7 @@ object WatchInfo {
         // *** Order matters. Long names should be checked before short names ***
         model = when {
             shortName.startsWith("MRG-B5000") -> WATCH_MODEL.MRG_B5000
+            shortName.startsWith("GCW-B5000") -> WATCH_MODEL.GCW_B5000
             shortName.startsWith("G-B001") -> WATCH_MODEL.GB001
             shortName.startsWith("GMW") -> WATCH_MODEL.GMW
             shortName.startsWith("GST") -> WATCH_MODEL.GST
