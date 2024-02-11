@@ -99,7 +99,7 @@ object TimeAdjustmentIO {
 
     private fun encodeTimeAdjustment(settings: JSONObject): ByteArray {
 
-        var casioIsAutoTimeOriginalValue = settings.getString("casioIsAutoTimeOriginalValue")
+        val casioIsAutoTimeOriginalValue = settings.getString("casioIsAutoTimeOriginalValue")
         if (casioIsAutoTimeOriginalValue.isEmpty()) {
             return "".toByteArray()
         }
@@ -107,7 +107,7 @@ object TimeAdjustmentIO {
         // syncing off: 110f0f0f0600500004000100->80<-37d2
         // syncing on:  110f0f0f0600500004000100->00<-37d2
 
-        var intArray = Utils.toIntArray(casioIsAutoTimeOriginalValue)
+        val intArray = Utils.toIntArray(casioIsAutoTimeOriginalValue)
 
         if (settings.get("timeAdjustment") == true) {
             intArray[12] = 0x00

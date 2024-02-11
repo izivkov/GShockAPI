@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.io.CasioIO
@@ -471,6 +472,7 @@ object Connection : IConnection {
             isConnecting = false
         }
 
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             with(gatt) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -486,7 +488,15 @@ object Connection : IConnection {
             }
 
             if (pendingOperation is Connect) {
+                WatchInfo.setNameAndModel(gatt.device.name.trimEnd('\u0000'))
+                WatchInfo.setAddress(gatt.device.address)
+
                 ProgressEvents.onNext("ConnectionSetupComplete", gatt.device)
+
+                // new
+                ProgressEvents.onNext("DeviceName", gatt.device.name)
+                ProgressEvents.onNext("DeviceAddress", gatt.device.address)
+
                 signalEndOfOperation()
             }
         }

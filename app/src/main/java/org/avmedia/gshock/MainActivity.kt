@@ -97,12 +97,14 @@ class MainActivity : AppCompatActivity() {
     private fun run(context: Context) {
 
         CoroutineScope(Dispatchers.Default).launch {
-            api.waitForConnection()
+            while (true) {
+                api.waitForConnection()
 
-            runCommands()
+                runCommands()
 
-            api.disconnect(this@MainActivity)
-            println("--------------- END ------------------")
+                api.disconnect(this@MainActivity)
+                println("--------------- END ------------------")
+            }
         }
     }
 

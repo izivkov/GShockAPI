@@ -53,6 +53,7 @@ data class BleScannerLocal(val context: Context) {
             if (device.type != BluetoothDevice.DEVICE_TYPE_UNKNOWN) Connection.connect(
                 device, context
             )
+            return
         }
         if (isScanning) return
         if (!bluetoothAdapter.isEnabled || bleScanner == null) return
@@ -103,16 +104,10 @@ data class BleScannerLocal(val context: Context) {
             super.onScanResult(callbackType, result)
 
             if (foundDevices.contains(result.device.toString())) {
+                stopBleScan()
                 return
             }
             foundDevices.add(result.device.toString())
-
-            val name = result.scanRecord?.deviceName
-            if (name != null) {
-                WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
-            }
-            WatchInfo.setAddress(result.device.toString())
-
             stopBleScan()
             Connection.connect(result.device, context)
         }

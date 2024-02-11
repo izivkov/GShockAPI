@@ -38,7 +38,7 @@ object DstForWorldCitiesIO {
      */
 
     suspend fun setDST(dst: String, casioTimeZone: CasioTimeZoneHelper.CasioTimeZone): String {
-        var intArray = Utils.toIntArray(dst)
+        val intArray = Utils.toIntArray(dst)
         if (intArray.size == 7) {
             intArray[4] = casioTimeZone.offset
             intArray[5] = casioTimeZone.dstOffset.toInt()

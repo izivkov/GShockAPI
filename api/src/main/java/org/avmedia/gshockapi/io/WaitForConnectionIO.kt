@@ -2,6 +2,8 @@ package org.avmedia.gshockapi.io
 
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.ProgressEvents
@@ -10,6 +12,7 @@ import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import org.avmedia.gshockapi.utils.WatchDataListener
 
+@RequiresApi(Build.VERSION_CODES.O)
 object WaitForConnectionIO {
 
     private object DeferredValueHolder {
@@ -49,6 +52,7 @@ object WaitForConnectionIO {
                 EventAction("ConnectionSetupComplete") {
                     val device =
                         ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
+
                     DeviceCharacteristics.init(device)
 
                     CachedIO.clearCache()

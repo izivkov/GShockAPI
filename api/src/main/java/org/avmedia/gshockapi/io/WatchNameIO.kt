@@ -11,7 +11,8 @@ object WatchNameIO {
     }
 
     suspend fun request(): String {
-        return WatchInfo.name
+        // return WatchInfo.name
+        return getWatchName("23")
     }
 
     private suspend fun getWatchName(key: String): String {

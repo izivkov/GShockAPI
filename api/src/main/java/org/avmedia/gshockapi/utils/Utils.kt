@@ -45,7 +45,7 @@ object Utils {
 
     fun toByteArray(string: String, maxLen: Int): ByteArray {
         val charset = Charsets.UTF_8
-        var retArr = string.toByteArray(charset)
+        val retArr = string.toByteArray(charset)
         if (retArr.size > maxLen) {
             return retArr.take(maxLen).toByteArray()
         }
@@ -57,7 +57,7 @@ object Utils {
     }
 
     fun toHexStr(asciiStr: String): String {
-        var byteArr = toByteArray(asciiStr)
+        val byteArr = toByteArray(asciiStr)
         var hexStr = ""
         byteArr.forEach {
             hexStr += "%02x".format(it)

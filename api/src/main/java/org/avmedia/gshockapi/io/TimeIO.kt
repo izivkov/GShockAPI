@@ -223,7 +223,7 @@ object TimeIO {
 
         val timeData = TimeEncoder.prepareCurrentTime(adjustedDateTime)
 
-        var timeCommand =
+        val timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
         CasioIO.writeCmd(0x000e, timeCommand)
