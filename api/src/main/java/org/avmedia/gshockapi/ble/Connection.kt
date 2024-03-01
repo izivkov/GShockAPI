@@ -84,7 +84,7 @@ object Connection {
     }
 
     private suspend fun connect (address: String?, context: Context) {
-        if (address == null) {
+        if (address == null || address == "") {
             return
         }
         val bluetoothAdapter: BluetoothAdapter? = getDefaultAdapter()
