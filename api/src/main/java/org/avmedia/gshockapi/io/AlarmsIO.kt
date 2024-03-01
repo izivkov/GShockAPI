@@ -29,6 +29,7 @@ object AlarmsIO {
         DeferredValueHolder.deferredResult = CompletableDeferred()
         Alarm.clear()
         Connection.sendMessage("{ action: '$key'}")
+
         return DeferredValueHolder.deferredResult.await()
     }
 
@@ -54,13 +55,13 @@ object AlarmsIO {
         fun fromJson(jsonStr: String) {
             val gson = Gson()
             val alarmArr = gson.fromJson(jsonStr, Array<Alarm>::class.java)
-            Alarm.alarms.addAll(alarmArr)
+            Alarm.addSorted(alarmArr)
         }
 
         val decoded = AlarmDecoder.toJson(data).get("ALARMS")
         fromJson(decoded.toString())
 
-        if (Alarm.alarms.size > 1) {
+        if (Alarm.alarms.size == 5) {
             DeferredValueHolder.deferredResult.complete(Alarm.alarms)
         }
     }
@@ -84,12 +85,17 @@ object AlarmsIO {
         val alarmsJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
         val alarmCasio0 = Alarms.fromJsonAlarmFirstAlarm(alarmsJsonArr[0] as JSONObject)
         CasioIO.writeCmd(0x000e, alarmCasio0)
-        var alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
+        val alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
         CasioIO.writeCmd(0x000e, alarmCasio)
     }
 
     object AlarmDecoder {
         private const val HOURLY_CHIME_MASK = 0b10000000
+        private val alarmsQueue = mutableListOf<ArrayList<Int>>()
+
+        fun toJsonNew(command: String) {
+            alarmsQueue.add(Utils.toIntArray(command))
+        }
 
         fun toJson(command: String): JSONObject {
             val jsonResponse = JSONObject()

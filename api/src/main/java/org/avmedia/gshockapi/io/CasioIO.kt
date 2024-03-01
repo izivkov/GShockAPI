@@ -10,7 +10,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.DeviceCharacteristics
 import java.util.UUID
 
 object CasioIO {
@@ -29,24 +28,10 @@ object CasioIO {
     }
 
     fun init() {
-        Connection.enableNotifications()
-    }
-
-    fun setWriter(writer: (BluetoothDevice, BluetoothGattCharacteristic, ByteArray) -> Unit) {
-        this.writer = writer
     }
 
     fun writeCmd(handle: Int, bytesArray: ByteArray) {
-        val handleLocal = lookupHandle(handle)
-        if (handleLocal == null) {
-            ProgressEvents.onNext("ApiError")
-            return
-        }
-        writer.invoke(
-            DeviceCharacteristics.device,
-            handleLocal,
-            bytesArray
-        )
+        Connection.write(handle, bytesArray)
     }
 
     fun writeCmd(handle: Int, cmd: String) {
@@ -55,16 +40,7 @@ object CasioIO {
 
     /// new
     private fun writeCmdFromString(handle: Int, bytesStr: String) {
-        val handleLocal = lookupHandle(handle)
-        if (handleLocal == null) {
-            ProgressEvents.onNext("ApiError")
-            return
-        }
-        writer.invoke(
-            DeviceCharacteristics.device,
-            handleLocal,
-            toCasioCmd(bytesStr)
-        )
+        Connection.write(handle, toCasioCmd(bytesStr))
     }
 
     private fun toCasioCmd(bytesStr: String): ByteArray {
@@ -77,10 +53,6 @@ object CasioIO {
             }
         }
         return hexArr.toByteArray()
-    }
-
-    private fun lookupHandle(handle: Int): BluetoothGattCharacteristic? {
-        return DeviceCharacteristics.findCharacteristic(DeviceCharacteristics.handlesToCharacteristicsMap[handle])
     }
 
     fun removeFromCache(newValue: String) {
