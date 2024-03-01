@@ -65,7 +65,6 @@ object GShockScanner {
             }
             .onEmpty {
                 ProgressEvents.onNext("ApiError", "No devices found while scanning")
-                scanCallback(null)
             }
             .onCompletion {
                 ProgressEvents.onNext("BLE Scanning Completed")
