@@ -157,14 +157,12 @@ private class GShockManagerImpl(
             writeCharacteristic = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
+            onConnected(device.name, device.address)
+
             // inform the caller that we have connected
-            onConnected(gatt.device.name, gatt.device.address)
-
-            ProgressEvents.onNext("ConnectionSetupComplete", gatt.device)
-
-            // new
-            ProgressEvents.onNext("DeviceName", gatt.device.name)
-            ProgressEvents.onNext("DeviceAddress", gatt.device.address)
+            ProgressEvents.onNext("ConnectionSetupComplete", device)
+            ProgressEvents.onNext("DeviceName", device.name)
+            ProgressEvents.onNext("DeviceAddress", device.address)
 
             return true
         }
