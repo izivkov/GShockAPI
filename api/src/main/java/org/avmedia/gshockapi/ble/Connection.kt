@@ -68,7 +68,7 @@ object Connection {
 
     fun startConnection(context:Context, deviceId: String?, deviceName: String?) {
         scope.launch {
-            if (deviceId == null) {
+            if (deviceId.isNullOrEmpty()) {
                 stopBleScan()
 
                 fun onScanCompleted(deviceInfo: GShockScanner.DeviceInfo?) {
@@ -85,7 +85,7 @@ object Connection {
     }
 
     private suspend fun connect (address: String?, context: Context) {
-        if (address == null || address == "") {
+        if (address.isNullOrEmpty()) {
             return
         }
         val bluetoothAdapter: BluetoothAdapter? = getDefaultAdapter()

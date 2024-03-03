@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     private fun run(context: Context) {
 
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 api.waitForConnection()
 
