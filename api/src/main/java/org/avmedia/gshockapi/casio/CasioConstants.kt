@@ -15,6 +15,7 @@ object CasioConstants {
     // Modern Watches - All Features
     val CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb002c-b012-49a8-b1f8-394fb2032b0f")
+
     val CASIO_ALL_FEATURES_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb002d-b012-49a8-b1f8-394fb2032b0f")
 

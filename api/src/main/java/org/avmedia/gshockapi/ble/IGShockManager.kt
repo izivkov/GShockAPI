@@ -22,12 +22,11 @@ enum class ConnectionState {
 typealias onConnectedType = (String, String) -> Unit
 
 interface GSHock {
-    suspend fun connect(onConnected: (String, String) -> Unit)
+    suspend fun connect(device: BluetoothDevice, onConnected: (String, String) -> Unit)
     fun release()
     fun setDataCallback(dataCallback: IDataReceived?)
     fun enableNotifications()
     suspend fun write(handle: Int, data: ByteArray)
-    abstract fun setDevice(device: BluetoothDevice)
     abstract var connectionState: ConnectionState
 }
 
@@ -52,8 +51,6 @@ private class GShockManagerImpl(
 
     override fun initialize() {
         super.initialize()
-        ProgressEvents.onNext("BleManagerInitialized")
-
         setNotificationCallback(writeCharacteristic).with { _, data ->
             Timber.i("Received data from characteristic: ${data.value}")
 
@@ -64,16 +61,13 @@ private class GShockManagerImpl(
         }
 
         enableNotifications(writeCharacteristic).enqueue()
-    }
-
-    override fun setDevice(device: BluetoothDevice) {
-        this.device = device
+        ProgressEvents.onNext("BleManagerInitialized")
     }
 
     @SuppressLint("MissingPermission")
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    override suspend fun connect(onConnected: onConnectedType) {
+    override suspend fun connect(device: BluetoothDevice, onConnected: onConnectedType) {
         this.onConnected = onConnected
 
         connect(device)
@@ -93,7 +87,9 @@ private class GShockManagerImpl(
         cancelQueue()
 
         // If the device was connected, we have to disconnect manually.
-        disconnect().enqueue()
+        if (wasConnected) {
+            disconnect().enqueue()
+        }
     }
 
     override fun setDataCallback(dataCallback: IDataReceived?) {
@@ -132,8 +128,16 @@ private class GShockManagerImpl(
             connectionState = ConnectionState.DISCONNECTED
         }
 
+        @SuppressLint("MissingPermission")
         override fun onDeviceReady(device: BluetoothDevice) {
-            Timber.i("$device onDeviceReady!!!!!!")
+            Timber.i("$device DeviceReady!!!!!!")
+
+            onConnected(device.name, device.address)
+
+            // inform the caller that we have connected
+            ProgressEvents.onNext("ConnectionSetupComplete", device)
+            ProgressEvents.onNext("DeviceName", device.name)
+            ProgressEvents.onNext("DeviceAddress", device.address)
         }
 
         override fun onDeviceDisconnecting(device: BluetoothDevice) {
@@ -157,13 +161,6 @@ private class GShockManagerImpl(
             writeCharacteristic = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
-            onConnected(device.name, device.address)
-
-            // inform the caller that we have connected
-            ProgressEvents.onNext("ConnectionSetupComplete", device)
-            ProgressEvents.onNext("DeviceName", device.name)
-            ProgressEvents.onNext("DeviceAddress", device.address)
-
             return true
         }
         return false

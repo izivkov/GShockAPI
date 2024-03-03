@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
 
@@ -20,14 +21,14 @@ object Connection {
     private  var bleManager: IGShockManager? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    private suspend fun connect() {
+    private suspend fun connect(device: BluetoothDevice) {
 
         fun onConnected (name: String, address: String) {
             WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             WatchInfo.setAddress(address)
         }
 
-        bleManager?.connect(::onConnected)
+        bleManager?.connect(device, ::onConnected)
     }
 
     fun disconnect() {
@@ -89,12 +90,15 @@ object Connection {
         }
         val bluetoothAdapter: BluetoothAdapter? = getDefaultAdapter()
         val device: BluetoothDevice? = bluetoothAdapter?.getRemoteDevice(address)
+        if (device == null) {
+            ProgressEvents.onNext("ApiError", "Cannot obtain remote device")
+            return
+        }
 
         if (bleManager == null) {
             bleManager = IGShockManager(context)
         }
-        bleManager?.setDevice(device as BluetoothDevice)
-        connect()
+        connect(device)
     }
 
     fun isBluetoothEnabled(context:Context): Boolean {
