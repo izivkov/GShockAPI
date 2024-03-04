@@ -71,7 +71,7 @@ private class GShockManagerImpl(
         this.onConnected = onConnected
 
         connect(device)
-            .retry(3, 300)
+            // .retry(3, 300)
             .useAutoConnect(false)
             .timeout(30 * 24 * 60 * 1000)
             .enqueue()

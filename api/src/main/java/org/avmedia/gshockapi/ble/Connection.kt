@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
+import timber.log.Timber
 
 object Connection {
 
@@ -26,6 +27,7 @@ object Connection {
         fun onConnected (name: String, address: String) {
             WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             WatchInfo.setAddress(address)
+            Timber.i("onConnected() end")
         }
 
         bleManager?.connect(device, ::onConnected)
