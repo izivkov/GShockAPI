@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WATCH_MODEL {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, UNKNOWN
     }
 
     var name: String = ""
@@ -62,6 +62,7 @@ object WatchInfo {
         ModelInfo(WATCH_MODEL.GPR, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", weekLanguageSupported = false),
         ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, temperature = false),
+        ModelInfo(WATCH_MODEL.EQB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, temperature = false),
         ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s")
     )
     // @formatter:on
@@ -91,6 +92,7 @@ object WatchInfo {
             shortName.startsWith("GPR") -> WATCH_MODEL.GPR
             shortName.startsWith("MSG") -> WATCH_MODEL.MSG
             shortName.startsWith("GBD") -> WATCH_MODEL.GBD
+            shortName.startsWith("EQB") -> WATCH_MODEL.EQB
             shortName.startsWith("GMB") -> WATCH_MODEL.GA
             shortName.startsWith("GA") -> WATCH_MODEL.GA
             shortName.startsWith("GB") -> WATCH_MODEL.GA

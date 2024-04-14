@@ -38,8 +38,8 @@ private class GShockManagerImpl(
     context: Context,
 ) : BleManager(context), GSHock {
 
-    private lateinit var readCharacteristic: BluetoothGattCharacteristic
-    private lateinit var writeCharacteristic: BluetoothGattCharacteristic
+    private lateinit var readCharacteristicVar: BluetoothGattCharacteristic
+    private lateinit var writeCharacteristicVar: BluetoothGattCharacteristic
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
     override var connectionState = ConnectionState.DISCONNECTED
@@ -51,7 +51,7 @@ private class GShockManagerImpl(
 
     override fun initialize() {
         super.initialize()
-        setNotificationCallback(writeCharacteristic).with { _, data ->
+        setNotificationCallback(writeCharacteristicVar).with { _, data ->
 
             fun ByteArray.toHexString(): String =
                 joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
@@ -62,7 +62,7 @@ private class GShockManagerImpl(
             dataReceivedCallback?.dataReceived(hexData)
         }
 
-        enableNotifications(writeCharacteristic).enqueue()
+        enableNotifications(writeCharacteristicVar).enqueue()
         ProgressEvents.onNext("BleManagerInitialized")
     }
 
@@ -73,7 +73,6 @@ private class GShockManagerImpl(
         this.onConnected = onConnected
 
         connect(device)
-            // .retry(3, 300)
             .useAutoConnect(false)
             .timeout(30 * 24 * 60 * 1000)
             .enqueue()
@@ -99,8 +98,8 @@ private class GShockManagerImpl(
     }
 
     override fun enableNotifications() {
-        enableNotifications(writeCharacteristic)
-            .fail { device, status ->
+        enableNotifications(writeCharacteristicVar)
+            .fail { _, status ->
                 // Handle failure to enable notifications
                 Timber.i("Failed to enable notifications. Status: $status")
                 ProgressEvents.onNext("ApiError")
@@ -134,12 +133,12 @@ private class GShockManagerImpl(
         override fun onDeviceReady(device: BluetoothDevice) {
             Timber.i("$device DeviceReady!!!!!!")
 
-            onConnected(device.name, device.address)
+            onConnected(device.name ?: "CASIO", device.address)
 
             // inform the caller that we have connected
-            ProgressEvents.onNext("ConnectionSetupComplete", device)
             ProgressEvents.onNext("DeviceName", device.name)
             ProgressEvents.onNext("DeviceAddress", device.address)
+            ProgressEvents.onNext("ConnectionSetupComplete", device)
 
             Timber.i("onDeviceReady: Sent all messages.")
         }
@@ -158,11 +157,11 @@ private class GShockManagerImpl(
     @SuppressLint("NewApi", "MissingPermission")
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
         gatt.getService(CasioConstants.WATCH_FEATURES_SERVICE_UUID)?.apply {
-            readCharacteristic = getCharacteristic(
+            readCharacteristicVar = getCharacteristic(
                 CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
 
-            writeCharacteristic = getCharacteristic(
+            writeCharacteristicVar = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
             return true
@@ -194,7 +193,13 @@ private class GShockManagerImpl(
 
     override suspend fun write(handle: Int, data: ByteArray) {
 
-        val characteristic = if (handle == 0xC) readCharacteristic else writeCharacteristic
+        if (!this::readCharacteristicVar.isInitialized || !this::writeCharacteristicVar.isInitialized) {
+            ProgressEvents.onNext("ApiError", "Connection failed. Please try again.")
+            disconnect()
+            return
+        }
+
+        val characteristic = if (handle == 0xC) readCharacteristicVar else writeCharacteristicVar
         val writeType = if (handle == 0xC) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         writeCharacteristic(

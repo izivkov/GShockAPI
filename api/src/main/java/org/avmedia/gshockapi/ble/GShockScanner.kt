@@ -24,14 +24,15 @@ import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerSettings
 import no.nordicsemi.android.kotlin.ble.core.scanner.FilteredServiceUuid
 import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.WatchInfo
 
 object GShockScanner {
     @SuppressLint("MissingPermission")
     val CASIO_SERVICE_UUID = "00001804-0000-1000-8000-00805f9b34fb"
 
     data class DeviceInfo(val name: String, val address: String)
-
     private lateinit var scannerFlow: Job
+    var scannedName = ""
 
     @SuppressLint("MissingPermission")
     suspend fun scan(
@@ -73,6 +74,7 @@ object GShockScanner {
                 val device = it.device
                 if (device.address !in deviceSet) {
                     deviceSet.add(device.address)
+                    scannedName = (device.name as String) ?: ""
                     scanCallback(DeviceInfo(device.name as String, device.address))
                     cancelFlow()
                 }
