@@ -1,6 +1,7 @@
 package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.ble.READ_WRITE_MODE
 import org.avmedia.gshockapi.utils.Utils
 
 object AppInfoIO {
@@ -31,7 +32,7 @@ object AppInfoIO {
             // In this case, set it to the hardcoded value bellow, so 'D' button will work again.
             val appInfoCompactStr = Utils.toCompactString(data)
             if (appInfoCompactStr == "22FFFFFFFFFFFFFFFFFFFF00") {
-                CasioIO.writeCmd(0xE, "223488F4E5D5AFC829E06D02")
+                CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, "223488F4E5D5AFC829E06D02")
             }
         }
 

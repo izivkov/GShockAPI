@@ -20,14 +20,18 @@ enum class ConnectionState {
 }
 
 typealias onConnectedType = (String, String) -> Unit
+enum class READ_WRITE_MODE {
+    WRITABLE_WITHOUT_RESPONSE,
+    WRITABLE_NOTIFIABLE
+}
 
 interface GSHock {
     suspend fun connect(device: BluetoothDevice, onConnected: (String, String) -> Unit)
     fun release()
     fun setDataCallback(dataCallback: IDataReceived?)
     fun enableNotifications()
-    suspend fun write(handle: Int, data: ByteArray)
     abstract var connectionState: ConnectionState
+    suspend fun write(handle: READ_WRITE_MODE, data: ByteArray)
 }
 
 class IGShockManager(
@@ -38,8 +42,8 @@ private class GShockManagerImpl(
     context: Context,
 ) : BleManager(context), GSHock {
 
-    private lateinit var readCharacteristicVar: BluetoothGattCharacteristic
-    private lateinit var writeCharacteristicVar: BluetoothGattCharacteristic
+    private lateinit var readCharacteristicHolder: BluetoothGattCharacteristic
+    private lateinit var writeCharacteristicHolder: BluetoothGattCharacteristic
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
     override var connectionState = ConnectionState.DISCONNECTED
@@ -51,7 +55,7 @@ private class GShockManagerImpl(
 
     override fun initialize() {
         super.initialize()
-        setNotificationCallback(writeCharacteristicVar).with { _, data ->
+        setNotificationCallback(writeCharacteristicHolder).with { _, data ->
 
             fun ByteArray.toHexString(): String =
                 joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
@@ -62,7 +66,7 @@ private class GShockManagerImpl(
             dataReceivedCallback?.dataReceived(hexData)
         }
 
-        enableNotifications(writeCharacteristicVar).enqueue()
+        enableNotifications(writeCharacteristicHolder).enqueue()
         ProgressEvents.onNext("BleManagerInitialized")
     }
 
@@ -98,7 +102,7 @@ private class GShockManagerImpl(
     }
 
     override fun enableNotifications() {
-        enableNotifications(writeCharacteristicVar)
+        enableNotifications(writeCharacteristicHolder)
             .fail { _, status ->
                 // Handle failure to enable notifications
                 Timber.i("Failed to enable notifications. Status: $status")
@@ -157,11 +161,11 @@ private class GShockManagerImpl(
     @SuppressLint("NewApi", "MissingPermission")
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
         gatt.getService(CasioConstants.WATCH_FEATURES_SERVICE_UUID)?.apply {
-            readCharacteristicVar = getCharacteristic(
+            readCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
 
-            writeCharacteristicVar = getCharacteristic(
+            writeCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
             return true
@@ -191,16 +195,16 @@ private class GShockManagerImpl(
     |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
     */
 
-    override suspend fun write(handle: Int, data: ByteArray) {
+    override suspend fun write(handle: READ_WRITE_MODE, data: ByteArray) {
 
-        if (!this::readCharacteristicVar.isInitialized || !this::writeCharacteristicVar.isInitialized) {
+        if (!this::readCharacteristicHolder.isInitialized || !this::writeCharacteristicHolder.isInitialized) {
             ProgressEvents.onNext("ApiError", "Connection failed. Please try again.")
             disconnect()
             return
         }
 
-        val characteristic = if (handle == 0xC) readCharacteristicVar else writeCharacteristicVar
-        val writeType = if (handle == 0xC) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        val characteristic = if (handle == READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE) readCharacteristicHolder else writeCharacteristicHolder
+        val writeType = if (handle == READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         writeCharacteristic(
             characteristic,

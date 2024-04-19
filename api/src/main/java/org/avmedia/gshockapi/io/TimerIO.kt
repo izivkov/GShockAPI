@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.ble.READ_WRITE_MODE
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -41,14 +42,14 @@ object TimerIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         CasioIO.writeCmd(
-            0x000c,
+            READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
         )
     }
 
     fun sendToWatchSet(message: String) {
         val seconds = JSONObject(message).get("value").toString()
-        CasioIO.writeCmd(0x000e, TimerEncoder.encode(seconds))
+        CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, TimerEncoder.encode(seconds))
     }
 
     object TimerDecoder {

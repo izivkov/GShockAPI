@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.ble.READ_WRITE_MODE
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -79,7 +80,7 @@ object TimeAdjustmentIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         CasioIO.writeCmd(
-            0x000c,
+            READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
         )
     }
@@ -93,7 +94,7 @@ object TimeAdjustmentIO {
         )
         val encodedTimeAdj = encodeTimeAdjustment(settings)
         if (encodedTimeAdj.isNotEmpty()) {
-            CasioIO.writeCmd(0x000e, encodedTimeAdj)
+            CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, encodedTimeAdj)
         }
     }
 

@@ -62,7 +62,7 @@ object Connection {
         bleManager?.setDataCallback(dataCallback)
     }
 
-    fun write(handle: Int, data: ByteArray) {
+    fun write(handle: READ_WRITE_MODE, data: ByteArray) {
         scope.launch {
             bleManager?.write(handle, data)
         }
