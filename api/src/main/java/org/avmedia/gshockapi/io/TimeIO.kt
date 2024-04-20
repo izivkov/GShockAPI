@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.READ_WRITE_MODE
+import org.avmedia.gshockapi.ble.GET_SET_MODE
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.utils.Utils
@@ -135,7 +135,7 @@ object TimeIO {
     private suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
         val ret: String = function(param)
         val shortStr = Utils.toCompactString(ret)
-        CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, shortStr)
+        CasioIO.writeCmd(GET_SET_MODE.SET, shortStr)
     }
 
     private suspend fun writeDST() {
@@ -201,7 +201,7 @@ object TimeIO {
         suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
             val ret: String = function(param)
             val shortStr = Utils.toCompactString(ret)
-            CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, shortStr)
+            CasioIO.writeCmd(GET_SET_MODE.SET, shortStr)
         }
 
         readAndWrite(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO)
@@ -227,7 +227,7 @@ object TimeIO {
         val timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
-        CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, timeCommand)
+        CasioIO.writeCmd(GET_SET_MODE.SET, timeCommand)
     }
 
     object TimeEncoder {

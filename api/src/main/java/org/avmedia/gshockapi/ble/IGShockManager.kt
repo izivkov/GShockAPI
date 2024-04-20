@@ -20,9 +20,9 @@ enum class ConnectionState {
 }
 
 typealias onConnectedType = (String, String) -> Unit
-enum class READ_WRITE_MODE {
-    WRITABLE_WITHOUT_RESPONSE,
-    WRITABLE_NOTIFIABLE
+enum class GET_SET_MODE {
+    GET,
+    SET
 }
 
 interface GSHock {
@@ -31,7 +31,7 @@ interface GSHock {
     fun setDataCallback(dataCallback: IDataReceived?)
     fun enableNotifications()
     abstract var connectionState: ConnectionState
-    suspend fun write(handle: READ_WRITE_MODE, data: ByteArray)
+    suspend fun write(handle: GET_SET_MODE, data: ByteArray)
 }
 
 class IGShockManager(
@@ -195,7 +195,7 @@ private class GShockManagerImpl(
     |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
     */
 
-    override suspend fun write(handle: READ_WRITE_MODE, data: ByteArray) {
+    override suspend fun write(handle: GET_SET_MODE, data: ByteArray) {
 
         if (!this::readCharacteristicHolder.isInitialized || !this::writeCharacteristicHolder.isInitialized) {
             ProgressEvents.onNext("ApiError", "Connection failed. Please try again.")
@@ -203,8 +203,8 @@ private class GShockManagerImpl(
             return
         }
 
-        val characteristic = if (handle == READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE) readCharacteristicHolder else writeCharacteristicHolder
-        val writeType = if (handle == READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        val characteristic = if (handle == GET_SET_MODE.GET) readCharacteristicHolder else writeCharacteristicHolder
+        val writeType = if (handle == GET_SET_MODE.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         writeCharacteristic(
             characteristic,

@@ -6,7 +6,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Event
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.READ_WRITE_MODE
+import org.avmedia.gshockapi.ble.GET_SET_MODE
 import org.avmedia.gshockapi.casio.*
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
@@ -154,7 +154,7 @@ object EventsIO {
             val reminderJson = remindersJsonArr.getJSONObject(element)
             val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
             CasioIO.writeCmd(
-                READ_WRITE_MODE.WRITABLE_NOTIFIABLE, Utils.byteArrayOfInts(
+                GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index + 1
                 ) + title
             )
@@ -163,7 +163,7 @@ object EventsIO {
             reminderTime += CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code
             reminderTime += index + 1
             reminderTime += ReminderEncoder.reminderTimeFromJson(reminderJson)
-            CasioIO.writeCmd(READ_WRITE_MODE.WRITABLE_NOTIFIABLE, Utils.byteArrayOfIntArray(reminderTime))
+            CasioIO.writeCmd(GET_SET_MODE.SET, Utils.byteArrayOfIntArray(reminderTime))
         }
 
         Timber.i("Got reminders $remindersJsonArr")
@@ -173,13 +173,13 @@ object EventsIO {
         var index = 1
         repeat(5) {
             CasioIO.writeCmd(
-                READ_WRITE_MODE.WRITABLE_NOTIFIABLE, Utils.byteArrayOfInts(
+                GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index
                 ) + ByteArray(18)
             )
 
             CasioIO.writeCmd(
-                READ_WRITE_MODE.WRITABLE_NOTIFIABLE, Utils.byteArrayOfInts(
+                GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index
                 ) + ByteArray(9)
             )

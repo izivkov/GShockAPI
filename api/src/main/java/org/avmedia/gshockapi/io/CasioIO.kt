@@ -9,7 +9,7 @@ package org.avmedia.gshockapi.io
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.READ_WRITE_MODE
+import org.avmedia.gshockapi.ble.GET_SET_MODE
 import java.util.UUID
 
 object CasioIO {
@@ -24,22 +24,22 @@ object CasioIO {
     enum class DTS_STATE(val state: Int) { ZERO(0), TWO(2), FOUR(4) }
 
     fun request(request: String) {
-        writeCmd(READ_WRITE_MODE.WRITABLE_WITHOUT_RESPONSE, request)
+        writeCmd(GET_SET_MODE.GET, request)
     }
 
     fun init() {
     }
 
-    fun writeCmd(handle: READ_WRITE_MODE, bytesArray: ByteArray) {
+    fun writeCmd(handle: GET_SET_MODE, bytesArray: ByteArray) {
         Connection.write(handle, bytesArray)
     }
 
-    fun writeCmd(handle: READ_WRITE_MODE, cmd: String) {
+    fun writeCmd(handle: GET_SET_MODE, cmd: String) {
         writeCmdFromString(handle, cmd)
     }
 
     /// new
-    private fun writeCmdFromString(handle: READ_WRITE_MODE, bytesStr: String) {
+    private fun writeCmdFromString(handle: GET_SET_MODE, bytesStr: String) {
         Connection.write(handle, toCasioCmd(bytesStr))
     }
 
