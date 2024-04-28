@@ -118,7 +118,6 @@ pwr. saving off:00010000
         } else {
             settings.dateFormat = "MM:DD"
         }
-
         if (settingArray[5] == 0) {
             settings.language = "English"
         }

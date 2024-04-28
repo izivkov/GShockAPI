@@ -11,6 +11,7 @@ import kotlinx.coroutines.cancel
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.CasioConstants
 import timber.log.Timber
 import java.util.*
@@ -137,10 +138,11 @@ private class GShockManagerImpl(
         override fun onDeviceReady(device: BluetoothDevice) {
             Timber.i("$device DeviceReady!!!!!!")
 
-            onConnected(device.name ?: "CASIO", device.address)
+            val name = device.name ?: WatchInfo.name ?: "CASIO"
+            onConnected(name, device.address)
 
             // inform the caller that we have connected
-            ProgressEvents.onNext("DeviceName", device.name)
+            ProgressEvents.onNext("DeviceName", name)
             ProgressEvents.onNext("DeviceAddress", device.address)
             ProgressEvents.onNext("ConnectionSetupComplete", device)
 
