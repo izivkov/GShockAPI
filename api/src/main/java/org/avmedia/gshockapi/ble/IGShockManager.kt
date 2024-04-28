@@ -138,7 +138,7 @@ private class GShockManagerImpl(
         override fun onDeviceReady(device: BluetoothDevice) {
             Timber.i("$device DeviceReady!!!!!!")
 
-            val name = device.name ?: WatchInfo.name ?: "CASIO"
+            val name = device.name ?: "CASIO"
             onConnected(name, device.address)
 
             // inform the caller that we have connected
