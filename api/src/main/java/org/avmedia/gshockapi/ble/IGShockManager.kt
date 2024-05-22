@@ -12,6 +12,7 @@ import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
 import java.util.*
 
@@ -162,13 +163,24 @@ private class GShockManagerImpl(
     @SuppressLint("NewApi", "MissingPermission")
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
         gatt.getService(CasioConstants.WATCH_FEATURES_SERVICE_UUID)?.apply {
-            readCharacteristicHolder = getCharacteristic(
-                CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID,
+//            readCharacteristicHolder = getCharacteristic(
+//                CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID,
+//            )
+
+            // INZ new
+            readCharacteristicHolder = BluetoothGattCharacteristic(
+                UUID.fromString("26eb001d-b012-49a8-b1f8-394fb2032b0f"),
+                // UUID.fromString("26eb000f-b012-49a8-b1f8-394fb2032b0f"),
+                BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+                BluetoothGattCharacteristic.PERMISSION_WRITE or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
             )
+            // INZ end
+
 
             writeCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
+
             return true
         }
         return false
@@ -207,9 +219,11 @@ private class GShockManagerImpl(
         val characteristic = if (handle == GET_SET_MODE.GET) readCharacteristicHolder else writeCharacteristicHolder
         val writeType = if (handle == GET_SET_MODE.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
+        val dataTemp = Utils.toByteArray("6000061e40000a0f6000061e6000061e7000001e")
+
         writeCharacteristic(
             characteristic,
-            data,
+            dataTemp, // data,
             writeType
         ).enqueue()
     }

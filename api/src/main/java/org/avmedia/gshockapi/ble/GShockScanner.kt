@@ -41,7 +41,7 @@ object GShockScanner {
     ) {
 
         val gShockFilters: List<BleScanFilter> = listOf(
-            BleScanFilter(serviceUuid = FilteredServiceUuid(ParcelUuid.fromString(CASIO_SERVICE_UUID)))
+            // BleScanFilter(serviceUuid = FilteredServiceUuid(ParcelUuid.fromString(CASIO_SERVICE_UUID)))
         )
 
         val gShockSettings = BleScannerSettings(

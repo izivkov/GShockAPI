@@ -78,7 +78,7 @@ class GShockAPI(private val context: Context) {
         getPressedButton()
 
         ProgressEvents.onNext("ButtonPressedInfoReceived")
-        getAppInfo() // this call re-enables lower-right button after watch reset.
+        // getAppInfo() // this call re-enables lower-right button after watch reset.
         ProgressEvents.onNext("WatchInitializationCompleted")
         return true
     }
@@ -137,7 +137,12 @@ class GShockAPI(private val context: Context) {
     /* Do not get value from cache, because we do not want to
     get all values here. */
     suspend fun getPressedButton(): CasioIO.WATCH_BUTTON {
-        val value = ButtonPressedIO.request()
+
+        // INZ
+        // val value = ButtonPressedIO.request()
+        val value = CasioIO.WATCH_BUTTON.UPPER_LEFT
+
+
         ButtonPressedIO.put(value)
         return value
     }
