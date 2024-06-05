@@ -1,5 +1,6 @@
 package org.avmedia.gshock
 
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -7,6 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
+import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.io.CasioIO
 import java.time.ZoneId
 import java.util.*
@@ -127,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
+        gb5600Test()
 //        println("Button pressed: ${api.getPressedButton()}")
 //        println("Name returned: ${api.getWatchName()}")
 //
@@ -143,12 +146,12 @@ class MainActivity : AppCompatActivity() {
 //        generateCustomEvent()
 //
 //        val currentTZ = TimeZone.getDefault().id
-//        api.setTime("Europe/Sofia")
+//         api.setTime("Europe/Sofia")
 //        api.setTime("Asia/Kolkata")
 //        api.setTime("Pacific/Kiritimati")
 //         api.setTime("UTC")
 //        api.setTime(currentTZ)
-        val alarms = api.getAlarms()
+//         val alarms = api.getAlarms()
 //        println("Alarm model: $alarms")
 //
 //        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
@@ -157,6 +160,11 @@ class MainActivity : AppCompatActivity() {
 //
 //        handleReminders()
 //        handleSettings()
+    }
+
+
+    private fun gb5600Test () {
+        api.gb5600Test()
     }
 
     private fun runTimezonesTest() {

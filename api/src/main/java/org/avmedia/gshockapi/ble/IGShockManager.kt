@@ -33,6 +33,7 @@ interface GSHock {
     fun enableNotifications()
     abstract var connectionState: ConnectionState
     suspend fun write(handle: GET_SET_MODE, data: ByteArray)
+    suspend fun write(handle: BluetoothGattCharacteristic, data: ByteArray)
 }
 
 class IGShockManager(
@@ -225,6 +226,14 @@ private class GShockManagerImpl(
             characteristic,
             dataTemp, // data,
             writeType
+        ).enqueue()
+    }
+
+    override suspend fun write(characteristic: BluetoothGattCharacteristic, data: ByteArray) {
+        writeCharacteristic(
+            characteristic,
+            data,
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         ).enqueue()
     }
 }

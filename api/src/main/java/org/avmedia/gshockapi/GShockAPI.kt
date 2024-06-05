@@ -1,6 +1,7 @@
 package org.avmedia.gshockapi
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -11,6 +12,9 @@ import org.avmedia.gshockapi.utils.*
 import timber.log.Timber
 import java.time.ZoneId
 import java.util.*
+
+import no.nordicsemi.android.ble.BleManager
+
 
 /**
  * This class contains all the API functions. This should the the main interface to the library.
@@ -473,5 +477,37 @@ class GShockAPI(private val context: Context) {
 
     fun preventReconnection ():Boolean {
         return true
+    }
+
+
+
+    // GB5600
+    fun gb5600Test () {
+        val initCharacteristic = BluetoothGattCharacteristic(
+            UUID.fromString("00002a06-0000-1000-8000-00805f9b34fb"),
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PERMISSION_WRITE or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
+        )
+
+        val dataInit = Utils.toByteArray("00")
+
+        Connection.writeCharacteristic(
+            initCharacteristic,
+            dataInit
+        )
+
+        val timeCharacteristic = BluetoothGattCharacteristic(
+            UUID.fromString("26eb000f-b012-49a8-b1f8-394fb2032b0f"),
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PERMISSION_WRITE or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
+        )
+
+        val dataTime = byteArrayOf(-43, 85, 87, 81, 72, 44, 1, 2, 0, 0)
+
+        Connection.writeCharacteristic(
+            timeCharacteristic,
+            dataTime
+        )
+
     }
 }

@@ -85,7 +85,6 @@ object TimeIO {
         return DstWatchStateIO.request(state)
     }
 
-    @Suppress("UNUSED_PARAMETER")
     enum class DtsMask(val mask: Int) {
         OFF(0b00),
         ON(0b01),
