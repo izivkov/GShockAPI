@@ -485,29 +485,24 @@ class GShockAPI(private val context: Context) {
     fun gb5600Test () {
         val initCharacteristic = BluetoothGattCharacteristic(
             UUID.fromString("00002a06-0000-1000-8000-00805f9b34fb"),
-            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
             BluetoothGattCharacteristic.PERMISSION_WRITE or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
         )
 
-        val dataInit = Utils.toByteArray("00")
-
         Connection.writeCharacteristic(
             initCharacteristic,
-            dataInit
+            byteArrayOf(0)
         )
 
         val timeCharacteristic = BluetoothGattCharacteristic(
             UUID.fromString("26eb000f-b012-49a8-b1f8-394fb2032b0f"),
-            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
             BluetoothGattCharacteristic.PERMISSION_WRITE or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
         )
 
-        val dataTime = byteArrayOf(-43, 85, 87, 81, 72, 44, 1, 2, 0, 0)
-
         Connection.writeCharacteristic(
             timeCharacteristic,
-            dataTime
+            byteArrayOf(-43, 85, 87, 81, 72, 44, 1, 2, 0, 0)
         )
-
     }
 }

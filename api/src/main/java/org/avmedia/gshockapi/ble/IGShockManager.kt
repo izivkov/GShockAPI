@@ -33,7 +33,7 @@ interface GSHock {
     fun enableNotifications()
     abstract var connectionState: ConnectionState
     suspend fun write(handle: GET_SET_MODE, data: ByteArray)
-    suspend fun write(handle: BluetoothGattCharacteristic, data: ByteArray)
+    suspend fun write(characteristic: BluetoothGattCharacteristic, data: ByteArray)
 }
 
 class IGShockManager(
@@ -177,7 +177,6 @@ private class GShockManagerImpl(
             )
             // INZ end
 
-
             writeCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
@@ -220,11 +219,9 @@ private class GShockManagerImpl(
         val characteristic = if (handle == GET_SET_MODE.GET) readCharacteristicHolder else writeCharacteristicHolder
         val writeType = if (handle == GET_SET_MODE.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
-        val dataTemp = Utils.toByteArray("6000061e40000a0f6000061e6000061e7000001e")
-
         writeCharacteristic(
             characteristic,
-            dataTemp, // data,
+            data,
             writeType
         ).enqueue()
     }
