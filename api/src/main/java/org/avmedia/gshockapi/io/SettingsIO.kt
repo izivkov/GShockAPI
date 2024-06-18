@@ -13,6 +13,11 @@ import org.json.JSONObject
 import kotlin.experimental.or
 
 object SettingsIO {
+    val MASK_24_HOURS = 0b00000001
+    val MASK_BUTTON_TONE_OFF = 0b00000010
+    val MASK_AUTO_LIGHT_OFF = 0b00000100
+    val POWER_SAVING_MODE = 0b00010000
+    val SOUND_ON = 0b01000000
 
     private object DeferredValueHolder {
         lateinit var deferredResult: CompletableDeferred<Settings>
@@ -95,11 +100,6 @@ pwr. saving off:00010000
     }
 
     private fun createJsonSettings(settingString: String): JSONObject {
-        val MASK_24_HOURS = 0b00000001
-        val MASK_BUTTON_TONE_OFF = 0b00000010
-        val MASK_LIGHT_OFF = 0b00000100
-        val POWER_SAVING_MODE = 0b00010000
-
         val settings = Settings()
 
         val settingArray = Utils.toIntArray(settingString)
@@ -110,7 +110,7 @@ pwr. saving off:00010000
             settings.timeFormat = "12h"
         }
         settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
-        settings.autoLight = settingArray[1] and MASK_LIGHT_OFF == 0
+        settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
         settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
 
         if (settingArray[4] == 1) {
@@ -161,11 +161,6 @@ pwr. saving off:00010000
 
     object SettingsEncoder {
         fun encode(settings: JSONObject): ByteArray {
-            val MASK_24_HOURS = 0b00000001
-            val MASK_BUTTON_TONE_OFF = 0b00000010
-            val MASK_LIGHT_OFF = 0b00000100
-            val POWER_SAVING_MODE = 0b00010000
-
             val arr = ByteArray(12)
             arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
             if (settings.get("timeFormat") == "24h") {
@@ -175,11 +170,14 @@ pwr. saving off:00010000
                 arr[1] = (arr[1] or MASK_BUTTON_TONE_OFF.toByte())
             }
             if (settings.get("autoLight") == false) {
-                arr[1] = (arr[1] or MASK_LIGHT_OFF.toByte())
+                arr[1] = (arr[1] or MASK_AUTO_LIGHT_OFF.toByte())
             }
             if (settings.get("powerSavingMode") == false) {
                 arr[1] = (arr[1] or POWER_SAVING_MODE.toByte())
             }
+
+            // This should be on if you like to hear alarms, times, etc, for ECB-30
+            arr[1] = (arr[1] or SOUND_ON.toByte())
 
             if (settings.get("lightDuration") == "4s") {
                 arr[2] = 1

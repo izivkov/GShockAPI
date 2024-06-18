@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         println("App Info: ${api.getAppInfo()}")
 
         println("Home Time: ${api.getHomeTime()}")
+        println("Temperaure: ${api.getWatchTemperature()}")
 
         getDSTState()
         getWorldCities()
@@ -143,10 +144,10 @@ class MainActivity : AppCompatActivity() {
         generateCustomEvent()
 
         val currentTZ = TimeZone.getDefault().id
-        api.setTime("Europe/Sofia")
-        api.setTime("Asia/Kolkata")
-        api.setTime("Pacific/Kiritimati")
-        api.setTime("UTC")
+//        api.setTime("Europe/Sofia")
+//        api.setTime("Asia/Kolkata")
+//        api.setTime("Pacific/Kiritimati")
+//        api.setTime("UTC")
         api.setTime(currentTZ)
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
@@ -155,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         alarms[4] = Alarm(9, 25, enabled = false)
         api.setAlarms(alarms)
 
-        handleReminders()
+        // handleReminders()
         handleSettings()
     }
 
@@ -248,6 +249,7 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun handleSettings() {
         val settings: Settings = api.getSettings()
+        println ("Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}")
         settings.dateFormat = "MM:DD"
         api.setSettings(settings)
     }
