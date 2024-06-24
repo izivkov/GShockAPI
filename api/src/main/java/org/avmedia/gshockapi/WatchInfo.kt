@@ -24,7 +24,8 @@ object WatchInfo {
     var longLightDuration = ""
     var weekLanguageSupported = true
     var worldCities = true
-    private var temperature = true
+    var hasTemperature = true
+    var hasBatteryLevel: Boolean = true
 
     //  Battery level between 15 and 20 for B2100 and between 9 and 19 for B5600. Scale accordingly to %
     var batteryLevelLowerLimit = 15
@@ -32,6 +33,8 @@ object WatchInfo {
 
     var alwaysConnected = false
     var findButtonUserDefined = false
+    var hasPowerSavingMode = true
+    var hasDnD = false
 
     /**
      * Info about the model.
@@ -47,11 +50,14 @@ object WatchInfo {
         val longLightDuration: String,
         val weekLanguageSupported: Boolean = true,
         val worldCities: Boolean = true,
-        val temperature: Boolean = true,
+        val hasBatteryLevel: Boolean = true,
+        val hasTemperature: Boolean = true,
         val batteryLevelLowerLimit: Int = 15,
         val batteryLevelUpperLimit: Int = 20,
         val alwaysConnected: Boolean = false,
         val findButtonUserDefined: Boolean = false,
+        val hasPowerSavingMode: Boolean = true,
+        val hasDnD:Boolean = false,
     )
 
     // @formatter:off
@@ -66,9 +72,10 @@ object WatchInfo {
         ModelInfo(WATCH_MODEL.MSG, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WATCH_MODEL.GPR, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", weekLanguageSupported = false),
         ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, temperature = false),
-        ModelInfo(WATCH_MODEL.EQB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, temperature = false),
-        ModelInfo(WATCH_MODEL.ECB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = true, temperature = true, alwaysConnected = true, findButtonUserDefined=true),
+        ModelInfo(WATCH_MODEL.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
+        ModelInfo(WATCH_MODEL.EQB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
+        ModelInfo(WATCH_MODEL.ECB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = true, hasTemperature = false, hasBatteryLevel = false,
+            alwaysConnected = true, findButtonUserDefined=true, hasPowerSavingMode=false, hasDnD = true),
         ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s")
     )
     // @formatter:on
@@ -117,11 +124,14 @@ object WatchInfo {
         this.longLightDuration = modelMap[model]!!.longLightDuration
         this.weekLanguageSupported = modelMap[model]!!.weekLanguageSupported
         this.worldCities = modelMap[model]!!.worldCities
-        this.temperature = modelMap[model]!!.temperature
+        this.hasTemperature = modelMap[model]!!.hasTemperature
         this.batteryLevelLowerLimit = modelMap[model]!!.batteryLevelLowerLimit
         this.batteryLevelUpperLimit = modelMap[model]!!.batteryLevelUpperLimit
         this.alwaysConnected = modelMap[model]!!.alwaysConnected
         this.findButtonUserDefined = modelMap[model]!!.findButtonUserDefined
+        this.hasPowerSavingMode = modelMap[model]!!.hasPowerSavingMode
+        this.hasDnD = modelMap[model]!!.hasDnD
+        this.hasBatteryLevel = modelMap[model]!!.hasBatteryLevel
 
         ProgressEvents.onNext("DeviceName", this.name)
     }

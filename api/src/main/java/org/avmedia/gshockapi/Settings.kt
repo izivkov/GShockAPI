@@ -42,4 +42,7 @@ class Settings {
     var timeAdjustment = true
 
     var adjustmentTimeMinutes = 30
+
+    // for always-connected watches only, like the ECB-30
+    var DnD = false
 }

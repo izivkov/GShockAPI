@@ -10,6 +10,8 @@ import org.avmedia.gshockapi.ble.GET_SET_MODE
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
+import kotlin.experimental.and
+import kotlin.experimental.inv
 import kotlin.experimental.or
 
 object SettingsIO {
@@ -17,7 +19,7 @@ object SettingsIO {
     val MASK_BUTTON_TONE_OFF = 0b00000010
     val MASK_AUTO_LIGHT_OFF = 0b00000100
     val POWER_SAVING_MODE = 0b00010000
-    val SOUND_ON = 0b01000000
+    val DO_NOT_DISTURB_OFF = 0b01000000
 
     private object DeferredValueHolder {
         lateinit var deferredResult: CompletableDeferred<Settings>
@@ -112,6 +114,7 @@ pwr. saving off:00010000
         settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
         settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
         settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
+        settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
 
         if (settingArray[4] == 1) {
             settings.dateFormat = "DD:MM"
@@ -176,8 +179,9 @@ pwr. saving off:00010000
                 arr[1] = (arr[1] or POWER_SAVING_MODE.toByte())
             }
 
-            // This should be on if you like to hear alarms, times, etc, for ECB-30
-            arr[1] = (arr[1] or SOUND_ON.toByte())
+            if (settings.get("DnD") == false) {
+                arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
+            }
 
             if (settings.get("lightDuration") == "4s") {
                 arr[2] = 1
@@ -194,6 +198,10 @@ pwr. saving off:00010000
             }
 
             return arr
+        }
+
+        private fun setDnDFlag(flag: Byte, value: Boolean): Byte {
+            return if (value) flag or DO_NOT_DISTURB_OFF.toByte() else flag and DO_NOT_DISTURB_OFF.toByte().inv()
         }
     }
 }
