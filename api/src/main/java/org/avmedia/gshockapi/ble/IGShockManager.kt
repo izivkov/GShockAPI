@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi.ble;
+package org.avmedia.gshockapi.ble
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -14,13 +14,13 @@ import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
-import java.util.*
 
 enum class ConnectionState {
     CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING
 }
 
 typealias onConnectedType = (String, String) -> Unit
+
 enum class GET_SET_MODE {
     GET,
     SET
@@ -31,7 +31,7 @@ interface GSHock {
     fun release()
     fun setDataCallback(dataCallback: IDataReceived?)
     fun enableNotifications()
-    abstract var connectionState: ConnectionState
+    var connectionState: ConnectionState
     suspend fun write(handle: GET_SET_MODE, data: ByteArray)
     suspend fun write(characteristic: BluetoothGattCharacteristic, data: ByteArray)
 }
@@ -216,8 +216,10 @@ private class GShockManagerImpl(
             return
         }
 
-        val characteristic = if (handle == GET_SET_MODE.GET) readCharacteristicHolder else writeCharacteristicHolder
-        val writeType = if (handle == GET_SET_MODE.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        val characteristic =
+            if (handle == GET_SET_MODE.GET) readCharacteristicHolder else writeCharacteristicHolder
+        val writeType =
+            if (handle == GET_SET_MODE.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         writeCharacteristic(
             characteristic,

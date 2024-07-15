@@ -8,11 +8,25 @@ package org.avmedia.gshockapi.casio
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.io.*
+import org.avmedia.gshockapi.io.AlarmsIO
+import org.avmedia.gshockapi.io.AppInfoIO
+import org.avmedia.gshockapi.io.ButtonPressedIO
+import org.avmedia.gshockapi.io.DstForWorldCitiesIO
+import org.avmedia.gshockapi.io.DstWatchStateIO
+import org.avmedia.gshockapi.io.ErrorIO
+import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.RunActionsIO
+import org.avmedia.gshockapi.io.SettingsIO
+import org.avmedia.gshockapi.io.TimeAdjustmentIO
+import org.avmedia.gshockapi.io.TimeIO
+import org.avmedia.gshockapi.io.TimerIO
+import org.avmedia.gshockapi.io.UnknownIO
+import org.avmedia.gshockapi.io.WatchConditionIO
+import org.avmedia.gshockapi.io.WatchNameIO
+import org.avmedia.gshockapi.io.WorldCitiesIO
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import timber.log.Timber
-import java.util.*
 
 object MessageDispatcher {
 
@@ -54,7 +68,8 @@ object MessageDispatcher {
         CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code to TimeAdjustmentIO::onReceived,
 
         CasioConstants.CHARACTERISTICS.ERROR.code to ErrorIO::onReceived,
-        CasioConstants.CHARACTERISTICS.UNKNOWN.code to UnknownIO::onReceived,
+        CasioConstants.CHARACTERISTICS.FIND_PHONE.code to RunActionsIO::onReceived, // always-connected watches, use PHONE FINDER to invoke actions...
+        CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code to UnknownIO::onReceived,
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -64,6 +79,6 @@ object MessageDispatcher {
         if (dataReceivedMessages[key] == null) {
             Timber.e("GShockAPI", "Unknown key: $key")
         }
-        dataReceivedMessages[key]!!.invoke(data)
+        dataReceivedMessages[key]?.invoke(data)
     }
 }

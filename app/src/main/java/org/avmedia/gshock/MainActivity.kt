@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
-        gb5600Test()
+        // gb5600Test()
 //        println("Button pressed: ${api.getPressedButton()}")
 //        println("Name returned: ${api.getWatchName()}")
 //
@@ -163,9 +163,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun gb5600Test () {
-        api.gb5600Test()
-    }
 
     private fun runTimezonesTest() {
         val all = ZoneId.getAvailableZoneIds().size
@@ -256,6 +253,7 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun handleSettings() {
         val settings: Settings = api.getSettings()
+        println ("Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}")
         settings.dateFormat = "MM:DD"
         api.setSettings(settings)
     }

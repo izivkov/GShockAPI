@@ -458,7 +458,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return *true* if enables, *false* otherwise.
      */
-    fun isBluetoothEnabled(context:Context): Boolean {
+    fun isBluetoothEnabled(context: Context): Boolean {
         return Connection.isBluetoothEnabled(context)
     }
 
@@ -475,7 +475,7 @@ class GShockAPI(private val context: Context) {
         return Connection.validateAddress(deviceAddress)
     }
 
-    fun preventReconnection ():Boolean {
+    fun preventReconnection(): Boolean {
         return true
     }
 
