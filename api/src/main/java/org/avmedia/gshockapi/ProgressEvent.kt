@@ -6,11 +6,12 @@
 
 package org.avmedia.gshockapi
 
-import android.annotation.SuppressLint
-import io.reactivex.Flowable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Consumer
-import io.reactivex.processors.PublishProcessor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.ProgressEvents.Events
 import org.avmedia.gshockapi.ProgressEvents.Subscriber
 import timber.log.Timber
@@ -65,16 +66,16 @@ data class EventAction(
 ) : IEventAction
 
 object ProgressEvents {
-
     val subscriber = Subscriber()
-    private val eventsProcessor: PublishProcessor<Events> = PublishProcessor.create()
+    private val eventsFlow: MutableSharedFlow<Events> = MutableSharedFlow()
 
     fun runEventActions(name: String, eventActions: Array<EventAction>) {
         subscriber.runEventActions(name, eventActions)
     }
 
+    private val subscribers: MutableSet<String> = LinkedHashSet()
+
     class Subscriber {
-        private val subscribers: Set<String> = LinkedHashSet<String>()
 
         /**
          * Call this from anywhere to start listening to [ProgressEvents].
@@ -82,25 +83,24 @@ object ProgressEvents {
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
          * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
          */
-
-        @SuppressLint("CheckResult")
         @Deprecated("This method is deprecated. Use runEventActions() instead.")
         fun start(
             name: String,
-            onNextStr: Consumer<in Events>,
-            onError: Consumer<in Throwable>,
+            onNext: (Events) -> Unit,
+            onError: (Throwable) -> Unit,
             filter: (Events) -> Boolean = { true }
         ) {
             if (subscribers.contains(name)) {
                 return // do not allow multiple subscribers with same name
             }
-            (subscribers as LinkedHashSet).add(name)
+            subscribers.add(name)
 
-            eventsProcessor.observeOn(AndroidSchedulers.mainThread())
-                .filter { event -> filter(event) }
-                .doOnNext(onNextStr)
-                .doOnError(onError)
-                .subscribe({}, onError)
+            CoroutineScope(Dispatchers.Main).launch {
+                eventsFlow
+                    .filter { event -> filter(event) }
+                    .catch { throwable -> onError(throwable) }
+                    .collect { event -> onNext(event) }
+            }
         }
 
         /**
@@ -109,59 +109,54 @@ object ProgressEvents {
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
          * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
          */
-        @SuppressLint("CheckResult")
         fun runEventActions(name: String, eventActions: Array<EventAction>) {
-
             if (subscribers.contains(name)) {
                 return // do not allow multiple subscribers with same name
             }
-            (subscribers as LinkedHashSet).add(name)
+            subscribers.add(name)
 
-            val runActions: () -> Unit = {
+            val runActions: suspend () -> Unit = {
                 eventActions.forEach { eventAction ->
-
                     val filter = { event: Events ->
                         val nameOfEvent = reverseEventMap[event]
                         nameOfEvent != null && nameOfEvent == eventAction.label
                     }
 
-                    val onNext = { _: Events ->
+                    val onNext: (Events) -> Unit = {
                         eventAction.action()
                     }
 
-                    val onError = { throwable: Throwable ->
+                    val onError: (Throwable) -> Unit = { throwable ->
                         Timber.d("Got error on subscribe: $throwable")
                         throwable.printStackTrace()
                     }
 
-                    eventsProcessor.observeOn(AndroidSchedulers.mainThread())
-                        .filter { event -> filter(event) }
-                        .doOnNext(onNext)
-                        .doOnError(onError)
-                        .subscribe({}, onError)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        eventsFlow
+                            .filter { event -> filter(event) }
+                            .catch { throwable -> onError(throwable) }
+                            .collect { event -> onNext(event) }
+                    }
                 }
             }
 
-            runActions()
+            CoroutineScope(Dispatchers.Main).launch {
+                runActions()
+            }
         }
-
 
         /**
          * Stop listening on [ProgressEvents]
          *
-         * @param name Name of the subscriber. This is the unique name passes to [start]
+         * @param name Name of the subscriber. This is the unique name passed to [start]
          */
-        @SuppressLint("CheckResult")
         fun stop(name: String) {
-            eventsProcessor.unsubscribeOn(AndroidSchedulers.mainThread())
-            (subscribers as LinkedHashSet).remove(name)
+            subscribers.remove(name)
         }
     }
 
-    val connectionEventsFlowable = (eventsProcessor as Flowable<Events>)
-
     /**
-     * The application can broadcast built in events by calling this function.
+     * The application can broadcast built-in events by calling this function.
      * ```
      *  ProgressEvents.onNext("AllPermissionsAccepted", [payload])
      * ```
@@ -183,16 +178,17 @@ object ProgressEvents {
      * @param payload: An optional parameter containing a payload of type `Any?`
      */
     fun onNext(eventName: String, payload: Any? = null) {
-        // add it if not in map.
         if (!eventMap.containsKey(eventName)) {
             addEvent(eventName)
         }
 
-        if (eventsProcessor.hasSubscribers()) {
+        if (subscribers.isNotEmpty()) {
             val event = eventMap[eventName]
             if (event != null) {
                 event.payload = payload
-                eventsProcessor.onNext(event)
+                CoroutineScope(Dispatchers.Main).launch {
+                    eventsFlow.emit(event)
+                }
             }
         }
     }
@@ -241,31 +237,30 @@ object ProgressEvents {
      * "HomeTimeUpdated"
      * "ApiError"
      * ```
-     * The App can add their oun arbitrary events like this:
+     * The App can add their own arbitrary events like this:
      * ```
      * ProgressEvents.addEvent("MyCustomEvent")
      * ```
      */
-    open class Events
-        (var payload: Any? = null)
+    open class Events(var payload: Any? = null)
 
     private var eventMap = mutableMapOf<String, Events>(
-        Pair("Init", Events()),
-        Pair("ConnectionStarted", Events()),
-        Pair("ConnectionSetupComplete", Events()),
-        Pair("Disconnect", Events()),
-        Pair("AlarmDataLoaded", Events()),
-        Pair("NotificationsEnabled", Events()),
-        Pair("NotificationsDisabled", Events()),
-        Pair("WatchInitializationCompleted", Events()),
-        Pair("AllPermissionsAccepted", Events()),
-        Pair("ButtonPressedInfoReceived", Events()),
-        Pair("ConnectionFailed", Events()),
-        Pair("SettingsLoaded", Events()),
-        Pair("NeedToUpdateUI", Events()),
-        Pair("CalendarUpdated", Events()),
-        Pair("HomeTimeUpdated", Events()),
-        Pair("ApiError", Events()),
+        "Init" to Events(),
+        "ConnectionStarted" to Events(),
+        "ConnectionSetupComplete" to Events(),
+        "Disconnect" to Events(),
+        "AlarmDataLoaded" to Events(),
+        "NotificationsEnabled" to Events(),
+        "NotificationsDisabled" to Events(),
+        "WatchInitializationCompleted" to Events(),
+        "AllPermissionsAccepted" to Events(),
+        "ButtonPressedInfoReceived" to Events(),
+        "ConnectionFailed" to Events(),
+        "SettingsLoaded" to Events(),
+        "NeedToUpdateUI" to Events(),
+        "CalendarUpdated" to Events(),
+        "HomeTimeUpdated" to Events(),
+        "ApiError" to Events(),
     )
 
     private var reverseEventMap =

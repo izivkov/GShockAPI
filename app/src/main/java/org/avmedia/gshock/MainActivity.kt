@@ -144,10 +144,10 @@ class MainActivity : AppCompatActivity() {
         generateCustomEvent()
 
         val currentTZ = TimeZone.getDefault().id
-//        api.setTime("Europe/Sofia")
-//        api.setTime("Asia/Kolkata")
-//        api.setTime("Pacific/Kiritimati")
-//        api.setTime("UTC")
+        api.setTime("Europe/Sofia")
+        api.setTime("Asia/Kolkata")
+        api.setTime("Pacific/Kiritimati")
+        api.setTime("UTC")
         api.setTime(currentTZ)
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
