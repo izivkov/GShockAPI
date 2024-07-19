@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.ProgressEvents.Events
 import org.avmedia.gshockapi.ProgressEvents.Subscriber
 import timber.log.Timber
+import java.util.logging.Logger
 
 /**
  * This class is used to send RX events to the rest of the library and to the application to inform
@@ -83,32 +84,6 @@ object ProgressEvents {
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
          * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
          */
-        @Deprecated("This method is deprecated. Use runEventActions() instead.")
-        fun start(
-            name: String,
-            onNext: (Events) -> Unit,
-            onError: (Throwable) -> Unit,
-            filter: (Events) -> Boolean = { true }
-        ) {
-            if (subscribers.contains(name)) {
-                return // do not allow multiple subscribers with same name
-            }
-            subscribers.add(name)
-
-            CoroutineScope(Dispatchers.Main).launch {
-                eventsFlow
-                    .filter { event -> filter(event) }
-                    .catch { throwable -> onError(throwable) }
-                    .collect { event -> onNext(event) }
-            }
-        }
-
-        /**
-         * Call this from anywhere to start listening to [ProgressEvents].
-         *
-         * @param name This should be a unique name to prevent multiple subscriptions. Only one
-         * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
-         */
         fun runEventActions(name: String, eventActions: Array<EventAction>) {
             if (subscribers.contains(name)) {
                 return // do not allow multiple subscribers with same name
@@ -116,6 +91,30 @@ object ProgressEvents {
             subscribers.add(name)
 
             val runActions: suspend () -> Unit = {
+                // Create a map for quick lookup
+                val actionMap = eventActions.associateBy { it.label }
+
+                val onNext: (Events) -> Unit = { event ->
+                    val nameOfEvent = reverseEventMap[event]
+                    if (nameOfEvent != null) {
+                        actionMap[nameOfEvent]?.action?.invoke()
+                    }
+                }
+
+                val onError: (Throwable) -> Unit = { throwable ->
+                    Timber.d("Got error on subscribe: $throwable")
+                    throwable.printStackTrace()
+                }
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    eventsFlow
+                        .filter { _ -> true }
+                        .catch { throwable -> onError(throwable) }
+                        .collect { event -> onNext(event) }
+                }
+            }
+
+            val runActionsFilter: suspend () -> Unit = {
                 eventActions.forEach { eventAction ->
                     val filter = { event: Events ->
                         val nameOfEvent = reverseEventMap[event]
