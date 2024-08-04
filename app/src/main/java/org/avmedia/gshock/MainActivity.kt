@@ -7,7 +7,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
-import org.avmedia.gshockapi.io.CasioIO
 import org.avmedia.gshockapi.io.IO
 import java.time.ZoneId
 import java.util.*
@@ -92,8 +91,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
-        println("Button pressed: ${api.getPressedButton()}")
-        println("Name returned: ${api.getWatchName()}")
+//        println("Button pressed: ${api.getPressedButton()}")
+//        println("Name returned: ${api.getWatchName()}")
 
 //        println("Battery Level: ${api.getBatteryLevel()}")
 //        println("Timer: ${api.getTimer()}")
@@ -122,7 +121,7 @@ class MainActivity : AppCompatActivity() {
 //        api.setAlarms(alarms)
 
         handleReminders()
-        // handleSettings()
+//        handleSettings()
     }
 
     private fun runTimezonesTest() {
@@ -203,10 +202,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun handleReminders() {
-        println("""Clear all events ${api.clearEvents()}""")
+        // println("""Clear all events ${api.clearEvents()}""")
         val events = ArrayList<Event>()
 
-        val watchEvents = api.getEventsFromWatch()
+        var watchEvents = api.getEventsFromWatch()
+        watchEvents = api.getEventsFromWatch()
 
         events.addAll(watchEvents)
         println("New Events: $events")

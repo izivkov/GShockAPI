@@ -15,7 +15,7 @@ object WorldCitiesIO {
 
     private suspend fun getWorldCities(key: String): String {
         DeferredValueHolder.deferredResult = CompletableDeferred()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 

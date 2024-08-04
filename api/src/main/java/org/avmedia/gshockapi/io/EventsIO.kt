@@ -1,9 +1,12 @@
 package org.avmedia.gshockapi.io
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.awaitAll
 import org.avmedia.gshockapi.Event
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GET_SET_MODE
@@ -23,23 +26,43 @@ object EventsIO {
 
     private object DeferredValueHolder {
         lateinit var deferredResult: CompletableDeferred<Event>
+        lateinit var deferredResultTitle: CompletableDeferred<JSONObject>
+        lateinit var deferredResultTime: CompletableDeferred<JSONObject>
     }
 
-    private object AccumulatedValueHolder {
-        var title = ""
-    }
-
+    @SuppressLint("DefaultLocale")
     suspend fun request(eventNumber: Int): Event {
-        AccumulatedValueHolder.title = ""
-        return CachedIO.request(eventNumber.toString(), ::getEventFromWatch) as Event
-    }
+        DeferredValueHolder.deferredResult = CompletableDeferred()
+        DeferredValueHolder.deferredResultTitle = CompletableDeferred()
+        DeferredValueHolder.deferredResultTime = CompletableDeferred()
 
-    private suspend fun getEventFromWatch(eventNumber: String): Event {
-        DeferredValueHolder.deferredResult = CompletableDeferred<Event>()
+        suspend fun requestTitle(keyTitle: String): Any {
+            IO.request(keyTitle)
+            return DeferredValueHolder.deferredResultTitle.await()
+        }
 
-        IO.request("30${eventNumber}") // reminder title
-        IO.request("31${eventNumber}") // reminder time
+        suspend fun requestTime(keyTime: String): Any {
+            IO.request(keyTime)
+            return DeferredValueHolder.deferredResultTime.await()
+        }
 
+        fun combineJSONObjects(obj1: JSONObject, obj2: JSONObject): JSONObject {
+            val combined = JSONObject(obj1.toString()) // Copy all key-value pairs from obj1
+            for (key in obj2.keys()) {
+                combined.put(key, obj2.get(key)) // Overwrite or add key-value pairs from obj2
+            }
+            return combined
+        }
+
+        suspend fun waitForEvent(eventNumber: Int) {
+            val titleVal = CachedIO.request("30$eventNumber", ::requestTitle) as JSONObject
+            val timeVal = CachedIO.request("31$eventNumber", ::requestTime) as JSONObject
+
+            val eventJson = combineJSONObjects(titleVal, timeVal)
+            DeferredValueHolder.deferredResult.complete(Event(eventJson))
+        }
+
+        waitForEvent(eventNumber)
         return DeferredValueHolder.deferredResult.await()
     }
 
@@ -138,14 +161,12 @@ object EventsIO {
     fun onReceived(data: String) {
 
         val decoded = ReminderDecoder.reminderTimeToJson(data + 2)
-        decoded.put("title", AccumulatedValueHolder.title)
-        val event = Event(decoded)
-        DeferredValueHolder.deferredResult.complete(event)
+        DeferredValueHolder.deferredResultTime.complete(decoded)
     }
 
     fun onReceivedTitle(data: String) {
-        val decoded = ReminderDecoder.reminderTitleToJson(data + 2)
-        AccumulatedValueHolder.title = decoded.get("title") as String
+        val decoded = ReminderDecoder.reminderTitleToJson(data)
+        DeferredValueHolder.deferredResultTitle.complete(decoded)
     }
 
     fun sendToWatchSet(message: String) {
@@ -389,7 +410,7 @@ object EventsIO {
             endDate: JSONObject?,
             daysOfWeek: JSONArray?
         ): IntArray {
-            var timeDetail = IntArray(8)
+            val timeDetail = IntArray(8)
 
             when (repeatPeriod) {
                 "NEVER" -> {
@@ -507,7 +528,7 @@ object EventsIO {
         }
 
         fun reminderTitleFromJson(reminderJson: JSONObject): ByteArray {
-            var titleStr: String = reminderJson.get("title") as String
+            val titleStr: String = reminderJson.get("title") as String
             return Utils.toByteArray(titleStr, 18)
         }
     }
