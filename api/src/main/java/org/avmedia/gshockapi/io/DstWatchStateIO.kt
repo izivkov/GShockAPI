@@ -9,13 +9,13 @@ object DstWatchStateIO {
         lateinit var deferredResult: CompletableDeferred<String>
     }
 
-    suspend fun request(state: CasioIO.DTS_STATE): String {
+    suspend fun request(state: IO.DTS_STATE): String {
         return CachedIO.request("1d0${state.state}", ::getDSTWatchState) as String
     }
 
     private suspend fun getDSTWatchState(key: String): String {
         DeferredValueHolder.deferredResult = CompletableDeferred()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 

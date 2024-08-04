@@ -46,9 +46,8 @@ object AlarmsIO {
             return gson.toJson(alarms)
         }
 
-        // remove from cache
-        CachedIO.cache.remove("GET_ALARMS")
-        Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")
+        fun setFunc () {Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")}
+        CachedIO.set("SET_ALARMS", ::setFunc)
     }
 
     fun onReceived(data: String) {
@@ -70,13 +69,13 @@ object AlarmsIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         // get alarm 1
-        CasioIO.writeCmd(
+        IO.writeCmd(
             GET_SET_MODE.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
         )
 
         // get the rest of the alarms
-        CasioIO.writeCmd(
+        IO.writeCmd(
             GET_SET_MODE.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code.toByte())
         )
@@ -85,9 +84,9 @@ object AlarmsIO {
     fun sendToWatchSet(message: String) {
         val alarmsJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
         val alarmCasio0 = Alarms.fromJsonAlarmFirstAlarm(alarmsJsonArr[0] as JSONObject)
-        CasioIO.writeCmd(GET_SET_MODE.SET, alarmCasio0)
+        IO.writeCmd(GET_SET_MODE.SET, alarmCasio0)
         val alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
-        CasioIO.writeCmd(GET_SET_MODE.SET, alarmCasio)
+        IO.writeCmd(GET_SET_MODE.SET, alarmCasio)
     }
 
     object AlarmDecoder {

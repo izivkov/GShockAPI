@@ -40,8 +40,8 @@ object SettingsIO {
     @RequiresApi(Build.VERSION_CODES.O)
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
-        CachedIO.cache.remove("GET_SETTINGS")
-        Connection.sendMessage("{action: \"SET_SETTINGS\", value: ${settingJson}}")
+        fun setFunc () {Connection.sendMessage("{action: \"SET_SETTINGS\", value: ${settingJson}}")}
+        CachedIO.set("GET_SETTINGS", ::setFunc)
     }
 
     fun onReceived(data: String) {
@@ -151,7 +151,7 @@ pwr. saving off:00010000
 
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
-        CasioIO.writeCmd(
+        IO.writeCmd(
             GET_SET_MODE.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
         )
@@ -159,7 +159,7 @@ pwr. saving off:00010000
 
     fun sendToWatchSet(message: String) {
         val settings = JSONObject(message).get("value") as JSONObject
-        CasioIO.writeCmd(GET_SET_MODE.SET, SettingsEncoder.encode(settings))
+        IO.writeCmd(GET_SET_MODE.SET, SettingsEncoder.encode(settings))
     }
 
     object SettingsEncoder {

@@ -6,21 +6,21 @@ import org.avmedia.gshockapi.utils.Utils
 object ButtonPressedIO {
 
     private object DeferredValueHolder {
-        lateinit var deferredResult: CompletableDeferred<CasioIO.WATCH_BUTTON>
+        lateinit var deferredResult: CompletableDeferred<IO.WATCH_BUTTON>
     }
 
-    suspend fun request(): CasioIO.WATCH_BUTTON {
-        return CachedIO.request("10", ::getPressedButton) as CasioIO.WATCH_BUTTON
+    suspend fun request(): IO.WATCH_BUTTON {
+        return CachedIO.request("10", ::getPressedButton) as IO.WATCH_BUTTON
     }
 
-    private suspend fun getPressedButton(key: String): CasioIO.WATCH_BUTTON {
+    private suspend fun getPressedButton(key: String): IO.WATCH_BUTTON {
         DeferredValueHolder.deferredResult = CompletableDeferred()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 
-    fun get(): CasioIO.WATCH_BUTTON {
-        return CachedIO.get("10") as CasioIO.WATCH_BUTTON
+    fun get(): IO.WATCH_BUTTON {
+        return CachedIO.get("10") as IO.WATCH_BUTTON
     }
 
     fun put(value: Any) {
@@ -37,19 +37,19 @@ object ButtonPressedIO {
         FIND PHONE:   0x10 07 7A 29 33 A1 C6 7F ->02<- 03 0F FF FF FF FF 24 00 00 00 // find phone
         */
 
-        var ret: CasioIO.WATCH_BUTTON = CasioIO.WATCH_BUTTON.INVALID
+        var ret: IO.WATCH_BUTTON = IO.WATCH_BUTTON.INVALID
 
         if (data != "" && Utils.toIntArray(data).size >= 19) {
             val bleIntArr = Utils.toIntArray(data)
             ret = when (bleIntArr[8]) {
-                in 0..1 -> CasioIO.WATCH_BUTTON.LOWER_LEFT
-                2 -> CasioIO.WATCH_BUTTON.FIND_PHONE
-                4 -> CasioIO.WATCH_BUTTON.LOWER_RIGHT
-                3 -> CasioIO.WATCH_BUTTON.NO_BUTTON // auto time set, no button pressed. Run actions to set time and calender only.
+                in 0..1 -> IO.WATCH_BUTTON.LOWER_LEFT
+                2 -> IO.WATCH_BUTTON.FIND_PHONE
+                4 -> IO.WATCH_BUTTON.LOWER_RIGHT
+                3 -> IO.WATCH_BUTTON.NO_BUTTON // auto time set, no button pressed. Run actions to set time and calender only.
 
                 // For ECB-30 Possible values: 10, 0xE, 0xB
 
-                else -> CasioIO.WATCH_BUTTON.LOWER_LEFT
+                else -> IO.WATCH_BUTTON.LOWER_LEFT
             }
         }
         DeferredValueHolder.deferredResult.complete(ret)

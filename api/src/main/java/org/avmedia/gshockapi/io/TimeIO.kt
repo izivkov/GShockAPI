@@ -81,7 +81,7 @@ object TimeIO {
         )
     }
 
-    private suspend fun getDSTWatchState(state: CasioIO.DTS_STATE): String {
+    private suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 
@@ -92,7 +92,7 @@ object TimeIO {
         AUTO(0b10),
     }
 
-    private suspend fun getDSTWatchStateWithTZ(state: CasioIO.DTS_STATE): String {
+    private suspend fun getDSTWatchStateWithTZ(state: IO.DTS_STATE): String {
         val origDTS = getDSTWatchState(state)
         // CasioIO.removeFromCache(origDTS)
 
@@ -119,7 +119,7 @@ object TimeIO {
     private suspend fun getWorldCitiesWithTZ(cityNum: Int): String {
         val newCity = WorldCitiesIO.parseCity(timeZone)
         val encoded = WorldCitiesIO.encodeAndPad(newCity!!, cityNum)
-        CasioIO.removeFromCache(encoded)
+        IO.removeFromCache(encoded)
         return encoded
     }
 
@@ -135,19 +135,19 @@ object TimeIO {
     private suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
         val ret: String = function(param)
         val shortStr = Utils.toCompactString(ret)
-        CasioIO.writeCmd(GET_SET_MODE.SET, shortStr)
+        IO.writeCmd(GET_SET_MODE.SET, shortStr)
     }
 
     private suspend fun writeDST() {
         data class Dts(
-            val function: KSuspendFunction1<CasioIO.DTS_STATE, String>,
-            val param: CasioIO.DTS_STATE
+            val function: KSuspendFunction1<IO.DTS_STATE, String>,
+            val param: IO.DTS_STATE
         )
 
         val dtsStates = arrayOf(
-            Dts(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO),
-            Dts(::getDSTWatchState, CasioIO.DTS_STATE.TWO),
-            Dts(::getDSTWatchState, CasioIO.DTS_STATE.FOUR)
+            Dts(::getDSTWatchStateWithTZ, IO.DTS_STATE.ZERO),
+            Dts(::getDSTWatchState, IO.DTS_STATE.TWO),
+            Dts(::getDSTWatchState, IO.DTS_STATE.FOUR)
         )
 
         for (i in 0 until WatchInfo.dstCount) {
@@ -201,10 +201,10 @@ object TimeIO {
         suspend fun <T> readAndWrite(function: KSuspendFunction1<T, String>, param: T) {
             val ret: String = function(param)
             val shortStr = Utils.toCompactString(ret)
-            CasioIO.writeCmd(GET_SET_MODE.SET, shortStr)
+            IO.writeCmd(GET_SET_MODE.SET, shortStr)
         }
 
-        readAndWrite(::getDSTWatchStateWithTZ, CasioIO.DTS_STATE.ZERO)
+        readAndWrite(::getDSTWatchStateWithTZ, IO.DTS_STATE.ZERO)
 
         readAndWrite(::getDSTForWorldCitiesWithTZ, 0)
         readAndWrite(::getDSTForWorldCities, 1)
@@ -227,7 +227,7 @@ object TimeIO {
         val timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
-        CasioIO.writeCmd(GET_SET_MODE.SET, timeCommand)
+        IO.writeCmd(GET_SET_MODE.SET, timeCommand)
     }
 
     object TimeEncoder {

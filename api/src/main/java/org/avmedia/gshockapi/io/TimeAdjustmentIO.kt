@@ -35,8 +35,9 @@ object TimeAdjustmentIO {
 
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
-        CachedIO.cache.remove("GET_TIME_ADJUSTMENT")
-        Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
+
+        fun setFunc () {Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")}
+        CachedIO.set("GET_TIME_ADJUSTMENT", ::setFunc)
     }
 
     fun onReceived(data: String) {
@@ -79,7 +80,7 @@ object TimeAdjustmentIO {
 
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
-        CasioIO.writeCmd(
+        IO.writeCmd(
             GET_SET_MODE.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
         )
@@ -94,7 +95,7 @@ object TimeAdjustmentIO {
         )
         val encodedTimeAdj = encodeTimeAdjustment(settings)
         if (encodedTimeAdj.isNotEmpty()) {
-            CasioIO.writeCmd(GET_SET_MODE.SET, encodedTimeAdj)
+            IO.writeCmd(GET_SET_MODE.SET, encodedTimeAdj)
         }
     }
 

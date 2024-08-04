@@ -20,7 +20,7 @@ object DstForWorldCitiesIO {
     private suspend fun getDSTForWorldCities(key: String): String {
 
         DeferredValueHolder.deferredResult = CompletableDeferred<String>()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 

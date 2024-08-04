@@ -73,7 +73,7 @@ class GShockAPI(private val context: Context) {
     }
 
     private suspend fun init(): Boolean {
-        CasioIO.init()
+        IO.init()
         CachedIO.init()
         getPressedButton()
 
@@ -136,7 +136,7 @@ class GShockAPI(private val context: Context) {
      */
     /* Do not get value from cache, because we do not want to
     get all values here. */
-    suspend fun getPressedButton(): CasioIO.WATCH_BUTTON {
+    suspend fun getPressedButton(): IO.WATCH_BUTTON {
         val value = ButtonPressedIO.request()
         ButtonPressedIO.put(value)
         return value
@@ -150,7 +150,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isActionButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == CasioIO.WATCH_BUTTON.LOWER_RIGHT
+        return button == IO.WATCH_BUTTON.LOWER_RIGHT
     }
 
     /**
@@ -161,7 +161,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isNormalButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == CasioIO.WATCH_BUTTON.LOWER_LEFT
+        return button == IO.WATCH_BUTTON.LOWER_LEFT
     }
 
     /**
@@ -173,7 +173,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isAutoTimeStarted(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == CasioIO.WATCH_BUTTON.NO_BUTTON
+        return button == IO.WATCH_BUTTON.NO_BUTTON
     }
 
     /**
@@ -184,7 +184,7 @@ class GShockAPI(private val context: Context) {
      */
     fun isFindPhoneButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == CasioIO.WATCH_BUTTON.FIND_PHONE
+        return button == IO.WATCH_BUTTON.FIND_PHONE
     }
 
     /**
@@ -205,7 +205,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return returns the Daylight Saving Time state of the watch as a String.
      */
-    suspend fun getDSTWatchState(state: CasioIO.DTS_STATE): String {
+    suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 

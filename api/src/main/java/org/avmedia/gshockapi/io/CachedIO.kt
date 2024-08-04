@@ -2,12 +2,37 @@ package org.avmedia.gshockapi.io
 
 import org.avmedia.gshockapi.utils.Utils
 import java.util.Locale
+import kotlin.reflect.KFunction0
 import kotlin.reflect.KSuspendFunction1
 
 object CachedIO {
 
     private var cacheOff = false
-    val cache = WatchValuesCache()
+    private val cache = Cache()
+
+    class Cache {
+        private val map = mutableMapOf<String, Any>()
+
+        suspend fun getCached(key: String): Any? {
+            return get(key.uppercase())
+        }
+
+        fun put(key: String, value: Any) {
+            map[key.uppercase()] = value
+        }
+
+        fun get(key: String): Any? {
+            return map[key.uppercase()]
+        }
+
+        fun remove(key: String) {
+            map.remove(key.uppercase())
+        }
+
+        fun clear() {
+            map.clear()
+        }
+    }
 
     fun init() {
         cache.clear()
@@ -25,6 +50,13 @@ object CachedIO {
             return funcResult
         }
         return value
+    }
+
+    fun set(key: String, func: KFunction0<Unit>? = null) {
+        if (func != null) {
+            func()
+        }
+        remove(key)
     }
 
     fun get(key: String): Any? {

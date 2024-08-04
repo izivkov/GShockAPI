@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.io.CasioIO
+import org.avmedia.gshockapi.io.IO
 import java.time.ZoneId
 import java.util.*
 
@@ -57,42 +58,6 @@ class MainActivity : AppCompatActivity() {
         ProgressEvents.runEventActions(this.javaClass.simpleName, eventActions)
     }
 
-    @Suppress("DEPRECATION")
-    private fun listenToProgressEventsDepicated() {
-        ProgressEvents.subscriber.start(this.javaClass.simpleName,
-
-            {
-                when (it) {
-                    ProgressEvents["ConnectionSetupComplete"] -> {
-                        println("Got \"ConnectionSetupComplete\" event")
-                    }
-
-                    ProgressEvents["Disconnect"] -> {
-                        println("Got \"Disconnect\" event")
-                    }
-
-                    ProgressEvents["ConnectionFailed"] -> {
-                        println("Got \"ConnectionFailed\" event")
-                    }
-
-                    ProgressEvents["WatchInitializationCompleted"] -> {
-                        println("Got \"WatchInitializationCompleted\" event")
-                    }
-
-                    ProgressEvents[customEventName] -> {
-                        println("Got \"$customEventName\" event")
-                    }
-
-                    else -> {
-                        println("Got \"${it.javaClass}\" event")
-                    }
-                }
-            }, { throwable ->
-                println("Got error on subscribe: $throwable")
-                throwable.printStackTrace()
-            })
-    }
-
     @Suppress("UNUSED_PARAMETER")
     private fun run(context: Context) {
 
@@ -130,34 +95,34 @@ class MainActivity : AppCompatActivity() {
         println("Button pressed: ${api.getPressedButton()}")
         println("Name returned: ${api.getWatchName()}")
 
-        println("Battery Level: ${api.getBatteryLevel()}")
-        println("Timer: ${api.getTimer()}")
-        println("App Info: ${api.getAppInfo()}")
+//        println("Battery Level: ${api.getBatteryLevel()}")
+//        println("Timer: ${api.getTimer()}")
+//        println("App Info: ${api.getAppInfo()}")
+//
+//        println("Home Time: ${api.getHomeTime()}")
+//        println("Temperaure: ${api.getWatchTemperature()}")
+//
+//        getDSTState()
+//        getWorldCities()
+//        getDSTForWorldCities()
+//
+//        generateCustomEvent()
+//
+//        val currentTZ = TimeZone.getDefault().id
+//        api.setTime("Europe/Sofia")
+//        api.setTime("Asia/Kolkata")
+//        api.setTime("Pacific/Kiritimati")
+//        api.setTime("UTC")
+//        api.setTime(currentTZ)
+//        val alarms = api.getAlarms()
+//        println("Alarm model: $alarms")
+//
+//        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
+//        alarms[4] = Alarm(9, 25, enabled = false)
+//        api.setAlarms(alarms)
 
-        println("Home Time: ${api.getHomeTime()}")
-        println("Temperaure: ${api.getWatchTemperature()}")
-
-        getDSTState()
-        getWorldCities()
-        getDSTForWorldCities()
-
-        generateCustomEvent()
-
-        val currentTZ = TimeZone.getDefault().id
-        api.setTime("Europe/Sofia")
-        api.setTime("Asia/Kolkata")
-        api.setTime("Pacific/Kiritimati")
-        api.setTime("UTC")
-        api.setTime(currentTZ)
-        val alarms = api.getAlarms()
-        println("Alarm model: $alarms")
-
-        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
-        alarms[4] = Alarm(9, 25, enabled = false)
-        api.setAlarms(alarms)
-
-        // handleReminders()
-        handleSettings()
+        handleReminders()
+        // handleSettings()
     }
 
     private fun runTimezonesTest() {
@@ -209,11 +174,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun getDSTState() {
-        println("DST STATE ZERO: ${api.getDSTWatchState(CasioIO.DTS_STATE.ZERO)}")
+        println("DST STATE ZERO: ${api.getDSTWatchState(IO.DTS_STATE.ZERO)}")
 
         if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
-            println("DST STATE TWO: ${api.getDSTWatchState(CasioIO.DTS_STATE.TWO)}")
-            println("DST STATE FOUR: ${api.getDSTWatchState(CasioIO.DTS_STATE.FOUR)}")
+            println("DST STATE TWO: ${api.getDSTWatchState(IO.DTS_STATE.TWO)}")
+            println("DST STATE FOUR: ${api.getDSTWatchState(IO.DTS_STATE.FOUR)}")
         }
     }
 
@@ -255,7 +220,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun handleTimer() {
-        var timerValue = api.getTimer()
+        val timerValue = api.getTimer()
         api.setTimer(timerValue)
     }
 }

@@ -37,8 +37,8 @@ object EventsIO {
     private suspend fun getEventFromWatch(eventNumber: String): Event {
         DeferredValueHolder.deferredResult = CompletableDeferred<Event>()
 
-        CasioIO.request("30${eventNumber}") // reminder title
-        CasioIO.request("31${eventNumber}") // reminder time
+        IO.request("30${eventNumber}") // reminder title
+        IO.request("31${eventNumber}") // reminder time
 
         return DeferredValueHolder.deferredResult.await()
     }
@@ -150,35 +150,48 @@ object EventsIO {
 
     fun sendToWatchSet(message: String) {
         val remindersJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
-        (0 until remindersJsonArr.length()).forEachIndexed { index, element ->
-            val reminderJson = remindersJsonArr.getJSONObject(element)
-            val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
-            CasioIO.writeCmd(
-                GET_SET_MODE.SET, Utils.byteArrayOfInts(
-                    CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index + 1
-                ) + title
-            )
 
-            var reminderTime = IntArray(0)
-            reminderTime += CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code
-            reminderTime += index + 1
-            reminderTime += ReminderEncoder.reminderTimeFromJson(reminderJson)
-            CasioIO.writeCmd(GET_SET_MODE.SET, Utils.byteArrayOfIntArray(reminderTime))
+        (0 until remindersJsonArr.length()).forEach { index ->
+            val reminderJson = remindersJsonArr.getJSONObject(index)
+
+            fun setFunc() {
+                processReminder(index + 1, reminderJson)
+            }
+            CachedIO.set("30${index + 1}", ::setFunc)
+            CachedIO.set("31${index + 1}") // just remove from cache
         }
 
         Timber.i("Got reminders $remindersJsonArr")
     }
 
+    private fun processReminder(reminderNumber: Int, reminderJson: JSONObject) {
+        // Process title
+        val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
+        IO.writeCmd(
+            GET_SET_MODE.SET, Utils.byteArrayOfInts(
+                CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, reminderNumber
+            ) + title
+        )
+
+        // Reminder Time.
+        var reminderTime = IntArray(0)
+        reminderTime += CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code
+        reminderTime += reminderNumber
+        reminderTime += ReminderEncoder.reminderTimeFromJson(reminderJson)
+
+        IO.writeCmd(GET_SET_MODE.SET, Utils.byteArrayOfIntArray(reminderTime))
+    }
+
     fun clearAll() {
         var index = 1
         repeat(5) {
-            CasioIO.writeCmd(
+            IO.writeCmd(
                 GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index
                 ) + ByteArray(18)
             )
 
-            CasioIO.writeCmd(
+            IO.writeCmd(
                 GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index
                 ) + ByteArray(9)
@@ -244,7 +257,7 @@ object EventsIO {
                 enabled = true
             }
 
-            var repeatPeriod = when {
+            val repeatPeriod = when {
                 timePeriod and ReminderMasks.WEEKLY_MASK == ReminderMasks.WEEKLY_MASK -> "WEEKLY"
                 timePeriod and ReminderMasks.MONTHLY_MASK == ReminderMasks.MONTHLY_MASK -> "MONTHLY"
                 timePeriod and ReminderMasks.YEARLY_MASK == ReminderMasks.YEARLY_MASK -> "YEARLY"

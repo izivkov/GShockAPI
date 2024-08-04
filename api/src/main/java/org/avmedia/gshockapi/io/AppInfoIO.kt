@@ -16,7 +16,7 @@ object AppInfoIO {
 
     private suspend fun getAppInfo(key: String): String {
         DeferredValueHolder.deferredResult = CompletableDeferred()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 
@@ -32,7 +32,7 @@ object AppInfoIO {
             // In this case, set it to the hardcoded value bellow, so 'D' button will work again.
             val appInfoCompactStr = Utils.toCompactString(data)
             if (appInfoCompactStr == "22FFFFFFFFFFFFFFFFFFFF00") {
-                CasioIO.writeCmd(GET_SET_MODE.SET, "223488F4E5D5AFC829E06D02")
+                IO.writeCmd(GET_SET_MODE.SET, "223488F4E5D5AFC829E06D02")
             }
         }
 

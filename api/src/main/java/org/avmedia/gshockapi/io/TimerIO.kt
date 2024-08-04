@@ -24,13 +24,13 @@ object TimerIO {
     private suspend fun getTimer(key: String): Int {
 
         DeferredValueHolder.deferredResult = CompletableDeferred()
-        CasioIO.request(key)
+        IO.request(key)
         return DeferredValueHolder.deferredResult.await()
     }
 
     fun set(timerValue: Int) {
-        CachedIO.cache.remove("18")
-        Connection.sendMessage("{action: \"SET_TIMER\", value: $timerValue}")
+        fun setFunc () {Connection.sendMessage("{action: \"SET_TIMER\", value: $timerValue}")}
+        CachedIO.set("18", ::setFunc)
     }
 
     fun onReceived(data: String) {
@@ -41,7 +41,7 @@ object TimerIO {
 
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
-        CasioIO.writeCmd(
+        IO.writeCmd(
             GET_SET_MODE.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
         )
@@ -49,7 +49,7 @@ object TimerIO {
 
     fun sendToWatchSet(message: String) {
         val seconds = JSONObject(message).get("value").toString()
-        CasioIO.writeCmd(GET_SET_MODE.SET, TimerEncoder.encode(seconds))
+        IO.writeCmd(GET_SET_MODE.SET, TimerEncoder.encode(seconds))
     }
 
     object TimerDecoder {

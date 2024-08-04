@@ -21,7 +21,7 @@ object WatchConditionIO {
     private suspend fun getWatchCondition(key: String): WatchConditionValue {
         if (DeferredValueHolder.deferredResult == null || DeferredValueHolder.deferredResult?.isActive == false) {
             DeferredValueHolder.deferredResult = CompletableDeferred()
-            CasioIO.request(key)
+            IO.request(key)
         }
         return (DeferredValueHolder.deferredResult as CompletableDeferred).await()
     }
