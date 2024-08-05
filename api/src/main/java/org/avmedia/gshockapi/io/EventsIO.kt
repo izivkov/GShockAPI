@@ -175,17 +175,20 @@ object EventsIO {
         (0 until remindersJsonArr.length()).forEach { index ->
             val reminderJson = remindersJsonArr.getJSONObject(index)
 
-            fun setFunc() {
-                processReminder(index + 1, reminderJson)
+            fun setFuncTitle() {
+                processReminderTitle(index + 1, reminderJson)
             }
-            CachedIO.set("30${index + 1}", ::setFunc)
-            CachedIO.set("31${index + 1}") // just remove from cache
+            fun setFuncTime() {
+                processReminderTime(index + 1, reminderJson)
+            }
+            CachedIO.set("30${index + 1}", ::setFuncTitle)
+            CachedIO.set("31${index + 1}", ::setFuncTime)
         }
 
         Timber.i("Got reminders $remindersJsonArr")
     }
 
-    private fun processReminder(reminderNumber: Int, reminderJson: JSONObject) {
+    private fun processReminderTitle(reminderNumber: Int, reminderJson: JSONObject) {
         // Process title
         val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
         IO.writeCmd(
@@ -193,8 +196,9 @@ object EventsIO {
                 CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, reminderNumber
             ) + title
         )
+    }
 
-        // Reminder Time.
+    private fun processReminderTime(reminderNumber: Int, reminderJson: JSONObject) {
         var reminderTime = IntArray(0)
         reminderTime += CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code
         reminderTime += reminderNumber
