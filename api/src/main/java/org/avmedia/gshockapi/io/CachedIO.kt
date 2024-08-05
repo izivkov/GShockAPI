@@ -52,10 +52,8 @@ object CachedIO {
         return value
     }
 
-    fun set(key: String, func: KFunction0<Unit>? = null) {
-        if (func != null) {
-            func()
-        }
+    fun set(key: String, func: KFunction0<Unit>) {
+        func()
         remove(key)
     }
 
