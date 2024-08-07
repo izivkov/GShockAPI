@@ -215,13 +215,14 @@ object EventsIO {
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index
                 ) + ByteArray(18)
             )
+            CachedIO.remove("30${index}")
 
             IO.writeCmd(
                 GET_SET_MODE.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index
                 ) + ByteArray(9)
             )
-
+            CachedIO.remove("31${index}")
             index += 1
         }
     }

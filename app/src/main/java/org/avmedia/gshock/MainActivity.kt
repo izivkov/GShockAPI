@@ -10,6 +10,7 @@ import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.io.IO
 import java.time.ZoneId
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
@@ -202,14 +203,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun handleReminders() {
-        // println("""Clear all events ${api.clearEvents()}""")
-        val events = ArrayList<Event>()
+        val originalEvents = api.getEventsFromWatch()
+        println("""Clear all events ${api.clearEvents()}""")
 
         var watchEvents = api.getEventsFromWatch()
-        watchEvents = api.getEventsFromWatch()
+        println("After clearing: $watchEvents")
 
-        events.addAll(watchEvents)
-        println("New Events: $events")
+        // must call get before set
+        api.getEventsFromWatch()
+
+        api.setEvents(originalEvents)
+        watchEvents = api.getEventsFromWatch()
+        println("After setting original events: $watchEvents")
+
+        val timeTaken = measureTimeMillis {
+            repeat(1000) {
+                api.getEventsFromWatch()
+            }
+        }
+        println("Time taken to execute 1000 getEventsFromWatch: $timeTaken ms")
+
+        println("At the end events are: ${api.getEventsFromWatch()}")
     }
 
     private suspend fun handleSettings() {
