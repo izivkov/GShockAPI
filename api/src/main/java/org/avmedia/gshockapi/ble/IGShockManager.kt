@@ -83,6 +83,8 @@ private class GShockManagerImpl(
     }
 
     override fun release() {
+        connectionState = ConnectionState.DISCONNECTING
+
         // Cancel all coroutines.
         scope.cancel()
 

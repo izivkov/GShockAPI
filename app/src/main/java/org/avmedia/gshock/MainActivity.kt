@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.io.IO
+import java.time.Clock
 import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -92,37 +93,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun runCommands() {
-        println("Button pressed: ${api.getPressedButton()}")
-        println("Name returned: ${api.getWatchName()}")
-
-        println("Battery Level: ${api.getBatteryLevel()}")
-        println("Timer: ${api.getTimer()}")
-        println("App Info: ${api.getAppInfo()}")
-
-        println("Home Time: ${api.getHomeTime()}")
-        println("Temperaure: ${api.getWatchTemperature()}")
-
-        getDSTState()
-        getWorldCities()
-        getDSTForWorldCities()
-
-        generateCustomEvent()
-
+//        println("Button pressed: ${api.getPressedButton()}")
+//        println("Name returned: ${api.getWatchName()}")
+//
+//        println("Battery Level: ${api.getBatteryLevel()}")
+//        println("Timer: ${api.getTimer()}")
+//        println("App Info: ${api.getAppInfo()}")
+//
+//        println("Home Time: ${api.getHomeTime()}")
+//        println("Temperaure: ${api.getWatchTemperature()}")
+//
+//        getDSTState()
+//        getWorldCities()
+//        getDSTForWorldCities()
+//
+//        generateCustomEvent()
+//
         val currentTZ = TimeZone.getDefault().id
-        api.setTime("Europe/Sofia")
-        api.setTime("Asia/Kolkata")
-        api.setTime("Pacific/Kiritimati")
-        api.setTime("UTC")
+//        api.setTime("Europe/Sofia")
+//        api.setTime("Asia/Kolkata")
+//        api.setTime("Pacific/Kiritimati")
+//        api.setTime("UTC")
+
         api.setTime(currentTZ)
-        val alarms = api.getAlarms()
-        println("Alarm model: $alarms")
-
-        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
-        alarms[4] = Alarm(9, 25, enabled = false)
-        api.setAlarms(alarms)
-
-        handleReminders()
-        handleSettings()
+//        val alarms = api.getAlarms()
+//        println("Alarm model: $alarms")
+//
+//        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
+//        alarms[4] = Alarm(9, 25, enabled = false)
+//        api.setAlarms(alarms)
+//
+//        handleReminders()
+//        handleSettings()
     }
 
     private fun runTimezonesTest() {
