@@ -20,8 +20,8 @@ object WatchInfo {
     private var alarmCount = 5
     var hasAutoLight = false
     var hasReminders = false
-    var shortLightDuration = ""
-    var longLightDuration = ""
+    var shortLightDuration = "2s"
+    var longLightDuration = "4s"
     var weekLanguageSupported = true
     var worldCities = true
     var hasTemperature = true

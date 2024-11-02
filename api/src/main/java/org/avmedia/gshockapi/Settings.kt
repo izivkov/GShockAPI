@@ -43,6 +43,8 @@ class Settings {
 
     var adjustmentTimeMinutes = 30
 
+    var fineAdjustment = 0
+
     // for always-connected watches only, like the ECB-30
     var DnD = false
 }

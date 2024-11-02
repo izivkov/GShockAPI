@@ -1,6 +1,6 @@
 package org.avmedia.gshockapi
 
-open class Alarm(
+data class Alarm(
     var hour: Int,
     var minute: Int,
     var enabled: Boolean,

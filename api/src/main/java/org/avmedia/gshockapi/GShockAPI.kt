@@ -63,6 +63,7 @@ class GShockAPI(private val context: Context) {
      */
 
     suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "") {
+        println("...waitForConnection...")
         Connection.stopBleScan()
 
         val connectedStatus =
@@ -76,8 +77,8 @@ class GShockAPI(private val context: Context) {
         IO.init()
         CachedIO.init()
         getPressedButton()
-
         ProgressEvents.onNext("ButtonPressedInfoReceived")
+
         getAppInfo() // this call re-enables lower-right button after watch reset.
         ProgressEvents.onNext("WatchInitializationCompleted")
         return true
@@ -303,7 +304,7 @@ class GShockAPI(private val context: Context) {
      *      setTime("Europe/Sofia")
      *  ```
      */
-    suspend fun setTime(timeZone: String = TimeZone.getDefault().id) {
+    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null) {
 
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("GShockAPI", "setTime: Invalid timezone $timeZone passed")
@@ -312,7 +313,7 @@ class GShockAPI(private val context: Context) {
         }
 
         TimeIO.setTimezone(timeZone)
-        TimeIO.set()
+        TimeIO.set(timeMs)
     }
 
     /**

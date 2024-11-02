@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.time.Month
 import java.util.Locale
 
-class Event(
+data class Event(
     var title: String,
     private var startDate: EventDate?,
     var endDate: EventDate?,

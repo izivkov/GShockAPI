@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -138,6 +139,15 @@ private class GShockManagerImpl(
         @SuppressLint("MissingPermission")
         override fun onDeviceReady(device: BluetoothDevice) {
             Timber.i("$device DeviceReady!!!!!!")
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                device.createBond()
+            }
+
+            if (device.name == null) {
+                ProgressEvents.onNext("ApiError", "Cannot obtain device name")
+                return
+            }
 
             val name = device.name ?: "CASIO"
             onConnected(name, device.address)

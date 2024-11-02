@@ -71,20 +71,12 @@ object TimeIO {
         casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone)
     }
 
-    suspend fun set() {
+    suspend fun set(timeMs: Long? = null) {
         initializeForSettingTime()
-
-        /*
-         Seems like Casio watches compensate for the time to obtain correct time from network, and are set about 3 seconds ahead.
-         This compensation is not needed for this app, so we need to subtract
-         3 seconds from the correct time.
-         */
-        val compensateValue = 3000
+        val timeToSet = timeMs ?: Clock.systemDefaultZone().millis()
 
         Connection.sendMessage(
-            "{action: \"SET_TIME\", value: ${
-                (Clock.systemDefaultZone().millis() - (compensateValue))
-            }}"
+            "{action: \"SET_TIME\", value: ${timeToSet}}"
         )
     }
 

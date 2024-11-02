@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import org.avmedia.gshockapi.*
 import org.avmedia.gshockapi.io.IO
+import java.lang.Thread.sleep
 import java.time.Clock
 import java.time.ZoneId
 import java.util.*
@@ -114,6 +115,10 @@ class MainActivity : AppCompatActivity() {
         api.setTime("Asia/Kolkata")
         api.setTime("Pacific/Kiritimati")
         api.setTime("UTC")
+
+        val currentTime = Clock.systemDefaultZone().millis()
+        api.setTime(timeMs = currentTime)
+        delay(10000)
 
         api.setTime(currentTZ)
         val alarms = api.getAlarms()

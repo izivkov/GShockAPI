@@ -38,7 +38,6 @@ object GShockScanner {
         context: Context,
         scanCallback: (DeviceInfo?) -> Unit
     ) {
-
         val gShockFilters: List<BleScanFilter> = listOf(
             BleScanFilter(serviceUuid = FilteredServiceUuid(ParcelUuid.fromString(CASIO_SERVICE_UUID)))
         )

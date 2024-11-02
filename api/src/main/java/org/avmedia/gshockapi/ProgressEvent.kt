@@ -68,7 +68,7 @@ data class EventAction(
 
 object ProgressEvents {
     val subscriber = Subscriber()
-    private val eventsFlow: MutableSharedFlow<Events> = MutableSharedFlow()
+    private val eventsFlow: MutableSharedFlow<Events> = MutableSharedFlow(replay = 10) // Replay last 10 events
 
     fun runEventActions(name: String, eventActions: Array<EventAction>) {
         subscriber.runEventActions(name, eventActions)
@@ -77,21 +77,17 @@ object ProgressEvents {
     private val subscribers: MutableSet<String> = LinkedHashSet()
 
     class Subscriber {
-
         /**
          * Call this from anywhere to start listening to [ProgressEvents].
          *
          * @param name This should be a unique name to prevent multiple subscriptions. Only one
-         * subscription per name is allowed. The caller can use its class name (`this.javaClass.canonicalName`) to ensure uniqueness:
+         * subscription per name is allowed.
          */
         fun runEventActions(name: String, eventActions: Array<EventAction>) {
-            if (subscribers.contains(name)) {
-                return // do not allow multiple subscribers with same name
-            }
+            if (subscribers.contains(name)) return  // Prevent duplicate subscriptions
             subscribers.add(name)
 
             val runActions: suspend () -> Unit = {
-                // Create a map for quick lookup
                 val actionMap = eventActions.associateBy { it.label }
 
                 val onNext: (Events) -> Unit = { event ->
@@ -102,57 +98,31 @@ object ProgressEvents {
                 }
 
                 val onError: (Throwable) -> Unit = { throwable ->
-                    Timber.d("Got error on subscribe: $throwable")
+                    Timber.d("Error on subscribe: $throwable")
                     throwable.printStackTrace()
                 }
 
                 CoroutineScope(Dispatchers.Main).launch {
                     eventsFlow
-                        .filter { _ -> true }
-                        .catch { throwable -> onError(throwable) }
-                        .collect { event -> onNext(event) }
+                        .filter { true }
+                        .catch { onError(it) }
+                        .collect { onNext(it) }
                 }
             }
 
-            val runActionsFilter: suspend () -> Unit = {
-                eventActions.forEach { eventAction ->
-                    val filter = { event: Events ->
-                        val nameOfEvent = reverseEventMap[event]
-                        nameOfEvent != null && nameOfEvent == eventAction.label
-                    }
-
-                    val onNext: (Events) -> Unit = {
-                        eventAction.action()
-                    }
-
-                    val onError: (Throwable) -> Unit = { throwable ->
-                        Timber.d("Got error on subscribe: $throwable")
-                        throwable.printStackTrace()
-                    }
-
-                    CoroutineScope(Dispatchers.Main).launch {
-                        eventsFlow
-                            .filter { event -> filter(event) }
-                            .catch { throwable -> onError(throwable) }
-                            .collect { event -> onNext(event) }
-                    }
-                }
-            }
-
-            CoroutineScope(Dispatchers.Main).launch {
-                runActions()
-            }
+            CoroutineScope(Dispatchers.Main).launch { runActions() }
         }
 
         /**
          * Stop listening on [ProgressEvents]
          *
-         * @param name Name of the subscriber. This is the unique name passed to [start]
+         * @param name Name of the subscriber
          */
         fun stop(name: String) {
             subscribers.remove(name)
         }
     }
+
 
     /**
      * The application can broadcast built-in events by calling this function.
@@ -177,31 +147,20 @@ object ProgressEvents {
      * @param payload: An optional parameter containing a payload of type `Any?`
      */
     fun onNext(eventName: String, payload: Any? = null) {
-        if (!eventMap.containsKey(eventName)) {
-            addEvent(eventName)
-        }
+        if (!eventMap.containsKey(eventName)) addEvent(eventName)
 
-        if (subscribers.isNotEmpty()) {
-            val event = eventMap[eventName]
-            if (event != null) {
-                event.payload = payload
-                CoroutineScope(Dispatchers.Main).launch {
-                    eventsFlow.emit(event)
-                }
+        val event = eventMap[eventName]?.apply { this.payload = payload }
+        if (subscribers.isNotEmpty() && event != null) {
+            CoroutineScope(Dispatchers.Main).launch {
+                eventsFlow.emit(event)
             }
         }
     }
 
-    operator fun get(eventName: String): Events? {
-        return eventMap[eventName]
-    }
+    operator fun get(eventName: String): Events? = eventMap[eventName]
 
     private fun addEvent(eventName: String) {
-        if (eventMap.containsKey(eventName)) {
-            Timber.d("Event $eventName")
-            return
-        }
-
+        if (eventMap.containsKey(eventName)) return
         val newEvent = Events()
         eventMap[eventName] = newEvent
         reverseEventMap[newEvent] = eventName
@@ -262,6 +221,5 @@ object ProgressEvents {
         "ApiError" to Events(),
     )
 
-    private var reverseEventMap =
-        eventMap.entries.associateBy({ it.value }, { it.key }).toMutableMap()
+    private val reverseEventMap = eventMap.entries.associateBy({ it.value }, { it.key }).toMutableMap()
 }
