@@ -35,7 +35,10 @@ object Connection {
 
     fun disconnect() {
         bleManager?.release()
+    }
 
+    fun close() {
+        bleManager?.close()
     }
 
     fun isConnected(): Boolean {

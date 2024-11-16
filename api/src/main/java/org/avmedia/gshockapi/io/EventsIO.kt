@@ -93,7 +93,8 @@ object EventsIO {
 
             // Truncate the result to the specific size
             while (result.size > maxSize) {
-                result.removeLast()
+                // result.removeLast()
+                result.removeAt(result.size - 1)
             }
 
             return result

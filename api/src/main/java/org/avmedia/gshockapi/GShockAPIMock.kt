@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import java.time.DayOfWeek
@@ -32,8 +33,8 @@ class GShockAPIMock(private val context: Context) {
     }
 
     suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "") {
-        ProgressEvents.onNext("WaitForConnection")
-        delay(1000)
+//        ProgressEvents.onNext("WaitForConnection")
+//        delay(1000)
 
         ProgressEvents.onNext("DeviceName", "CASIO GW-B5600")
         //delay(1000)
@@ -47,12 +48,15 @@ class GShockAPIMock(private val context: Context) {
         ProgressEvents.onNext("ButtonPressedInfoReceived")
 
         // delay(1000)
-        // ProgressEvents.onNext("Disconnect")
+        // ProgressEvents.onNext()
         // delay(1000)
     }
 
     private suspend fun init(): Boolean {
         return true
+    }
+
+    fun close () {
     }
 
     fun isConnected(): Boolean {
@@ -283,7 +287,7 @@ class GShockAPIMock(private val context: Context) {
         println("Settings set: $settings")
     }
 
-    fun disconnect(context: Context) {
+    fun disconnect() {
         println("Disconnected")
     }
 

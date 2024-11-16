@@ -32,7 +32,7 @@ import java.util.logging.Logger
  *              ProgressEvents["ConnectionSetupComplete"] -> {
  *                  println("Got \"ConnectionSetupComplete\" event")
  *              }
- *              ProgressEvents["Disconnect"] -> {
+ *              ProgressEvents[] -> {
  *                  println("Got \"Disconnect\" event")
  *              }
  *              ProgressEvents["ConnectionFailed"] -> {
