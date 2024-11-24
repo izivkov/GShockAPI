@@ -5,13 +5,20 @@ import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.coroutines.*
-import org.avmedia.gshockapi.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.Alarm
+import org.avmedia.gshockapi.EventAction
+import org.avmedia.gshockapi.GShockAPI
+import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.io.IO
-import java.lang.Thread.sleep
 import java.time.Clock
 import java.time.ZoneId
-import java.util.*
+import java.util.TimeZone
 import kotlin.system.measureTimeMillis
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -27,7 +34,6 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
         permissionManager = PermissionManager(this)
         permissionManager.setupPermissions()
@@ -69,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
                 runCommands()
 
-                api.disconnect(this@MainActivity)
+                api.disconnect()
                 println("--------------- END ------------------")
             }
         }
@@ -88,7 +94,7 @@ class MainActivity : AppCompatActivity() {
                 runCommands()
             }
 
-            api.disconnect(this@MainActivity)
+            api.disconnect()
             println("--------------- END ------------------")
         }
     }
@@ -147,7 +153,7 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
             runAllTimezones()
-            api.disconnect(this@MainActivity)
+            api.disconnect()
             println("--------------- End of runTimezonesTest ------------------")
         }
     }
@@ -235,7 +241,7 @@ class MainActivity : AppCompatActivity() {
 
     private suspend fun handleSettings() {
         val settings: Settings = api.getSettings()
-        println ("Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}")
+        println("Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}")
         settings.dateFormat = "MM:DD"
         api.setSettings(settings)
     }

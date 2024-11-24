@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import kotlinx.coroutines.delay
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.casio.*
 import org.avmedia.gshockapi.io.*
@@ -43,11 +42,11 @@ import java.util.*
  */
 
 @RequiresApi(Build.VERSION_CODES.O)
-class GShockAPI(private val context: Context) {
+class GShockAPI(private val context: Context) : IGShockAPI {
 
     /**
      * This function waits for the watch to connect to the phone.
-     * When connected, it returns and emmits a `ConnectionSetupComplete` event, which
+     * When connected, it returns and emits a `ConnectionSetupComplete` event, which
      * can inform other parts of the app that the connection has taken place.
      * @param[deviceId] Optional parameter containing a the Bluetooth ID
      * of a watch which was previously connected. Providing this parameter will
@@ -63,7 +62,7 @@ class GShockAPI(private val context: Context) {
      * ```
      */
 
-    suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "") {
+    override suspend fun waitForConnection(deviceId: String?, deviceName: String?) {
 
         Connection.stopBleScan()
 
@@ -74,9 +73,8 @@ class GShockAPI(private val context: Context) {
         }
     }
 
-    private suspend fun init(): Boolean {
+    override suspend fun init(): Boolean {
         IO.init()
-        CachedIO.init()
         getPressedButton()
         ProgressEvents.onNext("ButtonPressedInfoReceived")
 
@@ -88,7 +86,7 @@ class GShockAPI(private val context: Context) {
     /**
      * Returns a Boolean value indicating if the watch is currently commenced to the phone
      */
-    fun isConnected(): Boolean {
+    override fun isConnected(): Boolean {
         return Connection.isConnected()
     }
 
@@ -98,7 +96,7 @@ class GShockAPI(private val context: Context) {
      * The `deviceId` can be obtained by calling `getDeviceId()` or from the
      * payload in the `ProgressEvents.Events.Disconnect` event
      */
-    fun teardownConnection(device: BluetoothDevice) {
+    override fun teardownConnection(device: BluetoothDevice) {
         Connection.teardownConnection(device)
     }
 
@@ -138,7 +136,7 @@ class GShockAPI(private val context: Context) {
      */
     /* Do not get value from cache, because we do not want to
     get all values here. */
-    suspend fun getPressedButton(): IO.WATCH_BUTTON {
+    override suspend fun getPressedButton(): IO.WATCH_BUTTON {
         val value = ButtonPressedIO.request()
         ButtonPressedIO.put(value)
         return value
@@ -150,7 +148,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return **true** if the lower-right button initiated the connection, **false** otherwise.
      */
-    fun isActionButtonPressed(): Boolean {
+    override fun isActionButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
         return button == IO.WATCH_BUTTON.LOWER_RIGHT
     }
@@ -161,7 +159,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return **true** if the lower-left button initiated the connection, **false** otherwise.
      */
-    fun isNormalButtonPressed(): Boolean {
+    override fun isNormalButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
         return button == IO.WATCH_BUTTON.LOWER_LEFT
     }
@@ -173,7 +171,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return **true** if watch automatically initiated the connection, **false** otherwise.
      */
-    fun isAutoTimeStarted(): Boolean {
+    override fun isAutoTimeStarted(): Boolean {
         val button = ButtonPressedIO.get()
         return button == IO.WATCH_BUTTON.NO_BUTTON
     }
@@ -184,7 +182,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return **true** if button pressed to activate FIND PHONE function, **false** otherwise.
      */
-    fun isFindPhoneButtonPressed(): Boolean {
+    override fun isFindPhoneButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
         return button == IO.WATCH_BUTTON.FIND_PHONE
     }
@@ -194,11 +192,11 @@ class GShockAPI(private val context: Context) {
      *
      * @return returns the name of the watch as a String. i.e. "GW-B5600"
      */
-    suspend fun getWatchName(): String {
+    override suspend fun getWatchName(): String {
         return WatchNameIO.request()
     }
 
-    suspend fun getError(): String {
+    override suspend fun getError(): String {
         return ErrorIO.request()
     }
 
@@ -207,7 +205,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return returns the Daylight Saving Time state of the watch as a String.
      */
-    suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
+    override suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
         return DstWatchStateIO.request(state)
     }
 
@@ -219,7 +217,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return Daylight Saving Time state of the requested World City as a String.
      */
-    suspend fun getDSTForWorldCities(cityNumber: Int): String {
+    override suspend fun getDSTForWorldCities(cityNumber: Int): String {
         return DstForWorldCitiesIO.request(cityNumber)
     }
 
@@ -231,7 +229,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return The name of the requested World City as a String.
      */
-    suspend fun getWorldCities(cityNumber: Int): String {
+    override suspend fun getWorldCities(cityNumber: Int): String {
         return WorldCitiesIO.request(cityNumber)
     }
 
@@ -240,7 +238,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return The name of Home City as a String.
      */
-    suspend fun getHomeTime(): String {
+    override suspend fun getHomeTime(): String {
         return HomeTimeIO.request()
     }
 
@@ -249,7 +247,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return the battery level in percent as a String. E.g.: 83
      */
-    suspend fun getBatteryLevel(): Int {
+    override suspend fun getBatteryLevel(): Int {
         return WatchConditionIO.request().batteryLevel
     }
 
@@ -258,7 +256,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return the watch's temperature in degree Celsius
      */
-    suspend fun getWatchTemperature(): Int {
+    override suspend fun getWatchTemperature(): Int {
         return WatchConditionIO.request().temperature
     }
 
@@ -267,7 +265,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3 minutes.
      */
-    suspend fun getTimer(): Int {
+    override suspend fun getTimer(): Int {
         return TimerIO.request()
     }
 
@@ -276,7 +274,7 @@ class GShockAPI(private val context: Context) {
      *
      * @param timerValue Timer number of seconds as an Int.  E.g.: 180 means the timer will be set for 3 minutes.
      */
-    fun setTimer(timerValue: Int) {
+    override fun setTimer(timerValue: Int) {
         TimerIO.set(timerValue)
     }
 
@@ -287,7 +285,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return appInfo string from the watch.
      */
-    suspend fun getAppInfo(): String {
+    override suspend fun getAppInfo(): String {
         return AppInfoIO.request()
     }
 
@@ -305,7 +303,7 @@ class GShockAPI(private val context: Context) {
      *      setTime("Europe/Sofia")
      *  ```
      */
-    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null) {
+    override suspend fun setTime(timeZone: String, timeMs: Long?) {
 
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("GShockAPI", "setTime: Invalid timezone $timeZone passed")
@@ -323,7 +321,7 @@ class GShockAPI(private val context: Context) {
      * @return ArrayList<[Alarm]>
      */
 
-    suspend fun getAlarms(): ArrayList<Alarm> {
+    override suspend fun getAlarms(): ArrayList<Alarm> {
         return AlarmsIO.request()
     }
 
@@ -332,7 +330,7 @@ class GShockAPI(private val context: Context) {
      *
      * @param ArrayList<[Alarm]>
      */
-    fun setAlarms(alarms: ArrayList<Alarm>) {
+    override fun setAlarms(alarms: ArrayList<Alarm>) {
         AlarmsIO.set(alarms)
     }
 
@@ -341,7 +339,7 @@ class GShockAPI(private val context: Context) {
      *
      * @return ArrayList<[Event]>
      */
-    suspend fun getEventsFromWatch(): ArrayList<Event> {
+    override suspend fun getEventsFromWatch(): ArrayList<Event> {
 
         val events = ArrayList<Event>()
 
@@ -360,7 +358,7 @@ class GShockAPI(private val context: Context) {
      * @param eventNumber The index of the event 1..5
      * @return [Event]
      */
-    private suspend fun getEventFromWatch(eventNumber: Int): Event {
+    override suspend fun getEventFromWatch(eventNumber: Int): Event {
         return EventsIO.request(eventNumber)
     }
 
@@ -369,7 +367,7 @@ class GShockAPI(private val context: Context) {
      *
      * @param ArrayList<[Event]>
      */
-    fun setEvents(events: ArrayList<Event>) {
+    override fun setEvents(events: ArrayList<Event>) {
         EventsIO.set(events)
     }
 
@@ -378,7 +376,7 @@ class GShockAPI(private val context: Context) {
      *
      * @param none
      */
-    fun clearEvents() {
+    override fun clearEvents() {
         EventsIO.clearAll()
     }
 
@@ -394,7 +392,7 @@ class GShockAPI(private val context: Context) {
      * @return [Settings]
      */
 
-    suspend fun getSettings(): Settings {
+    override suspend fun getSettings(): Settings {
         val settings = getBasicSettings()
         val timeAdjustment = getTimeAdjustment()
         settings.timeAdjustment = timeAdjustment.isTimeAdjustmentSet
@@ -402,11 +400,11 @@ class GShockAPI(private val context: Context) {
         return settings
     }
 
-    private suspend fun getBasicSettings(): Settings {
+    override suspend fun getBasicSettings(): Settings {
         return SettingsIO.request()
     }
 
-    private suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
+    override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
         return TimeAdjustmentIO.request()
     }
 
@@ -422,7 +420,7 @@ class GShockAPI(private val context: Context) {
      *
      * @param settings
      */
-    fun setSettings(settings: Settings) {
+    override fun setSettings(settings: Settings) {
         SettingsIO.set(settings)
         TimeAdjustmentIO.set(settings)
     }
@@ -438,15 +436,25 @@ class GShockAPI(private val context: Context) {
      *
      * @param context [Context]
      */
-    fun disconnect() {
+    override fun disconnect() {
         Connection.disconnect()
     }
 
-    fun stopScan() {
+    // for compatibility.
+    @Deprecated(
+        message = "This function is deprecated, use disconnect() instead",
+        replaceWith = ReplaceWith("disconnect()"),
+        level = DeprecationLevel.WARNING
+    )
+    fun disconnect(context:Context) {
+        disconnect()
+    }
+
+    override fun stopScan() {
         Connection.stopBleScan()
     }
 
-    fun close () {
+    override fun close() {
         Connection.close()
     }
 
@@ -455,24 +463,24 @@ class GShockAPI(private val context: Context) {
      *
      * @return *true* if enables, *false* otherwise.
      */
-    fun isBluetoothEnabled(context: Context): Boolean {
+    override fun isBluetoothEnabled(context: Context): Boolean {
         return Connection.isBluetoothEnabled(context)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun sendMessage(message: String) {
+    override fun sendMessage(message: String) {
         MessageDispatcher.sendToWatch(message)
     }
 
-    fun resetHand() {
+    override fun resetHand() {
         sendMessage("{action: \"RESET_HAND\", value: \"\"}")
     }
 
-    fun validateBluetoothAddress(deviceAddress: String?): Boolean {
+    override fun validateBluetoothAddress(deviceAddress: String?): Boolean {
         return Connection.validateAddress(deviceAddress)
     }
 
-    fun preventReconnection(): Boolean {
+    override fun preventReconnection(): Boolean {
         return true
     }
 }

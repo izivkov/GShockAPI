@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.io
 
+import CachedIO
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
@@ -23,7 +24,9 @@ object AlarmsIO {
 
     @Suppress("UNCHECKED_CAST")
     suspend fun request(): ArrayList<Alarm> {
-        return CachedIO.request("GET_ALARMS", ::getAlarms) as ArrayList<Alarm>
+        return CachedIO.request("GET_ALARMS") { key ->
+            getAlarms(key)
+        }
     }
 
     private suspend fun getAlarms(key: String): ArrayList<Alarm> {
@@ -46,8 +49,12 @@ object AlarmsIO {
             return gson.toJson(alarms)
         }
 
-        fun setFunc () {Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")}
-        CachedIO.set("SET_ALARMS", ::setFunc)
+        fun setFunc() {
+            Connection.sendMessage("{action: \"SET_ALARMS\", value: ${toJson()} }")
+        }
+        CachedIO.set("SET_ALARMS") {
+            setFunc()
+        }
     }
 
     fun onReceived(data: String) {

@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.io
 
+import CachedIO
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build

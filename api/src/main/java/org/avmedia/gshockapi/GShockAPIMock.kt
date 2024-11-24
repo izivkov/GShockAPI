@@ -1,7 +1,5 @@
 package org.avmedia.gshockapi
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothAdapter.getDefaultAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
@@ -10,19 +8,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import java.time.DayOfWeek
 import java.time.Month
-import java.util.TimeZone
 
 
 /*
 This class is used during development to mock the GShock API.
  */
 @RequiresApi(Build.VERSION_CODES.O)
-class GShockAPIMock(private val context: Context) {
+class GShockAPIMock(private val context: Context) : IGShockAPI {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
@@ -32,7 +28,7 @@ class GShockAPIMock(private val context: Context) {
         }
     }
 
-    suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "") {
+    override suspend fun waitForConnection(deviceId: String?, deviceName: String?) {
 //        ProgressEvents.onNext("WaitForConnection")
 //        delay(1000)
 
@@ -52,51 +48,51 @@ class GShockAPIMock(private val context: Context) {
         // delay(1000)
     }
 
-    private suspend fun init(): Boolean {
+    override suspend fun init(): Boolean {
         return true
     }
 
-    fun close () {
+    override fun close() {
     }
 
-    fun isConnected(): Boolean {
+    override fun isConnected(): Boolean {
         return true
     }
 
-    fun teardownConnection(device: BluetoothDevice) {
+    override fun teardownConnection(device: BluetoothDevice) {
         // NO-OP
     }
 
-    suspend fun getPressedButton(): IO.WATCH_BUTTON {
+    override suspend fun getPressedButton(): IO.WATCH_BUTTON {
         return IO.WATCH_BUTTON.LOWER_LEFT
     }
 
-    fun isActionButtonPressed(): Boolean {
+    override fun isActionButtonPressed(): Boolean {
         return false
     }
 
-    fun isNormalButtonPressed(): Boolean {
+    override fun isNormalButtonPressed(): Boolean {
         return true
     }
 
-    fun isAutoTimeStarted(): Boolean {
+    override fun isAutoTimeStarted(): Boolean {
         return false
     }
 
-    fun isFindPhoneButtonPressed(): Boolean {
+    override fun isFindPhoneButtonPressed(): Boolean {
         return false
     }
 
-    suspend fun getWatchName(): String {
+    override suspend fun getWatchName(): String {
         return "CASIO GW-B5600"
         // return "CASIO ECB-30"
     }
 
-    suspend fun getError(): String {
+    override suspend fun getError(): String {
         return "Error"
     }
 
-    suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
+    override suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
         /*
         DST STATE ZERO: 0x1D 00 01 03 02 02 76 00 00 FF FF FF FF FF FF
         DST STATE TWO: 0x1D 02 03 03 03 A0 00 DC 00 FF FF FF FF FF FF
@@ -105,7 +101,7 @@ class GShockAPIMock(private val context: Context) {
         return "0x1D 00 01 03 02 02 76 00 00 FF FF FF FF FF FF"
     }
 
-    suspend fun getDSTForWorldCities(cityNumber: Int): String {
+    override suspend fun getDSTForWorldCities(cityNumber: Int): String {
         return when (cityNumber) {
             0 -> "0x1E 00 02 76 EC 04 01"
             1 -> "0x1E 01 00 00 00 00 00"
@@ -117,7 +113,7 @@ class GShockAPIMock(private val context: Context) {
         }
     }
 
-    suspend fun getWorldCities(cityNumber: Int): String {
+    override suspend fun getWorldCities(cityNumber: Int): String {
         return when (cityNumber) {
             0 -> "0x1F 00 54 4F 52 4F 4E 54 4F 00 00 00 00 00 00 00 00 00 00 00"
             1 -> "0x1F 01 28 55 54 43 29 00 00 00 00 00 00 00 00 00 00 00 00 00"
@@ -129,35 +125,35 @@ class GShockAPIMock(private val context: Context) {
         }
     }
 
-    suspend fun getHomeTime(): String {
+    override suspend fun getHomeTime(): String {
         return "SOFIA"
     }
 
-    suspend fun getBatteryLevel(): Int {
+    override suspend fun getBatteryLevel(): Int {
         return 81
     }
 
-    suspend fun getWatchTemperature(): Int {
+    override suspend fun getWatchTemperature(): Int {
         return 37
     }
 
-    suspend fun getTimer(): Int {
+    override suspend fun getTimer(): Int {
         return 4 * 60
     }
 
-    fun setTimer(timerValue: Int) {
+    override fun setTimer(timerValue: Int) {
         println("Timer set to $timerValue")
     }
 
-    suspend fun getAppInfo(): String {
+    override suspend fun getAppInfo(): String {
         return "0x22 C7 67 B2 F0 78 86 71 6A 76 EC 02"
     }
 
-    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null) {
+    override suspend fun setTime(timeZone: String, timeMs: Long?) {
         println("Time set to $timeZone")
     }
 
-    suspend fun getAlarms(): ArrayList<Alarm> {
+    override suspend fun getAlarms(): ArrayList<Alarm> {
         delay(0)
 
         val alarmList: ArrayList<Alarm> = arrayListOf(
@@ -170,11 +166,11 @@ class GShockAPIMock(private val context: Context) {
         return alarmList
     }
 
-    fun setAlarms(alarms: ArrayList<Alarm>) {
+    override fun setAlarms(alarms: ArrayList<Alarm>) {
         println("Alarms set: $alarms")
     }
 
-    suspend fun getEventsFromWatch(): ArrayList<Event> {
+    override suspend fun getEventsFromWatch(): ArrayList<Event> {
 
         val eventList: ArrayList<Event> = arrayListOf(
             Event(
@@ -235,8 +231,7 @@ class GShockAPIMock(private val context: Context) {
 
     }
 
-    private suspend fun getEventFromWatch(eventNumber: Int): Event {
-
+    override suspend fun getEventFromWatch(eventNumber: Int): Event {
         return Event(
             title = "Event 10",
             startDate = EventDate(2024, Month.MAY, 1), // Replace with actual EventDate structure
@@ -248,15 +243,15 @@ class GShockAPIMock(private val context: Context) {
         )
     }
 
-    fun setEvents(events: ArrayList<Event>) {
+    override fun setEvents(events: ArrayList<Event>) {
         println("Events set: $events")
     }
 
-    fun clearEvents() {
+    override fun clearEvents() {
         println("Events cleared")
     }
 
-    suspend fun getSettings(): Settings {
+    override suspend fun getSettings(): Settings {
         delay(0)
 
         val setting = Settings()
@@ -275,44 +270,44 @@ class GShockAPIMock(private val context: Context) {
         return setting
     }
 
-    private suspend fun getBasicSettings(): Settings {
+    override suspend fun getBasicSettings(): Settings {
         return Settings()
     }
 
-    private suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
+    override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
         return TimeAdjustmentInfo(true, 30)
     }
 
-    fun setSettings(settings: Settings) {
+    override fun setSettings(settings: Settings) {
         println("Settings set: $settings")
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         println("Disconnected")
     }
 
-    fun stopScan() {
+    override fun stopScan() {
         println("Scan stopped")
     }
 
-    fun isBluetoothEnabled(context: Context): Boolean {
+    override fun isBluetoothEnabled(context: Context): Boolean {
         return false
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun sendMessage(message: String) {
+    override fun sendMessage(message: String) {
         println("Message sent: $message")
     }
 
-    fun resetHand() {
+    override fun resetHand() {
         println("Hand reset")
     }
 
-    fun validateBluetoothAddress(deviceAddress: String?): Boolean {
+    override fun validateBluetoothAddress(deviceAddress: String?): Boolean {
         return true
     }
 
-    fun preventReconnection(): Boolean {
+    override fun preventReconnection(): Boolean {
         return true
     }
 }

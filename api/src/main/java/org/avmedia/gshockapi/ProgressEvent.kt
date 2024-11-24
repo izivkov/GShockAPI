@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.ProgressEvents.Events
 import org.avmedia.gshockapi.ProgressEvents.Subscriber
 import timber.log.Timber
-import java.util.logging.Logger
 
 /**
  * This class is used to send RX events to the rest of the library and to the application to inform
@@ -68,7 +67,8 @@ data class EventAction(
 
 object ProgressEvents {
     val subscriber = Subscriber()
-    private val eventsFlow: MutableSharedFlow<Events> = MutableSharedFlow(replay = 10) // Replay last 10 events
+    private val eventsFlow: MutableSharedFlow<Events> =
+        MutableSharedFlow(replay = 10) // Replay last 10 events
 
     fun runEventActions(name: String, eventActions: Array<EventAction>) {
         subscriber.runEventActions(name, eventActions)
@@ -221,5 +221,6 @@ object ProgressEvents {
         "ApiError" to Events(),
     )
 
-    private val reverseEventMap = eventMap.entries.associateBy({ it.value }, { it.key }).toMutableMap()
+    private val reverseEventMap =
+        eventMap.entries.associateBy({ it.value }, { it.key }).toMutableMap()
 }

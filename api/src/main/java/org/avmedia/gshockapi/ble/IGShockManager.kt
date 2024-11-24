@@ -29,7 +29,7 @@ enum class GET_SET_MODE {
 interface GSHock {
     suspend fun connect(device: BluetoothDevice, onConnected: (String, String) -> Unit)
     fun release()
-    fun close ()
+    fun close()
     fun setDataCallback(dataCallback: IDataReceived?)
     fun enableNotifications()
     var connectionState: ConnectionState
@@ -83,12 +83,13 @@ private class GShockManagerImpl(
             .useAutoConnect(true)
             .done {
                 requestMtu(256).enqueue()
-                Timber.d("BLE", "Connected with autoConnect!") }
+                Timber.d("BLE", "Connected with autoConnect!")
+            }
             .fail { _, status -> Timber.d("BLE", "Failed with status $status") }
             .enqueue()
     }
 
-    override fun close () {
+    override fun close() {
         super.close()
     }
 

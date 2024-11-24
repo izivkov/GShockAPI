@@ -6,6 +6,7 @@
 
 package org.avmedia.gshockapi.io
 
+import CachedIO
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ble.Connection

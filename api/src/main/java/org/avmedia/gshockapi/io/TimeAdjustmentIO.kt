@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.io
 
+import CachedIO
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
@@ -24,7 +25,7 @@ object TimeAdjustmentIO {
     }
 
     suspend fun request(): TimeAdjustmentInfo {
-        return CachedIO.request("GET_TIME_ADJUSTMENT", ::getTimeAdjustment) as TimeAdjustmentInfo
+        return CachedIO.request("GET_TIME_ADJUSTMENT") { key -> getTimeAdjustment(key) }
     }
 
     private suspend fun getTimeAdjustment(key: String): TimeAdjustmentInfo {
@@ -36,7 +37,9 @@ object TimeAdjustmentIO {
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
 
-        fun setFunc () {Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")}
+        fun setFunc() {
+            Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
+        }
         CachedIO.set("GET_TIME_ADJUSTMENT", ::setFunc)
     }
 
