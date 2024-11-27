@@ -21,15 +21,13 @@ object WaitForConnectionIO {
     suspend fun request(
         context: Context,
         deviceId: String?,
-        deviceName: String?
     ): String {
-        return waitForConnection(context, deviceId, deviceName)
+        return waitForConnection(context, deviceId)
     }
 
     private suspend fun waitForConnection(
         context: Context,
         deviceId: String?,
-        deviceName: String?
     ): String {
 
         if (Connection.isConnected() || Connection.isConnecting()) {
@@ -39,14 +37,11 @@ object WaitForConnectionIO {
         DeferredValueHolder.deferredResult = CompletableDeferred()
         WatchDataListener.init()
 
-        Connection.startConnection(context, deviceId, deviceName)
+        Connection.startConnection(context, deviceId)
 
         fun waitForConnectionSetupComplete() {
             val eventActions = arrayOf(
                 EventAction("ConnectionSetupComplete") {
-                    val device =
-                        ProgressEvents.getPayload("ConnectionSetupComplete") as BluetoothDevice
-
                     CachedIO.clearCache()
                     DeferredValueHolder.deferredResult.complete("OK")
                 },

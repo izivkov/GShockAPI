@@ -49,7 +49,17 @@ object Connection {
         return bleManager?.connectionState == ConnectionState.CONNECTING
     }
 
+    @Deprecated(
+        message = "This function is deprecated, use teardownConnection() instead",
+        replaceWith = ReplaceWith("teardownConnection()"),
+        level = DeprecationLevel.WARNING
+    )
+    @Suppress("UNUSED_PARAMETER")
     fun teardownConnection(device: BluetoothDevice) {
+        bleManager?.release()
+    }
+
+    fun teardownConnection() {
         bleManager?.release()
     }
 
@@ -72,7 +82,7 @@ object Connection {
         }
     }
 
-    fun startConnection(context: Context, deviceId: String?, deviceName: String?) {
+    fun startConnection(context: Context, deviceId: String?) {
         scope.launch {
             if (deviceId.isNullOrEmpty()) {
                 stopBleScan()

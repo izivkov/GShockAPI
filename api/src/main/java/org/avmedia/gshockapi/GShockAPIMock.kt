@@ -28,7 +28,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         }
     }
 
-    override suspend fun waitForConnection(deviceId: String?, deviceName: String?) {
+    override suspend fun waitForConnection(deviceId: String?) {
 //        ProgressEvents.onNext("WaitForConnection")
 //        delay(1000)
 

@@ -62,12 +62,12 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * ```
      */
 
-    override suspend fun waitForConnection(deviceId: String?, deviceName: String?) {
+    override suspend fun waitForConnection(deviceId: String?) {
 
         Connection.stopBleScan()
 
         val connectedStatus =
-            WaitForConnectionIO.request(context, deviceId, deviceName)
+            WaitForConnectionIO.request(context, deviceId)
         if (connectedStatus == "OK") {
             init()
         }
@@ -97,7 +97,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * payload in the `ProgressEvents.Events.Disconnect` event
      */
     override fun teardownConnection(device: BluetoothDevice) {
-        Connection.teardownConnection(device)
+        Connection.teardownConnection()
     }
 
     /**
@@ -446,7 +446,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         replaceWith = ReplaceWith("disconnect()"),
         level = DeprecationLevel.WARNING
     )
-    fun disconnect(context:Context) {
+    @Suppress("UNUSED_PARAMETER")
+    fun disconnect(context: Context) {
         disconnect()
     }
 

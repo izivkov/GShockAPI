@@ -9,7 +9,7 @@ import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import java.util.TimeZone
 
 interface IGShockAPI {
-    suspend fun waitForConnection(deviceId: String? = "", deviceName: String? = "")
+    suspend fun waitForConnection(deviceId: String? = "")
     suspend fun init(): Boolean
     fun isConnected(): Boolean
     fun teardownConnection(device: BluetoothDevice)
