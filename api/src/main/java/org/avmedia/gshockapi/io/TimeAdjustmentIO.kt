@@ -37,10 +37,9 @@ object TimeAdjustmentIO {
     fun set(settings: Settings) {
         val settingJson = Gson().toJson(settings)
 
-        fun setFunc() {
+        CachedIO.set("GET_TIME_ADJUSTMENT") {
             Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: ${settingJson}}")
         }
-        CachedIO.set("GET_TIME_ADJUSTMENT", ::setFunc)
     }
 
     fun onReceived(data: String) {
