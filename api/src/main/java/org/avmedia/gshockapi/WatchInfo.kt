@@ -84,7 +84,8 @@ object WatchInfo {
      * When we obtain the name of the watch from the BLE connection, we need to call this method.
      * From here, we can determine and set all the model's characteristics.
      */
-    fun setNameAndModel(name: String) {
+    fun
+            setNameAndModel(name: String) {
         this.name = name
 
         // name is like: CASIO GW-B5600
