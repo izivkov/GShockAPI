@@ -49,16 +49,6 @@ object Connection {
         return bleManager?.connectionState == ConnectionState.CONNECTING
     }
 
-    @Deprecated(
-        message = "This function is deprecated, use teardownConnection() instead",
-        replaceWith = ReplaceWith("teardownConnection()"),
-        level = DeprecationLevel.WARNING
-    )
-    @Suppress("UNUSED_PARAMETER")
-    fun teardownConnection(device: BluetoothDevice) {
-        bleManager?.release()
-    }
-
     fun teardownConnection() {
         bleManager?.release()
     }
@@ -76,7 +66,7 @@ object Connection {
         bleManager?.setDataCallback(dataCallback)
     }
 
-    fun write(handle: GET_SET_MODE, data: ByteArray) {
+    fun write(handle: GetSetMode, data: ByteArray) {
         scope.launch {
             bleManager?.write(handle, data)
         }

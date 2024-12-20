@@ -10,7 +10,7 @@ object DstWatchStateIO {
         lateinit var deferredResult: CompletableDeferred<String>
     }
 
-    suspend fun request(state: IO.DTS_STATE): String {
+    suspend fun request(state: IO.DstState): String {
         return CachedIO.request("1d0${state.state}") { key -> getDSTWatchState(key) }
     }
 

@@ -136,7 +136,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     /* Do not get value from cache, because we do not want to
     get all values here. */
-    override suspend fun getPressedButton(): IO.WATCH_BUTTON {
+    override suspend fun getPressedButton(): IO.WatchButton {
         val value = ButtonPressedIO.request()
         ButtonPressedIO.put(value)
         return value
@@ -150,7 +150,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override fun isActionButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == IO.WATCH_BUTTON.LOWER_RIGHT
+        return button == IO.WatchButton.LOWER_RIGHT
     }
 
     /**
@@ -161,7 +161,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override fun isNormalButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == IO.WATCH_BUTTON.LOWER_LEFT
+        return button == IO.WatchButton.LOWER_LEFT
     }
 
     /**
@@ -173,7 +173,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override fun isAutoTimeStarted(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == IO.WATCH_BUTTON.NO_BUTTON
+        return button == IO.WatchButton.NO_BUTTON
     }
 
     /**
@@ -184,7 +184,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override fun isFindPhoneButtonPressed(): Boolean {
         val button = ButtonPressedIO.get()
-        return button == IO.WATCH_BUTTON.FIND_PHONE
+        return button == IO.WatchButton.FIND_PHONE
     }
 
     /**
@@ -205,7 +205,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @return returns the Daylight Saving Time state of the watch as a String.
      */
-    override suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
+    override suspend fun getDSTWatchState(state: IO.DstState): String {
         return DstWatchStateIO.request(state)
     }
 
@@ -438,17 +438,6 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override fun disconnect() {
         Connection.disconnect()
-    }
-
-    // for compatibility.
-    @Deprecated(
-        message = "This function is deprecated, use disconnect() instead",
-        replaceWith = ReplaceWith("disconnect()"),
-        level = DeprecationLevel.WARNING
-    )
-    @Suppress("UNUSED_PARAMETER")
-    fun disconnect(context: Context) {
-        disconnect()
     }
 
     override fun stopScan() {

@@ -8,7 +8,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Event
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.ReminderMasks
 import org.avmedia.gshockapi.utils.Utils
@@ -69,7 +69,7 @@ object EventsIO {
 
     fun set(events: ArrayList<Event>) {
 
-        val MAX_REMINDERS = 5
+        val maxReminders = 5
 
         if (events.isEmpty()) {
             Timber.d("Events model not initialised! Cannot set reminders")
@@ -94,7 +94,6 @@ object EventsIO {
 
             // Truncate the result to the specific size
             while (result.size > maxSize) {
-                // result.removeLast()
                 result.removeAt(result.size - 1)
             }
 
@@ -150,10 +149,10 @@ object EventsIO {
             val currentEvents = appendAndTruncate(
                 getEnabledEvents(events),
                 events.filter { !it.enabled } as ArrayList<Event>,
-                MAX_REMINDERS)
+                maxReminders)
 
             // if less then MAX_REMINDERS, pad with empty events
-            return padToMax(currentEvents, MAX_REMINDERS)
+            return padToMax(currentEvents, maxReminders)
         }
 
         val eventsToSend = toJson(getEventsToSend())
@@ -195,7 +194,7 @@ object EventsIO {
         // Process title
         val title = ReminderEncoder.reminderTitleFromJson(reminderJson)
         IO.writeCmd(
-            GET_SET_MODE.SET, Utils.byteArrayOfInts(
+            GetSetMode.SET, Utils.byteArrayOfInts(
                 CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, reminderNumber
             ) + title
         )
@@ -207,21 +206,21 @@ object EventsIO {
         reminderTime += reminderNumber
         reminderTime += ReminderEncoder.reminderTimeFromJson(reminderJson)
 
-        IO.writeCmd(GET_SET_MODE.SET, Utils.byteArrayOfIntArray(reminderTime))
+        IO.writeCmd(GetSetMode.SET, Utils.byteArrayOfIntArray(reminderTime))
     }
 
     fun clearAll() {
         var index = 1
         repeat(5) {
             IO.writeCmd(
-                GET_SET_MODE.SET, Utils.byteArrayOfInts(
+                GetSetMode.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code, index
                 ) + ByteArray(18)
             )
             CachedIO.remove("30${index}")
 
             IO.writeCmd(
-                GET_SET_MODE.SET, Utils.byteArrayOfInts(
+                GetSetMode.SET, Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code, index
                 ) + ByteArray(9)
             )

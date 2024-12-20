@@ -7,7 +7,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.Alarms
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
@@ -77,13 +77,13 @@ object AlarmsIO {
     fun sendToWatch(message: String) {
         // get alarm 1
         IO.writeCmd(
-            GET_SET_MODE.GET,
+            GetSetMode.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
         )
 
         // get the rest of the alarms
         IO.writeCmd(
-            GET_SET_MODE.GET,
+            GetSetMode.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code.toByte())
         )
     }
@@ -91,9 +91,9 @@ object AlarmsIO {
     fun sendToWatchSet(message: String) {
         val alarmsJsonArr: JSONArray = JSONObject(message).get("value") as JSONArray
         val alarmCasio0 = Alarms.fromJsonAlarmFirstAlarm(alarmsJsonArr[0] as JSONObject)
-        IO.writeCmd(GET_SET_MODE.SET, alarmCasio0)
+        IO.writeCmd(GetSetMode.SET, alarmCasio0)
         val alarmCasio: ByteArray = Alarms.fromJsonAlarmSecondaryAlarms(alarmsJsonArr)
-        IO.writeCmd(GET_SET_MODE.SET, alarmCasio)
+        IO.writeCmd(GetSetMode.SET, alarmCasio)
     }
 
     object AlarmDecoder {

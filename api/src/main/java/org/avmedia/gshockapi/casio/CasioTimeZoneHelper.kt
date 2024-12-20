@@ -180,16 +180,14 @@ object CasioTimeZoneHelper {
         val rules1 = tz1.normalized().rules
         val rules2 = tz2.normalized().rules
 
-        return rules1.getStandardOffset(Instant.now())
-            .equals(rules2.getStandardOffset(Instant.now())) && rules1.getDaylightSavings(Instant.now())
-            .equals(rules1.getDaylightSavings(Instant.now())) && rules1.transitionRules.equals(
-            rules2.transitionRules
-        )
+        return rules1.getStandardOffset(Instant.now()) == rules2.getStandardOffset(Instant.now())
+                && rules1.getDaylightSavings(Instant.now()) == rules1.getDaylightSavings(Instant.now())
+                && rules1.transitionRules == rules2.transitionRules
     }
 
     fun findTimeZone(timeZoneName: String): CasioTimeZone {
 
-        var foundEntry = timeZoneMap[timeZoneName]
+        val foundEntry = timeZoneMap[timeZoneName]
         if (foundEntry != null) {
             return foundEntry
         }

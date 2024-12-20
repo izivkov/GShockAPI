@@ -13,14 +13,14 @@ interface IGShockAPI {
     suspend fun init(): Boolean
     fun isConnected(): Boolean
     fun teardownConnection(device: BluetoothDevice)
-    suspend fun getPressedButton(): IO.WATCH_BUTTON
+    suspend fun getPressedButton(): IO.WatchButton
     fun isActionButtonPressed(): Boolean
     fun isNormalButtonPressed(): Boolean
     fun isAutoTimeStarted(): Boolean
     fun isFindPhoneButtonPressed(): Boolean
     suspend fun getWatchName(): String
     suspend fun getError(): String
-    suspend fun getDSTWatchState(state: IO.DTS_STATE): String
+    suspend fun getDSTWatchState(state: IO.DstState): String
     suspend fun getDSTForWorldCities(cityNumber: Int): String
     suspend fun getWorldCities(cityNumber: Int): String
     suspend fun getHomeTime(): String

@@ -7,7 +7,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -155,14 +155,14 @@ pwr. saving off:00010000
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         IO.writeCmd(
-            GET_SET_MODE.GET,
+            GetSetMode.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
         )
     }
 
     fun sendToWatchSet(message: String) {
         val settings = JSONObject(message).get("value") as JSONObject
-        IO.writeCmd(GET_SET_MODE.SET, SettingsEncoder.encode(settings))
+        IO.writeCmd(GetSetMode.SET, SettingsEncoder.encode(settings))
     }
 
     object SettingsEncoder {

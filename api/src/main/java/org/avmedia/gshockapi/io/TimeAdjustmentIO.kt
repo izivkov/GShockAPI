@@ -7,7 +7,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -83,7 +83,7 @@ object TimeAdjustmentIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         IO.writeCmd(
-            GET_SET_MODE.GET,
+            GetSetMode.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
         )
     }
@@ -97,7 +97,7 @@ object TimeAdjustmentIO {
         )
         val encodedTimeAdj = encodeTimeAdjustment(settings)
         if (encodedTimeAdj.isNotEmpty()) {
-            IO.writeCmd(GET_SET_MODE.SET, encodedTimeAdj)
+            IO.writeCmd(GetSetMode.SET, encodedTimeAdj)
         }
     }
 

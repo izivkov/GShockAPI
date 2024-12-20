@@ -162,7 +162,7 @@ data class Event(
 
     private fun getDaysOfWeekFormatted(): String {
         var daysOfWeekStr = ""
-        if (daysOfWeek != null && daysOfWeek!!.size > 0) {
+        if (daysOfWeek != null && daysOfWeek!!.isNotEmpty()) {
             daysOfWeek!!.forEach {
                 daysOfWeekStr += "${capitalizeFirstAndTrim(it.name, 3)},"
             }

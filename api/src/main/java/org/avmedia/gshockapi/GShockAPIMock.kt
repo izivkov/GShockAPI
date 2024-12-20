@@ -29,23 +29,13 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     }
 
     override suspend fun waitForConnection(deviceId: String?) {
-//        ProgressEvents.onNext("WaitForConnection")
-//        delay(1000)
-
         ProgressEvents.onNext("DeviceName", "CASIO GW-B5600")
-        //delay(1000)
 
         ProgressEvents.onNext("ConnectionStarted")
-        // delay(1000)
 
         ProgressEvents.onNext("WatchInitializationCompleted")
         ProgressEvents.onNext("ConnectionSetupComplete")
-        // delay(1000)
         ProgressEvents.onNext("ButtonPressedInfoReceived")
-
-        // delay(1000)
-        // ProgressEvents.onNext()
-        // delay(1000)
     }
 
     override suspend fun init(): Boolean {
@@ -53,6 +43,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     }
 
     override fun close() {
+        // NO-OP
     }
 
     override fun isConnected(): Boolean {
@@ -63,8 +54,8 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         // NO-OP
     }
 
-    override suspend fun getPressedButton(): IO.WATCH_BUTTON {
-        return IO.WATCH_BUTTON.LOWER_LEFT
+    override suspend fun getPressedButton(): IO.WatchButton {
+        return IO.WatchButton.LOWER_LEFT
     }
 
     override fun isActionButtonPressed(): Boolean {
@@ -92,7 +83,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return "Error"
     }
 
-    override suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
+    override suspend fun getDSTWatchState(state: IO.DstState): String {
         /*
         DST STATE ZERO: 0x1D 00 01 03 02 02 76 00 00 FF FF FF FF FF FF
         DST STATE TWO: 0x1D 02 03 03 03 A0 00 DC 00 FF FF FF FF FF FF

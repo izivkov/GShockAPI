@@ -5,7 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
@@ -45,14 +45,14 @@ object TimerIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         IO.writeCmd(
-            GET_SET_MODE.GET,
+            GetSetMode.GET,
             Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
         )
     }
 
     fun sendToWatchSet(message: String) {
         val seconds = JSONObject(message).get("value").toString()
-        IO.writeCmd(GET_SET_MODE.SET, TimerEncoder.encode(seconds))
+        IO.writeCmd(GetSetMode.SET, TimerEncoder.encode(seconds))
     }
 
     object TimerDecoder {

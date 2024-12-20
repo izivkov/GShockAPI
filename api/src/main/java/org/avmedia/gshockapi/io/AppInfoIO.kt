@@ -2,7 +2,7 @@ package org.avmedia.gshockapi.io
 
 import CachedIO
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
 
 object AppInfoIO {
@@ -33,7 +33,7 @@ object AppInfoIO {
             // In this case, set it to the hardcoded value bellow, so 'D' button will work again.
             val appInfoCompactStr = Utils.toCompactString(data)
             if (appInfoCompactStr == "22FFFFFFFFFFFFFFFFFFFF00") {
-                IO.writeCmd(GET_SET_MODE.SET, "223488F4E5D5AFC829E06D02")
+                IO.writeCmd(GetSetMode.SET, "223488F4E5D5AFC829E06D02")
             }
         }
 

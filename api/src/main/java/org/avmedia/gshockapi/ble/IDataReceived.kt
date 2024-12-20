@@ -6,6 +6,6 @@
 
 package org.avmedia.gshockapi.ble
 
-interface IDataReceived {
+fun interface IDataReceived {
     fun dataReceived(data: String?)
 }

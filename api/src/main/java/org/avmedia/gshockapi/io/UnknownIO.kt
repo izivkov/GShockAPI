@@ -8,5 +8,6 @@ object UnknownIO {
 
     @Suppress("UNUSED_PARAMETER")
     fun onReceived(message: String) {
+        // NO-OP
     }
 }

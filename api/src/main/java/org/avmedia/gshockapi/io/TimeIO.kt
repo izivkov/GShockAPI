@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.utils.Utils
@@ -79,7 +79,7 @@ object TimeIO {
         )
     }
 
-    private suspend fun getDSTWatchState(state: IO.DTS_STATE): String {
+    private suspend fun getDSTWatchState(state: IO.DstState): String {
         return DstWatchStateIO.request(state)
     }
 
@@ -90,7 +90,7 @@ object TimeIO {
         AUTO(0b10),
     }
 
-    private suspend fun getDSTWatchStateWithTZ(state: IO.DTS_STATE): String {
+    private suspend fun getDSTWatchStateWithTZ(state: IO.DstState): String {
         val origDTS = getDSTWatchState(state)
 
         val dstValue =
@@ -134,19 +134,19 @@ object TimeIO {
     ) {
         val ret: String = function(param)
         val shortStr = Utils.toCompactString(ret)
-        IO.writeCmd(GET_SET_MODE.SET, shortStr)
+        IO.writeCmd(GetSetMode.SET, shortStr)
     }
 
     private suspend fun writeDST() {
         data class Dts(
-            val param: IO.DTS_STATE,
-            val function: suspend (IO.DTS_STATE) -> String, // Lambda type
+            val param: IO.DstState,
+            val function: suspend (IO.DstState) -> String, // Lambda type
         )
 
         val dtsStates = arrayOf(
-            Dts(IO.DTS_STATE.ZERO) { state -> getDSTWatchStateWithTZ(state) },
-            Dts(IO.DTS_STATE.TWO) { state -> getDSTWatchState(state) },
-            Dts(IO.DTS_STATE.FOUR) { state -> getDSTWatchState(state) }
+            Dts(IO.DstState.ZERO) { state -> getDSTWatchStateWithTZ(state) },
+            Dts(IO.DstState.TWO) { state -> getDSTWatchState(state) },
+            Dts(IO.DstState.FOUR) { state -> getDSTWatchState(state) }
         )
 
         for (i in 0 until WatchInfo.dstCount) {
@@ -210,7 +210,7 @@ object TimeIO {
         val timeCommand =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
 
-        IO.writeCmd(GET_SET_MODE.SET, timeCommand)
+        IO.writeCmd(GetSetMode.SET, timeCommand)
     }
 
     object TimeEncoder {

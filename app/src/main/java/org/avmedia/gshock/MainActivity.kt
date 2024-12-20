@@ -41,9 +41,10 @@ class MainActivity : AppCompatActivity() {
         listenToProgressEvents()
 
         run(this)
-        // runDownBattery(this)
-        // testTimeZones()
-        // runTimezonesTest()
+
+        // runDownBattery(this) // NOSONAR
+        // testTimeZones()      // NOSONAR
+        // runTimezonesTest()   // NOSONAR
     }
 
     private fun listenToProgressEvents() {
@@ -82,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Suppress("UNUSED_PARAMETER")
+    // NOSONAR
     private fun runDownBattery(context: Context, toPercent: Int = -1) {
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -166,7 +168,7 @@ class MainActivity : AppCompatActivity() {
         println("World DST City 0: ${api.getDSTForWorldCities(0)}")
         println("World DST City 1: ${api.getDSTForWorldCities(1)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
+        if (WatchInfo.model == WatchInfo.WatchModel.GW) {
             println("World DST City 2: ${api.getDSTForWorldCities(2)}")
             println("World DST City 3: ${api.getDSTForWorldCities(3)}")
             println("World DST City 4: ${api.getDSTForWorldCities(4)}")
@@ -178,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         println("World City 0: ${api.getWorldCities(0)}")
         println("World City 1: ${api.getWorldCities(1)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
+        if (WatchInfo.model == WatchInfo.WatchModel.GW) {
             println("World City 2: ${api.getWorldCities(2)}")
             println("World City 3: ${api.getWorldCities(3)}")
             println("World City 4: ${api.getWorldCities(4)}")
@@ -187,32 +189,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun getDSTState() {
-        println("DST STATE ZERO: ${api.getDSTWatchState(IO.DTS_STATE.ZERO)}")
+        println("DST STATE ZERO: ${api.getDSTWatchState(IO.DstState.ZERO)}")
 
-        if (WatchInfo.model == WatchInfo.WATCH_MODEL.GW) {
-            println("DST STATE TWO: ${api.getDSTWatchState(IO.DTS_STATE.TWO)}")
-            println("DST STATE FOUR: ${api.getDSTWatchState(IO.DTS_STATE.FOUR)}")
+        if (WatchInfo.model == WatchInfo.WatchModel.GW) {
+            println("DST STATE TWO: ${api.getDSTWatchState(IO.DstState.TWO)}")
+            println("DST STATE FOUR: ${api.getDSTWatchState(IO.DstState.FOUR)}")
         }
-    }
-
-    private fun testTimeZones() {
-//        var totalCount = 0
-//        var unknown = 0
-//        val elapsed = measureTimeMillis {
-//            for (tz in ZoneId.getAvailableZoneIds()) {
-//                val foundTZ = CasioTimeZoneHelper.findTimeZone(tz)
-//                ++totalCount
-//                if (foundTZ.name == "UNKNOWN") {
-//                    ++unknown
-//                }
-//            }
-//        }
-//
-//        println("elapsed time: size: ${ZoneId.getAvailableZoneIds().size}, $elapsed ms., total: $totalCount, unknown: $unknown")
-
-//        for (tz in CasioTimeZoneHelper.timeZoneMap.values) {
-//            println("$tz")
-//        }
     }
 
     private suspend fun handleReminders() {

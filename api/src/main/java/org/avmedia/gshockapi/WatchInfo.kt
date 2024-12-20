@@ -5,7 +5,7 @@ package org.avmedia.gshockapi
  * Based on that, the application can display different information.
  */
 object WatchInfo {
-    enum class WATCH_MODEL {
+    enum class WatchModel {
         GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, ECB, UNKNOWN
     }
 
@@ -13,7 +13,7 @@ object WatchInfo {
     var shortName = ""
     private var address: String = ""
 
-    var model = WATCH_MODEL.UNKNOWN
+    var model = WatchModel.UNKNOWN
 
     var worldCitiesCount = 2
     var dstCount = 3
@@ -39,7 +39,7 @@ object WatchInfo {
      * Info about the model.
      */
     data class ModelInfo(
-        var model: WATCH_MODEL,
+        var model: WatchModel,
         var worldCitiesCount: Int,
         var dstCount: Int,
         var alarmCount: Int,
@@ -60,21 +60,21 @@ object WatchInfo {
 
     // @formatter:off
     private val models = listOf (
-        ModelInfo(WATCH_MODEL.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
-        ModelInfo(WATCH_MODEL.MRG_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
-        ModelInfo(WATCH_MODEL.GCW_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
-        ModelInfo(WATCH_MODEL.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
-        ModelInfo(WATCH_MODEL.GST, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.GB001, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.MSG, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.GPR, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", weekLanguageSupported = false),
-        ModelInfo(WATCH_MODEL.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
-        ModelInfo(WATCH_MODEL.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
-        ModelInfo(WATCH_MODEL.EQB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
-        ModelInfo(WATCH_MODEL.ECB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = true, hasTemperature = false, hasBatteryLevel = false,
+        ModelInfo(WatchModel.GW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WatchModel.MRG_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WatchModel.GCW_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WatchModel.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
+        ModelInfo(WatchModel.GST, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.GB001, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.MSG, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.GPR, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", weekLanguageSupported = false),
+        ModelInfo(WatchModel.DW, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.GBD, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
+        ModelInfo(WatchModel.EQB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = false, hasTemperature = false),
+        ModelInfo(WatchModel.ECB, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", worldCities = true, hasTemperature = false, hasBatteryLevel = false,
             alwaysConnected = true, findButtonUserDefined=true, hasPowerSavingMode=false),
-        ModelInfo(WATCH_MODEL.UNKNOWN, 2, 1, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s")
+        ModelInfo(WatchModel.UNKNOWN, 2, 1, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s")
     )
     // @formatter:on
 
@@ -84,8 +84,7 @@ object WatchInfo {
      * When we obtain the name of the watch from the BLE connection, we need to call this method.
      * From here, we can determine and set all the model's characteristics.
      */
-    fun
-            setNameAndModel(name: String) {
+    fun setNameAndModel(name: String) {
         this.name = name
 
         // name is like: CASIO GW-B5600
@@ -96,22 +95,22 @@ object WatchInfo {
 
         // *** Order matters. Long names should be checked before short names ***
         model = when {
-            shortName.startsWith("MRG-B5000") -> WATCH_MODEL.MRG_B5000
-            shortName.startsWith("GCW-B5000") -> WATCH_MODEL.GCW_B5000
-            shortName.startsWith("G-B001") -> WATCH_MODEL.GB001
-            shortName.startsWith("GMW") -> WATCH_MODEL.GMW
-            shortName.startsWith("GST") -> WATCH_MODEL.GST
-            shortName.startsWith("GPR") -> WATCH_MODEL.GPR
-            shortName.startsWith("MSG") -> WATCH_MODEL.MSG
-            shortName.startsWith("GBD") -> WATCH_MODEL.GBD
-            shortName.startsWith("EQB") -> WATCH_MODEL.EQB
-            shortName.startsWith("GMB") -> WATCH_MODEL.GA
-            shortName == "ECB-10" || shortName == "ECB-20" || shortName == "ECB-30" -> WATCH_MODEL.ECB
-            shortName.startsWith("GA") -> WATCH_MODEL.GA
-            shortName.startsWith("GB") -> WATCH_MODEL.GA
-            shortName.startsWith("GW") -> WATCH_MODEL.GW
-            shortName.startsWith("DW") -> WATCH_MODEL.DW
-            else -> WATCH_MODEL.UNKNOWN
+            shortName.startsWith("MRG-B5000") -> WatchModel.MRG_B5000
+            shortName.startsWith("GCW-B5000") -> WatchModel.GCW_B5000
+            shortName.startsWith("G-B001") -> WatchModel.GB001
+            shortName.startsWith("GMW") -> WatchModel.GMW
+            shortName.startsWith("GST") -> WatchModel.GST
+            shortName.startsWith("GPR") -> WatchModel.GPR
+            shortName.startsWith("MSG") -> WatchModel.MSG
+            shortName.startsWith("GBD") -> WatchModel.GBD
+            shortName.startsWith("EQB") -> WatchModel.EQB
+            shortName.startsWith("GMB") -> WatchModel.GA
+            shortName == "ECB-10" || shortName == "ECB-20" || shortName == "ECB-30" -> WatchModel.ECB
+            shortName.startsWith("GA") -> WatchModel.GA
+            shortName.startsWith("GB") -> WatchModel.GA
+            shortName.startsWith("GW") -> WatchModel.GW
+            shortName.startsWith("DW") -> WatchModel.DW
+            else -> WatchModel.UNKNOWN
         }
 
         this.hasReminders = modelMap[model]!!.hasReminders
@@ -147,6 +146,6 @@ object WatchInfo {
         this.address = ""
         this.name = ""
         this.shortName = ""
-        this.model = WATCH_MODEL.UNKNOWN
+        this.model = WatchModel.UNKNOWN
     }
 }

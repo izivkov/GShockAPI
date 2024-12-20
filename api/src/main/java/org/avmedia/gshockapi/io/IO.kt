@@ -10,7 +10,7 @@ import CachedIO
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import org.avmedia.gshockapi.ble.Connection
-import org.avmedia.gshockapi.ble.GET_SET_MODE
+import org.avmedia.gshockapi.ble.GetSetMode
 import java.util.UUID
 
 object IO {
@@ -18,29 +18,30 @@ object IO {
     private var mAvailableCharacteristics: Map<UUID, BluetoothGattCharacteristic>? = null
     private lateinit var writer: (BluetoothDevice, BluetoothGattCharacteristic, ByteArray) -> Unit
 
-    enum class WATCH_BUTTON {
+    enum class WatchButton {
         UPPER_LEFT, LOWER_LEFT, UPPER_RIGHT, LOWER_RIGHT, NO_BUTTON, FIND_PHONE, INVALID
     }
 
-    enum class DTS_STATE(val state: Int) { ZERO(0), TWO(2), FOUR(4) }
+    enum class DstState(val state: Int) { ZERO(0), TWO(2), FOUR(4) }
 
     fun request(request: String) {
-        writeCmd(GET_SET_MODE.GET, request)
+        writeCmd(GetSetMode.GET, request)
     }
 
     fun init() {
+        // NO-OP
     }
 
-    fun writeCmd(handle: GET_SET_MODE, bytesArray: ByteArray) {
+    fun writeCmd(handle: GetSetMode, bytesArray: ByteArray) {
         Connection.write(handle, bytesArray)
     }
 
-    fun writeCmd(handle: GET_SET_MODE, cmd: String) {
+    fun writeCmd(handle: GetSetMode, cmd: String) {
         writeCmdFromString(handle, cmd)
     }
 
     /// new
-    private fun writeCmdFromString(handle: GET_SET_MODE, bytesStr: String) {
+    private fun writeCmdFromString(handle: GetSetMode, bytesStr: String) {
         Connection.write(handle, toCasioCmd(bytesStr))
     }
 
