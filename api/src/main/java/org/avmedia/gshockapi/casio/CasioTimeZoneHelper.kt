@@ -181,7 +181,7 @@ object CasioTimeZoneHelper {
         val rules2 = tz2.normalized().rules
 
         return rules1.getStandardOffset(Instant.now()) == rules2.getStandardOffset(Instant.now())
-                && rules1.getDaylightSavings(Instant.now()) == rules1.getDaylightSavings(Instant.now())
+                && rules1.getDaylightSavings(Instant.now()) == rules2.getDaylightSavings(Instant.now())
                 && rules1.transitionRules == rules2.transitionRules
     }
 
