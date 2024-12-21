@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         run(this)
 
         // runDownBattery(this) // NOSONAR
-        // testTimeZones()      // NOSONAR
+        // runTimezonesTest()      // NOSONAR
         // runTimezonesTest()   // NOSONAR
     }
 
