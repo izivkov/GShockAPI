@@ -29,8 +29,6 @@ class MainActivity : AppCompatActivity() {
     private val customEventName =
         "************** My Oun Event Generated from the App.!!!! ************"
 
-    init {}
-
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,8 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    // NOSONAR
-    private fun runDownBattery(context: Context, toPercent: Int = -1) {
+    private fun runDownBattery(context: Context, toPercent: Int = -1) { // NOSONAR
 
         CoroutineScope(Dispatchers.Default).launch {
             api.waitForConnection()
@@ -140,7 +137,8 @@ class MainActivity : AppCompatActivity() {
         handleSettings()
     }
 
-    private fun runTimezonesTest() {
+    @Suppress("unused")
+    private fun runTimezonesTest() { // NOSONAR
         val all = ZoneId.getAvailableZoneIds().size
         var current = 0
 
@@ -228,7 +226,8 @@ class MainActivity : AppCompatActivity() {
         api.setSettings(settings)
     }
 
-    private suspend fun handleTimer() {
+    @Suppress("unused")
+    private suspend fun handleTimer() { // NOSONAR
         val timerValue = api.getTimer()
         api.setTimer(timerValue)
     }
