@@ -22,6 +22,7 @@ timber = "5.0.1"
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-ktx-v1131 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 ble = { module = "no.nordicsemi.android:ble", version.ref = "ble" }
 client = { module = "no.nordicsemi.android.kotlin.ble:client", version.ref = "client" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
