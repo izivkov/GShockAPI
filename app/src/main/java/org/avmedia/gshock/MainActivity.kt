@@ -1,14 +1,33 @@
 package org.avmedia.gshock
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.avmedia.gshock.ui.theme.GShockAPITheme
 import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.GShockAPI
@@ -16,33 +35,31 @@ import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.io.IO
-import java.time.Clock
 import java.time.ZoneId
 import java.util.TimeZone
 import kotlin.system.measureTimeMillis
 
 @RequiresApi(Build.VERSION_CODES.O)
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     private val api = GShockAPI(this)
     private lateinit var permissionManager: PermissionManager
     private val customEventName =
         "************** My Oun Event Generated from the App.!!!! ************"
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        permissionManager = PermissionManager(this)
-        permissionManager.setupPermissions()
-
         listenToProgressEvents()
 
-        run(this)
-
-        // runDownBattery(this) // NOSONAR
-        // runTimezonesTest()      // NOSONAR
-        // runTimezonesTest()   // NOSONAR
+        setContent {
+            GShockAPITheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                    MainScreen()
+                    run()
+                }
+            }
+        }
     }
 
     private fun listenToProgressEvents() {
@@ -65,8 +82,28 @@ class MainActivity : AppCompatActivity() {
         ProgressEvents.runEventActions(this.javaClass.simpleName, eventActions)
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun run(context: Context) {
+    @Composable
+    fun MainScreen () {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp) // Margin around the entire column
+        ) {
+            Text(
+                text = "Long-press the BOTTOM-LEFT button on your watch to connect and run tests.",
+                modifier = Modifier.padding(20.dp), // Space between components
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Text(
+                text = "Look at the debug logs to see output of the tests.",
+                modifier = Modifier.padding(20.dp), // Space between components
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+
+    private fun run() {
 
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
@@ -80,25 +117,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun runDownBattery(context: Context, toPercent: Int = -1) { // NOSONAR
-
-        CoroutineScope(Dispatchers.Default).launch {
-            api.waitForConnection()
-
-            while (true) {
-                if (api.getBatteryLevel() <= toPercent) {
-                    break
-                }
-                runCommands()
-            }
-
-            api.disconnect()
-            println("--------------- END ------------------")
-        }
-    }
-
     private suspend fun runCommands() {
+        // private suspend fun runCommands() {
         println("Button pressed: ${api.getPressedButton()}")
         println("Name returned: ${api.getWatchName()}")
 
@@ -107,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         println("App Info: ${api.getAppInfo()}")
 
         println("Home Time: ${api.getHomeTime()}")
-        println("Temperaure: ${api.getWatchTemperature()}")
+        println("Temperature: ${api.getWatchTemperature()}")
 
         getDSTState()
         getWorldCities()
@@ -118,14 +138,8 @@ class MainActivity : AppCompatActivity() {
         val currentTZ = TimeZone.getDefault().id
         api.setTime("Europe/Sofia")
         api.setTime("Asia/Kolkata")
-        api.setTime("Pacific/Kiritimati")
-        api.setTime("UTC")
-
-        val currentTime = Clock.systemDefaultZone().millis()
-        api.setTime(timeMs = currentTime)
-        delay(10000)
-
         api.setTime(currentTZ)
+
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
 
@@ -138,7 +152,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Suppress("unused")
-    private fun runTimezonesTest() { // NOSONAR
+    private fun runTimezonesTest(items: MutableList<String>) { // NOSONAR
         val all = ZoneId.getAvailableZoneIds().size
         var current = 0
 

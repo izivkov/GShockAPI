@@ -1,6 +1,6 @@
-package org.avmedia.gshockapi
+package org.avmedia.gshock
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import org.junit.Assert.*
 
