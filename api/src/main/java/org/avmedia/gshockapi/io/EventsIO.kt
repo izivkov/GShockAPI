@@ -300,16 +300,12 @@ object EventsIO {
             //                  00 23 02 21 23 02 21 00 00
             // start from here:    ^
             // so, skip 1
-            val startDate = decodeDate(timeDetail.sliceArray(IntRange(1, timeDetail.lastIndex)))
-
-            result["startDate"] = startDate
+            result["startDate"] = decodeDate(timeDetail.sliceArray(IntRange(1, timeDetail.lastIndex)))
 
             //                  00 23 02 21 23 02 21 00 00
             // start from here:             ^
             // so, skip 4
-            val endDate = decodeDate(timeDetail.sliceArray(IntRange(4, timeDetail.lastIndex)))
-
-            result["endDate"] = endDate
+            result["endDate"] = decodeDate(timeDetail.sliceArray(IntRange(4, timeDetail.lastIndex)))
 
             val dayOfWeek = timeDetail[7]
             val daysOfWeek = ArrayList<String>()

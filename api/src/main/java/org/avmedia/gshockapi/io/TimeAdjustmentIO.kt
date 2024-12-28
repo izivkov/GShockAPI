@@ -119,8 +119,7 @@ object TimeAdjustmentIO {
             intArray[12] = 0x80
         }
 
-        val adjustmentTimeMinutes = settings.getInt("adjustmentTimeMinutes")
-        intArray[13] = adjustmentTimeMinutes
+        intArray[13] = settings.getInt("adjustmentTimeMinutes")
 
         return intArray.foldIndexed(ByteArray(intArray.size)) { i, a, v ->
             a.apply {

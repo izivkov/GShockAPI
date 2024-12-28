@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -48,8 +49,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             GShockAPITheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
-                    MainScreen()
-                    Run()
+                    Box(Modifier.padding(padding)) {
+                        MainScreen()
+                        Run()
+                    }
                 }
             }
         }
@@ -98,11 +101,6 @@ class MainActivity : ComponentActivity() {
             )
 
             Text(
-                text = "Look at the debug logs to see output of the tests.",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Text(
                 text = dynamicText, // Bind the text to the ViewModel's state
                 style = MaterialTheme.typography.bodyLarge
             )
@@ -110,7 +108,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Example: Updating the text from another part of the app
-    fun updateDynamicText(viewModel: MainScreenViewModel, newText: String) {
+    private fun updateDynamicText(viewModel: MainScreenViewModel, newText: String) {
         viewModel.dynamicText = newText
     }
 
