@@ -122,13 +122,13 @@ class MainActivity : ComponentActivity() {
                 api.waitForConnection()
 
                 updateDynamicText(viewModel,"Connected...")
-                updateDynamicText(viewModel,"Running tests...")
+                updateDynamicText(viewModel,"Running tests...Take a look at your debug logs.")
 
                 runCommands()
 
                 api.disconnect()
                 updateDynamicText(viewModel,"Disconnected")
-                updateDynamicText(viewModel,"Tests Ended. Look at your debug logs to see the results.")
+                updateDynamicText(viewModel,"Tests Ended..")
             }
         }
     }
