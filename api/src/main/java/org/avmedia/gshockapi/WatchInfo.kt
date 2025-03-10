@@ -6,7 +6,7 @@ package org.avmedia.gshockapi
  */
 object WatchInfo {
     enum class WatchModel {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, ECB, UNKNOWN
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, UNKNOWN,
     }
 
     var name: String = ""
@@ -65,6 +65,7 @@ object WatchInfo {
         ModelInfo(WatchModel.GCW_B5000, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
         ModelInfo(WatchModel.GMW, 6, 3, 5, hasAutoLight = true, hasReminders = true, shortLightDuration = "2s", longLightDuration = "4s", batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19),
         ModelInfo(WatchModel.GST, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
+        ModelInfo(WatchModel.ABL_100, 2, 1, 5, hasAutoLight = false, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s", hasTemperature = false, hasBatteryLevel = false),
         ModelInfo(WatchModel.GA, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WatchModel.GB001, 2, 1, 5, hasAutoLight = true, hasReminders = false, shortLightDuration = "1.5s", longLightDuration = "3s"),
         ModelInfo(WatchModel.MSG, 2, 1, 5, hasAutoLight = false, hasReminders = true, shortLightDuration = "1.5s", longLightDuration = "3s"),
@@ -97,6 +98,7 @@ object WatchInfo {
         model = when {
             shortName.startsWith("MRG-B5000") -> WatchModel.MRG_B5000
             shortName.startsWith("GCW-B5000") -> WatchModel.GCW_B5000
+            shortName.startsWith("ABL-100") -> WatchModel.ABL_100
             shortName.startsWith("G-B001") -> WatchModel.GB001
             shortName.startsWith("GMW") -> WatchModel.GMW
             shortName.startsWith("GST") -> WatchModel.GST
