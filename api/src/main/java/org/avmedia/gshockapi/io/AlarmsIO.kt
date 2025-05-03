@@ -22,7 +22,6 @@ object AlarmsIO {
         lateinit var deferredResult: CompletableDeferred<ArrayList<Alarm>>
     }
 
-    @Suppress("UNCHECKED_CAST")
     suspend fun request(): ArrayList<Alarm> {
         return CachedIO.request("GET_ALARMS") { key ->
             getAlarms(key)

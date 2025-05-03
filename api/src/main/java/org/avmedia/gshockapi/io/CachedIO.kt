@@ -43,6 +43,10 @@ object CachedIO {
     // Get a cached value without recomputing
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(key: String): T {
+        if (!cache.containsKey(key.uppercase())) {
+            throw IllegalStateException("Key $key not found in cache")
+        }
+
         return cache[key.uppercase()] as T
     }
 

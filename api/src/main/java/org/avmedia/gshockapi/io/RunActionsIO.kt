@@ -1,7 +1,7 @@
 package org.avmedia.gshockapi.io
 
 import org.avmedia.gshockapi.ProgressEvents
-import timber.log.Timber
+import org.avmedia.gshockapi.WatchInfo
 
 object RunActionsIO {
 
@@ -11,8 +11,7 @@ object RunActionsIO {
 
     fun onReceived(data: String) {
         // 0x0A 02
-        Timber.d("RunActionsIO: onReceived: $data")
-        if (data == "0x0A 02") {
+        if (data == "0x0A 02" && WatchInfo.alwaysConnected) {
             ProgressEvents.onNext("RunActions")
         }
     }

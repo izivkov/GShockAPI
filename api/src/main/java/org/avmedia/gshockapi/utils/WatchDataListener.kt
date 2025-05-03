@@ -21,7 +21,8 @@ From there, the appropriate onReceived() method is called for the corresponding 
 @RequiresApi(Build.VERSION_CODES.O)
 object WatchDataListener {
     fun init() {
-        val dataReceived: IDataReceived = IDataReceived { data -> data?.let { MessageDispatcher.onReceived(it) } }
+        val dataReceived: IDataReceived =
+            IDataReceived { data -> data?.let { MessageDispatcher.onReceived(it) } }
 
         fun waitForConnectionSetupComplete() {
             val eventActions = arrayOf(

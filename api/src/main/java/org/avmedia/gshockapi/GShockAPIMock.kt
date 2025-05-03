@@ -29,7 +29,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     }
 
     override suspend fun waitForConnection(deviceId: String?) {
-        ProgressEvents.onNext("DeviceName", "CASIO GW-B5600")
+        ProgressEvents.onNext("DeviceName", "CASIO DW-H5600")
 
         ProgressEvents.onNext("ConnectionStarted")
 
@@ -74,8 +74,12 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return false
     }
 
+    override fun isAlwaysConnectedConnectionPressed(): Boolean {
+        return false
+    }
+
     override suspend fun getWatchName(): String {
-        return "CASIO GW-B5600"
+        return "CASIO DW-H5600"
         // return "CASIO ECB-30"
     }
 
@@ -300,5 +304,44 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
 
     override fun preventReconnection(): Boolean {
         return true
+    }
+
+    // Health
+    override suspend fun readSteps(): Int {
+        // delay(3000)
+        return return (300..1000).random()
+    }
+
+    override suspend fun readHeartRateSamples(): List<Int> {
+        return listOf(
+            (50..60).random(),
+            (60..70).random(),
+            (70..80).random(),
+            (80..90).random()
+        )
+    }
+
+    override suspend fun readSleepSessions(): Long {
+        return (200L..500L).random()
+    }
+
+    override suspend fun readMinHeartRate(): Int {
+        return (20..30).random()
+    }
+
+    override suspend fun readMaxHeartRate(): Int {
+        return (90..120).random()
+    }
+
+    override suspend fun readAvgHeartRate(): Int {
+        return (70..80).random()
+    }
+
+    override suspend fun readSleepDuration(): Int {
+        return (250..350).random()
+    }
+
+    override suspend fun readExerciseSession(): Any {
+        return Any()
     }
 }

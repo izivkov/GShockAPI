@@ -300,7 +300,8 @@ object EventsIO {
             //                  00 23 02 21 23 02 21 00 00
             // start from here:    ^
             // so, skip 1
-            result["startDate"] = decodeDate(timeDetail.sliceArray(IntRange(1, timeDetail.lastIndex)))
+            result["startDate"] =
+                decodeDate(timeDetail.sliceArray(IntRange(1, timeDetail.lastIndex)))
 
             //                  00 23 02 21 23 02 21 00 00
             // start from here:             ^

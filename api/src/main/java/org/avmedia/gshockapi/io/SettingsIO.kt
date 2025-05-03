@@ -16,11 +16,19 @@ import kotlin.experimental.inv
 import kotlin.experimental.or
 
 object SettingsIO {
-    val MASK_24_HOURS = 0b00000001
-    val MASK_BUTTON_TONE_OFF = 0b00000010
-    val MASK_AUTO_LIGHT_OFF = 0b00000100
-    val POWER_SAVING_MODE = 0b00010000
-    val DO_NOT_DISTURB_OFF = 0b01000000
+    private const val MASK_24_HOURS = 0b00000001
+    private const val MASK_BUTTON_TONE_OFF = 0b00000010
+    private const val MASK_AUTO_LIGHT_OFF = 0b00000100
+    private const val POWER_SAVING_MODE = 0b00010000
+    private const val DO_NOT_DISTURB_OFF = 0b01000000
+
+    // Button tone and vibration settings (DW-H5600 specific)
+    private const val SOUND_AND_VIBRATION = 0b1100  // Both sound and vibration (0x0C)
+    private const val VIBRATION_ONLY = 0b1000       // Vibration only (0x08)
+    private const val SOUND_ONLY = 0b0100           // Sound only (0x04)
+    private const val SILENT = 0b0000               // silent (0x00)
+
+    private const val CHIME = 0b00100000
 
     private object DeferredValueHolder {
         lateinit var deferredResult: CompletableDeferred<Settings>
@@ -73,6 +81,11 @@ russian:13 04 00 00 00 05 00 00 00 00 00 00
 Button Tone:
 on:     13 04 00 00 00 00 00 00 00 00 00 00
 off:    13 06 00 00 00 00 00 00 00 00 00 00
+
+For DW-H5600
+        13 04 00 00 00 00 00 00 00 00 00 00 0c 00 00 06 2d  // sound and vibration
+        13 04 00 00 00 00 00 00 00 00 00 00 04 00 00 06 2d  // vibration only
+        13 04 00 00 00 00 00 00 00 00 00 00 00 00 00 06 2d  // silent
 
 Auto Light: ?????
 on:     13 00 00 00 00 00 00 00 00 00 00 00

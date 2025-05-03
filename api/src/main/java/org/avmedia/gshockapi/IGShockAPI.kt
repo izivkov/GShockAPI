@@ -15,6 +15,7 @@ interface IGShockAPI {
     fun teardownConnection(device: BluetoothDevice)
     suspend fun getPressedButton(): IO.WatchButton
     fun isActionButtonPressed(): Boolean
+    fun isAlwaysConnectedConnectionPressed(): Boolean
     fun isNormalButtonPressed(): Boolean
     fun isAutoTimeStarted(): Boolean
     fun isFindPhoneButtonPressed(): Boolean
@@ -50,4 +51,14 @@ interface IGShockAPI {
     fun resetHand()
     fun validateBluetoothAddress(deviceAddress: String?): Boolean
     fun preventReconnection(): Boolean
+
+    // health
+    suspend fun readSteps(): Int
+    suspend fun readHeartRateSamples(): List<Int>
+    suspend fun readSleepSessions(): Long
+    suspend fun readSleepDuration(): Int
+    suspend fun readMinHeartRate(): Int
+    suspend fun readMaxHeartRate(): Int
+    suspend fun readAvgHeartRate(): Int
+    suspend fun readExerciseSession(): Any
 }
