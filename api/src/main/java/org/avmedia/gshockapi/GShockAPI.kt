@@ -5,8 +5,10 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.*
 import org.avmedia.gshockapi.io.*
+import org.avmedia.gshockapi.io.IO.writeCmd
 import org.avmedia.gshockapi.utils.*
 import timber.log.Timber
 import java.time.ZoneId

@@ -14,6 +14,7 @@ import no.nordicsemi.android.ble.observer.ConnectionObserver
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
 import timber.log.Timber
+import java.util.UUID
 
 enum class ConnectionState {
     CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING
@@ -23,7 +24,8 @@ typealias onConnectedType = (String, String) -> Unit
 
 enum class GetSetMode {
     GET,
-    SET
+    SET,
+    NOTIFY
 }
 
 interface GSHock {
@@ -46,6 +48,7 @@ private class GShockManagerImpl(
 
     private lateinit var readCharacteristicHolder: BluetoothGattCharacteristic
     private lateinit var writeCharacteristicHolder: BluetoothGattCharacteristic
+    private lateinit var writeCharacteristicHolderNotifications: BluetoothGattCharacteristic
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
     override var connectionState = ConnectionState.DISCONNECTED
@@ -183,6 +186,9 @@ private class GShockManagerImpl(
 
     @SuppressLint("NewApi", "MissingPermission")
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
+
+        printCharacteristics(gatt)
+
         gatt.getService(CasioConstants.WATCH_FEATURES_SERVICE_UUID)?.apply {
             readCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID,
@@ -191,12 +197,54 @@ private class GShockManagerImpl(
             writeCharacteristicHolder = getCharacteristic(
                 CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID,
             )
+
+            if (findCharacteristic(gatt, CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID)) {
+                writeCharacteristicHolderNotifications = getCharacteristic(
+                    CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID,
+                )
+            }
             return true
         }
         return false
     }
 
-    /*
+    private fun findCharacteristic(gatt: BluetoothGatt, uuid: UUID):Boolean {
+        gatt.services.forEach { service ->
+            service.characteristics.forEach { char ->
+                val properties = propsToString(char.properties)
+                if (char.uuid == uuid) {
+                    Timber.i("Found characteristic: ${char.uuid} ($properties)")
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    private fun printCharacteristics(gatt: BluetoothGatt) {
+        gatt.services.forEach { service ->
+            println("Service: ${service.uuid}")
+            service.characteristics.forEach { char ->
+                val properties = propsToString(char.properties)
+                println("  └─ Characteristic: ${char.uuid} ($properties)")
+            }
+        }
+    }
+
+    private fun propsToString(properties: Int): String {
+        val props = mutableListOf<String>()
+        if (properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) props.add("READ")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) props.add("WRITE")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) props.add("WRITE_NO_RESPONSE")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) props.add("NOTIFY")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) props.add("INDICATE")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE != 0) props.add("SIGNED_WRITE")
+        if (properties and BluetoothGattCharacteristic.PROPERTY_BROADCAST != 0) props.add("BROADCAST")
+        return props.joinToString(" | ")
+    }
+
+    /* GW-5600
     I/BleExtensionsKt: Service 00001801-0000-1000-8000-00805f9b34fb
     Characteristics:
     |--
@@ -218,18 +266,52 @@ private class GShockManagerImpl(
     |------00002902-0000-1000-8000-00805f9b34fb: EMPTY
     */
 
+    /* DW-H5600
+  Service: 00001801-0000-1000-8000-00805f9b34fb
+  Service: 00001800-0000-1000-8000-00805f9b34fb
+    └─ Characteristic: 00002a00-0000-1000-8000-00805f9b34fb (READ)
+    └─ Characteristic: 00002a01-0000-1000-8000-00805f9b34fb (READ)
+    └─ Characteristic: 00002a04-0000-1000-8000-00805f9b34fb (READ)
+    └─ Characteristic: 00002aa6-0000-1000-8000-00805f9b34fb (READ)
+  Service: 00001804-0000-1000-8000-00805f9b34fb
+    └─ Characteristic: 00002a07-0000-1000-8000-00805f9b34fb (READ)
+  Service: 26eb000d-b012-49a8-b1f8-394fb2032b0f
+    └─ Characteristic: 26eb0023-b012-49a8-b1f8-394fb2032b0f (WRITE | NOTIFY)
+    └─ Characteristic: 26eb0024-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE | NOTIFY)
+    └─ Characteristic: 26eb002c-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE)
+    └─ Characteristic: 26eb002d-b012-49a8-b1f8-394fb2032b0f (WRITE | NOTIFY)
+    └─ Characteristic: 26eb0030-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE) // unique to DW-H5600
+     */
+
     override suspend fun write(handle: GetSetMode, data: ByteArray) {
 
-        if (!this::readCharacteristicHolder.isInitialized || !this::writeCharacteristicHolder.isInitialized) {
+        if (!this::readCharacteristicHolder.isInitialized ||
+            !this::writeCharacteristicHolder.isInitialized) {
             ProgressEvents.onNext("ApiError", "Connection failed. Please try again.")
             disconnect()
             return
         }
 
-        val characteristic =
-            if (handle == GetSetMode.GET) readCharacteristicHolder else writeCharacteristicHolder
+        val characteristic = when (handle) {
+            GetSetMode.GET -> readCharacteristicHolder
+            GetSetMode.SET -> writeCharacteristicHolder
+            GetSetMode.NOTIFY -> when {
+                !this::writeCharacteristicHolderNotifications.isInitialized -> {
+                    ProgressEvents.onNext("ApiError", "Notifications not supported on this device")
+                    disconnect()
+                    return
+                }
+                else -> writeCharacteristicHolderNotifications
+            }
+            else -> {
+                ProgressEvents.onNext("ApiError", "Invalid handle: $handle")
+                disconnect()
+                return
+            }
+        }
+
         val writeType =
-            if (handle == GetSetMode.GET) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         writeCharacteristic(
             characteristic,

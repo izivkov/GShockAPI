@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.avmedia.gshock.ui.theme.GShockAPITheme
 import org.avmedia.gshockapi.Alarm
@@ -116,18 +117,16 @@ class MainActivity : ComponentActivity() {
     private fun Run(viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
 
         LaunchedEffect(Unit) {
-            while (true) {
-                api.waitForConnection()
+            api.waitForConnection()
 
-                updateDynamicText(viewModel,"Connected...")
-                updateDynamicText(viewModel,"Running tests...Take a look at your debug logs.")
+            updateDynamicText(viewModel, "Connected...")
+            updateDynamicText(viewModel, "Running tests...Take a look at your debug logs.")
 
-                runCommands()
+            runCommands()
 
-                api.disconnect()
-                updateDynamicText(viewModel,"Disconnected")
-                updateDynamicText(viewModel,"Tests Ended..")
-            }
+            api.disconnect()
+            updateDynamicText(viewModel, "Disconnected")
+            updateDynamicText(viewModel, "Tests Ended..")
         }
     }
 
