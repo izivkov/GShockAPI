@@ -309,7 +309,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     // Health
     override suspend fun readSteps(): Int {
         // delay(3000)
-        return return (300..1000).random()
+        return (300..1000).random()
     }
 
     override suspend fun readHeartRateSamples(): List<Int> {
