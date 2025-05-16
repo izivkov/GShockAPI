@@ -66,7 +66,6 @@ private class GShockManagerImpl(
                 joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
 
             val hexData = data.value?.toHexString()
-            Timber.i("Received data: $hexData")
 
             dataReceivedCallback?.dataReceived(hexData)
         }

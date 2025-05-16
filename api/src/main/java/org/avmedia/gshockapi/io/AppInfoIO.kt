@@ -23,8 +23,6 @@ object AppInfoIO {
 
     fun onReceived(data: String) {
 
-        println("Received data: $data")
-
         fun setAppInfo(data: String): Unit {
             // App info:
             // This is needed to re-enable button D (Lower-right) after the watch has been reset or BLE has been cleared.
@@ -38,9 +36,7 @@ object AppInfoIO {
 
             if (appInfoCompactStr == "22FFFFFFFFFFFFFFFFFFFF00") {
                 IO.writeCmd(GetSetMode.SET, "223488F4E5D5AFC829E06D02")
-
-                // For the DW-H5600 we get:       "22b1faea51bd2f085f461502"
-                // IO.writeCmd(GetSetMode.SET, "22b1faea51bd2f085f461502")
+                // For the DW-H5600 we get:      "22b1faea51bd2f085f461502"
             }
         }
 
