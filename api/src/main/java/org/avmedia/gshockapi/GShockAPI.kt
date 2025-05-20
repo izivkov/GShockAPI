@@ -36,6 +36,7 @@ import java.util.*
  *          api.getAppInfo()
  *          api.getHomeTime()
  *          api.setTime()
+ *          api.sendAppNotification()
  *          ...
  *      }
  *  }
@@ -413,6 +414,39 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
     override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
         return TimeAdjustmentIO.request()
+    }
+
+    /**
+     * Sends a notification to the watch display.
+     *
+     * The notification can be one of the following types:
+     * - CALENDAR: Calendar events and reminders
+     * - EMAIL: Email notifications
+     * - EMAIL_SMS: Email or SMS messages that can include Unicode characters
+     *
+     * The function performs these steps:
+     * 1. Encodes the notification into a byte buffer
+     * 2. Encrypts the buffer using XOR encoding
+     * 3. Sends the encrypted data to the watch
+     *
+     * Example usage:
+     * ```kotlin
+     * val notification = AppNotification(
+     *     type = NotificationType.CALENDAR,
+     *     timestamp = "20240320T143000",
+     *     app = "Calendar",
+     *     title = "Team Meeting",
+     *     text = "2:30 PM - 3:30 PM"
+     * )
+     * sendAppNotification(notification)
+     *
+     * @param notification AppNotification object containing all notification details
+     * @see AppNotification for notification object structure
+     * @see NotificationType for supported notification types */
+    override fun sendAppNotification(notification: AppNotification) {
+        val encodedBuffer = AppNotificationIO.encodeNotificationPacket(notification)
+        val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
+        writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
     }
 
     /**

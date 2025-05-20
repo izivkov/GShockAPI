@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.ble.GetSetMode
+import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import java.time.DayOfWeek
@@ -292,6 +295,10 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun sendMessage(message: String) {
         println("Message sent: $message")
+    }
+
+    override fun sendAppNotification(notification: AppNotification) {
+        println("sendAppNotification: Message sent: $notification")
     }
 
     override fun resetHand() {
