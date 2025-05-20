@@ -47,14 +47,15 @@ object AppNotificationIO {
 
         val (app, offset1) = readLengthPrefixedString(buf, offset)
         val (title, offset2) = readLengthPrefixedString(buf, offset1)
-        val (_, offset3) = readLengthPrefixedString(buf, offset2) // skip shortText (ignored here)
-        val (text, offset4) = readLengthPrefixedString(buf, offset3)
+        val (shortText, offset3) = readLengthPrefixedString(buf, offset2)
+        val (text, _) = readLengthPrefixedString(buf, offset3)
 
         return AppNotification(
             type = notifType,
             timestamp = timestamp,
             app = app,
             title = title,
+            shortText = shortText,
             text = text
         )
     }
