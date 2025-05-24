@@ -72,6 +72,10 @@ object Connection {
         }
     }
 
+    fun isServiceSupported(handle: GetSetMode): Boolean {
+        return bleManager?.isServiceSupported(handle) == true
+    }
+
     fun startConnection(context: Context, deviceId: String?) {
         scope.launch {
             if (deviceId.isNullOrEmpty()) {

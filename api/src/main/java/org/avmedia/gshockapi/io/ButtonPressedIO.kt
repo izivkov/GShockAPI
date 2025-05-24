@@ -55,15 +55,24 @@ FIND PHONE:   0x10 07 7A 29 33 A1 C6 7F ->02<- 03 0F FF FF FF FF 24 00 00 00 // 
 
         if (data != "" && Utils.toIntArray(data).size >= 19) {
             val bleIntArr = Utils.toIntArray(data)
-            ret = when (bleIntArr[8]) {
+            val pressedButton = bleIntArr[8]
+            ret = when (pressedButton) {
                 in 0..1 -> IO.WatchButton.LOWER_LEFT
                 2 -> IO.WatchButton.FIND_PHONE
                 4 -> IO.WatchButton.LOWER_RIGHT
                 3 -> IO.WatchButton.NO_BUTTON // auto time set, no button pressed. Run actions to set time and calender only.
 
-                // For ECB-30 Possible values: 10, 0xE, 0xB
+                else -> {
+                    // For Always-connected watches, Possible values: 0xA, 0xB, 0xD, 0xE,
+                    // Check if the number has the 0b1000 bit set, i.e any of 0xA, 0xE, 0xD, 0xB
 
-                else -> IO.WatchButton.LOWER_LEFT
+                    val alwaysRunningMask = 0b1000
+                    if (pressedButton and alwaysRunningMask != 0) {
+                        IO.WatchButton.ALLAYS_CONNECTED_CONNECTION
+                    } else {
+                        IO.WatchButton.LOWER_LEFT
+                    }
+                }
             }
         }
         DeferredValueHolder.deferredResult.complete(ret)

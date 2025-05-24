@@ -46,6 +46,7 @@ interface IGShockAPI {
     fun close()
     fun isBluetoothEnabled(context: Context): Boolean
     fun sendAppNotification(notification: AppNotification)
+    fun supportsAppNotifications(): Boolean
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun sendMessage(message: String)

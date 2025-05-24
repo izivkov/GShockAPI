@@ -125,8 +125,10 @@ class MainActivity : ComponentActivity() {
             updateDynamicText(viewModel, "Connected...")
             updateDynamicText(viewModel, "Running tests...Take a look at your debug logs.")
 
-            // runCommands()
-            runAppNotificationTest()
+            runCommands()
+            if (api.supportsAppNotifications()) {
+                runAppNotificationTest()
+            }
 
             api.disconnect()
             updateDynamicText(viewModel, "Disconnected")

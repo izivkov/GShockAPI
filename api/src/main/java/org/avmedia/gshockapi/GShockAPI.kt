@@ -68,7 +68,6 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     override suspend fun waitForConnection(deviceId: String?) {
 
         Connection.stopBleScan()
-
         val connectedStatus =
             WaitForConnectionIO.request(context, deviceId)
         if (connectedStatus == "OK") {
@@ -448,6 +447,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
         writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
     }
+
+    override fun supportsAppNotifications(): Boolean =
+        Connection.isServiceSupported(GetSetMode.NOTIFY)
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:
