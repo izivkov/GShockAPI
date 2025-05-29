@@ -109,7 +109,7 @@ private class GShockManagerImpl(
 
         connect(device)
             .retry(3, 100)
-            .useAutoConnect(false)
+            .useAutoConnect(true)
             .done {
                 requestMtu(256).enqueue()
                 Timber.d("BLE", "Connected with autoConnect!")
