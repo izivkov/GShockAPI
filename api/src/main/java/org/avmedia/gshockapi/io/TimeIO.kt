@@ -64,7 +64,9 @@ object TimeIO {
 
     private data class State(
         val timeZone: String = TimeZone.getDefault().id,
-        val casioTimezone: CasioTimeZoneHelper.CasioTimeZone = CasioTimeZoneHelper.findTimeZone(TimeZone.getDefault().id),
+        val casioTimezone: CasioTimeZoneHelper.CasioTimeZone = CasioTimeZoneHelper.findTimeZone(
+            TimeZone.getDefault().id
+        ),
     )
 
     private var state = State()
@@ -95,8 +97,9 @@ object TimeIO {
 
     private suspend fun getDSTWatchStateWithTZ(state: IO.DstState): String {
         val origDTS = getDSTWatchState(state)
-        val dstValue = (if (this.state.casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or
-                (if (this.state.casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
+        val dstValue =
+            (if (this.state.casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or
+                    (if (this.state.casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
@@ -197,14 +200,16 @@ object TimeIO {
 
     fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
-        val dstDurationToAdd = if (state.casioTimezone.isInDST()) state.casioTimezone.dstOffset * 60 * 15 else 0
+        val dstDurationToAdd =
+            if (state.casioTimezone.isInDST()) state.casioTimezone.dstOffset * 60 * 15 else 0
         val msAdjustedForDST = dateTimeMs + dstDurationToAdd
 
         val instant = Instant.ofEpochMilli(msAdjustedForDST)
         val adjustedDateTime = LocalDateTime.ofInstant(instant, state.casioTimezone.zoneId)
 
         val timeData = TimeEncoder.prepareCurrentTime(adjustedDateTime)
-        val timeCommand = Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
+        val timeCommand =
+            Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
         IO.writeCmd(GetSetMode.SET, timeCommand)
     }
 

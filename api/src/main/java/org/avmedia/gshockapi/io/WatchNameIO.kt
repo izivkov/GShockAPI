@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.io
 
+import CachedIO
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.utils.Utils
 

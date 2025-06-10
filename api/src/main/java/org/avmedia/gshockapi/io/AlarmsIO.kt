@@ -6,7 +6,6 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Alarm
-import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.Alarms
@@ -35,10 +34,12 @@ object AlarmsIO {
 
     suspend fun request(): ArrayList<Alarm> =
         CachedIO.request("GET_ALARMS") { key ->
-            updateState { it.copy(
-                deferredResult = CompletableDeferred(),
-                isProcessing = true
-            )}
+            updateState {
+                it.copy(
+                    deferredResult = CompletableDeferred(),
+                    isProcessing = true
+                )
+            }
             Alarm.clear()
             Connection.sendMessage("{ action: '$key'}")
             state.deferredResult?.await() ?: ArrayList()

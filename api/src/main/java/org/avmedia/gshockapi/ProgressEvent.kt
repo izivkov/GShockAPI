@@ -86,7 +86,9 @@ object ProgressEvents {
             "HomeTimeUpdated" to Events(),
             "ApiError" to Events()
         ),
-        val reverseEventMap: Map<Events, String> = eventMap.entries.associateBy({ it.value }, { it.key })
+        val reverseEventMap: Map<Events, String> = eventMap.entries.associateBy(
+            { it.value },
+            { it.key })
     )
 
     private var state = State()

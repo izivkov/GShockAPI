@@ -54,9 +54,7 @@ object ButtonPressedIO {
         }
 
         val bleIntArr = Utils.toIntArray(data)
-        val pressedButton = bleIntArr[8]
-
-        return when (pressedButton) {
+        return when (val pressedButton = bleIntArr[8]) {
             in 0..1 -> IO.WatchButton.LOWER_LEFT
             2 -> IO.WatchButton.FIND_PHONE
             4 -> IO.WatchButton.LOWER_RIGHT

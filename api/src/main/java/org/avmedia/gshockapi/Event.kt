@@ -1,14 +1,11 @@
 package org.avmedia.gshockapi
 
-import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.core.util.Preconditions
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
 import org.avmedia.gshockapi.utils.Utils.getStringSafe
 import org.json.JSONArray
 import org.json.JSONObject
-import timber.log.Timber
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
@@ -39,7 +36,9 @@ data class Event(
                 date.getInt("day")
             )
         },
-        repeatPeriod = parseRepeatPeriod(json.getJSONObject("time").getStringSafe("repeatPeriod") as String),
+        repeatPeriod = parseRepeatPeriod(
+            json.getJSONObject("time").getStringSafe("repeatPeriod") as String
+        ),
         daysOfWeek = parseWeekDays(json.getJSONObject("time").getJSONArray("daysOfWeek")),
         enabled = json.getJSONObject("time").getBooleanSafe("enabled") ?: false,
         incompatible = json.getJSONObject("time").getBooleanSafe("incompatible") ?: false
@@ -91,12 +90,20 @@ data class Event(
         RepeatPeriod.WEEKLY -> daysOfWeek?.joinToString(",") {
             capitalizeFirstAndTrim(it.name, 3)
         }.orEmpty()
+
         RepeatPeriod.YEARLY -> startDate?.let {
-            "${capitalizeFirstAndTrim(it.month.toString(), 3)}-${it.day}${formatDayOfMonth(it.day)} each year"
+            "${
+                capitalizeFirstAndTrim(
+                    it.month.toString(),
+                    3
+                )
+            }-${it.day}${formatDayOfMonth(it.day)} each year"
         }.orEmpty()
+
         RepeatPeriod.MONTHLY -> startDate?.let {
             "${it.day}${formatDayOfMonth(it.day)} each month"
         }.orEmpty()
+
         RepeatPeriod.NEVER -> ""
         else -> ""
     }
