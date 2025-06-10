@@ -66,10 +66,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
 
     override suspend fun waitForConnection(deviceId: String?) {
-
         Connection.stopBleScan()
-        val connectedStatus =
-            WaitForConnectionIO.request(context, deviceId)
+        Connection.init(context)
+        val connectedStatus = WaitForConnectionIO.request(context, deviceId)
         if (connectedStatus == "OK") {
             init()
         }
@@ -88,9 +87,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * Returns a Boolean value indicating if the watch is currently commenced to the phone
      */
-    override fun isConnected(): Boolean {
-        return Connection.isConnected()
-    }
+    override fun isConnected(): Boolean =
+        Connection.isConnected()
 
     /**
      * Close the connection and free all associated resources.
@@ -329,7 +327,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
 
     override suspend fun getAlarms(): ArrayList<Alarm> {
-        return AlarmsIO.request()
+        return AlarmsIO.request()  // New method that handles conversion internally
     }
 
     /**
@@ -337,8 +335,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @param ArrayList<[Alarm]>
      */
+
     override fun setAlarms(alarms: ArrayList<Alarm>) {
-        AlarmsIO.set(alarms)
+        AlarmsIO.set(alarms)  // Renamed for clarity
     }
 
     /**

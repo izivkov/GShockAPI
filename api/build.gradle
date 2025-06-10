@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "org.avmedia.gshockapi"
+    namespace = "org.avmedia.gshockapi.api"
     compileSdk = 35
 
     defaultConfig {

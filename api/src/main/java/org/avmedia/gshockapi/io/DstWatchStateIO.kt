@@ -5,19 +5,21 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.utils.Utils
 
 object DstWatchStateIO {
+    private data class State(
+        val deferredResult: CompletableDeferred<String>? = null
+    )
 
-    private object DeferredValueHolder {
-        lateinit var deferredResult: CompletableDeferred<String>
-    }
+    private var state = State()
 
-    suspend fun request(state: IO.DstState): String {
-        return CachedIO.request("1d0${state.state}") { key -> getDSTWatchState(key) }
-    }
+    suspend fun request(state: IO.DstState): String =
+        CachedIO.request("1d0${state.state}") { key ->
+            getDSTWatchState(key)
+        }
 
     private suspend fun getDSTWatchState(key: String): String {
-        DeferredValueHolder.deferredResult = CompletableDeferred()
+        state = state.copy(deferredResult = CompletableDeferred())
         IO.request(key)
-        return DeferredValueHolder.deferredResult.await()
+        return state.deferredResult?.await() ?: ""
     }
 
     /*
@@ -32,7 +34,6 @@ object DstWatchStateIO {
     */
 
     suspend fun setDST(dstState: String, dst: Int): String {
-
         val intArray = Utils.toIntArray(dstState)
         intArray[3] = dst
 
@@ -41,6 +42,9 @@ object DstWatchStateIO {
     }
 
     fun onReceived(data: String) {
-        DeferredValueHolder.deferredResult.complete(data)
+        state.deferredResult?.complete(data)
+
+        // Do not reset state here, as it is used in the request function.
+        // state = State()
     }
 }

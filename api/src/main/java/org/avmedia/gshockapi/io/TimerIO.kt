@@ -12,21 +12,26 @@ import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.O)
 object TimerIO {
+    data class TimerState(
+        val hours: Int,
+        val minutes: Int,
+        val seconds: Int,
+        val totalSeconds: Int
+    )
 
-    private object DeferredValueHolder {
-        lateinit var deferredResult: CompletableDeferred<Int>
-    }
+    private data class State(
+        val deferredResult: CompletableDeferred<Int>? = null
+    )
 
-    suspend fun request(): Int {
-        val timerValue = CachedIO.request("18") { key -> getTimer(key) }
-        return timerValue
-    }
+    private var state = State()
+
+    suspend fun request(): Int =
+        CachedIO.request("18") { key -> getTimer(key) }
 
     private suspend fun getTimer(key: String): Int {
-
-        DeferredValueHolder.deferredResult = CompletableDeferred()
+        state = state.copy(deferredResult = CompletableDeferred())
         IO.request(key)
-        return DeferredValueHolder.deferredResult.await()
+        return state.deferredResult?.await() ?: 0
     }
 
     fun set(timerValue: Int) {
@@ -37,9 +42,18 @@ object TimerIO {
     }
 
     fun onReceived(data: String) {
-        val decoded = TimerDecoder.decodeValue(data)
-        val decodedInt = decoded.toInt()
-        DeferredValueHolder.deferredResult.complete(decodedInt)
+        TimerDecoder.decode(data)
+            .map { timerState -> timerState.totalSeconds }
+            .fold(
+                onSuccess = { seconds ->
+                    state.deferredResult?.complete(seconds)
+                    state = State()
+                },
+                onFailure = { error ->
+                    state.deferredResult?.completeExceptionally(error)
+                    state = State()
+                }
+            )
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -51,39 +65,51 @@ object TimerIO {
     }
 
     fun sendToWatchSet(message: String) {
-        val seconds = JSONObject(message).get("value").toString()
-        IO.writeCmd(GetSetMode.SET, TimerEncoder.encode(seconds))
+        runCatching { JSONObject(message).get("value").toString().toInt() }
+            .map { seconds -> TimerCalculator.secondsToTimerState(seconds) }
+            .map { timerState -> TimerEncoder.encode(timerState) }
+            .fold(
+                onSuccess = { encodedData ->
+                    IO.writeCmd(GetSetMode.SET, encodedData)
+                },
+                onFailure = { error ->
+                    println("Failed to set timer: ${error.message}")
+                }
+            )
     }
 
-    object TimerDecoder {
-
-        fun decodeValue(data: String): String {
-            val timerIntArray = Utils.toIntArray(data)
-
-            val hours = timerIntArray[1]
-            val minutes = timerIntArray[2]
-            val seconds = timerIntArray[3]
-
-            val inSeconds = hours * 3600 + minutes * 60 + seconds
-            return inSeconds.toString()
+    object TimerCalculator {
+        fun secondsToTimerState(totalSeconds: Int): TimerState {
+            val hours = totalSeconds / 3600
+            val minutesAndSeconds = totalSeconds % 3600
+            val minutes = minutesAndSeconds / 60
+            val seconds = minutesAndSeconds % 60
+            return TimerState(hours, minutes, seconds, totalSeconds)
         }
+
+        fun componentsToSeconds(hours: Int, minutes: Int, seconds: Int): Int =
+            hours * 3600 + minutes * 60 + seconds
     }
 
     object TimerEncoder {
-        fun encode(secondsStr: String): ByteArray {
-            val inSeconds = secondsStr.toInt()
-            val hours = inSeconds / 3600
-            val minutesAndSeconds = inSeconds % 3600
-            val minutes = minutesAndSeconds / 60
-            val seconds = minutesAndSeconds % 60
+        fun encode(timerState: TimerState): ByteArray =
+            ByteArray(7).apply {
+                this[0] = 0x18
+                this[1] = timerState.hours.toByte()
+                this[2] = timerState.minutes.toByte()
+                this[3] = timerState.seconds.toByte()
+            }
+    }
 
-            val arr = ByteArray(7)
-            arr[0] = 0x18
-            arr[1] = hours.toByte()
-            arr[2] = minutes.toByte()
-            arr[3] = seconds.toByte()
-
-            return arr
+    object TimerDecoder {
+        fun decode(data: String): Result<TimerState> = runCatching {
+            val timerIntArray = Utils.toIntArray(data)
+            val totalSeconds = TimerCalculator.componentsToSeconds(
+                timerIntArray[1],
+                timerIntArray[2],
+                timerIntArray[3]
+            )
+            TimerCalculator.secondsToTimerState(totalSeconds)
         }
     }
 }
