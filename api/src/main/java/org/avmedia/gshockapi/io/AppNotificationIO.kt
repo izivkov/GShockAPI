@@ -21,13 +21,14 @@ object AppNotificationIO {
             .joinToString("") { "%02x".format(it) }
 
     private fun readLengthPrefixedString(buf: ByteArray, offset: Int): Pair<String, Int> {
-        if (offset + 2 > buf.size) throw IllegalArgumentException("Not enough data to read length prefix")
+        require(offset + 2 <= buf.size) { "Not enough data to read length prefix" }
+        require(buf[offset + 1] == 0x00.toByte()) { "Expected null second byte in length prefix" }
+
         val length = buf[offset].toUByte().toInt()
-        if (buf[offset + 1] != 0x00.toByte()) throw IllegalArgumentException("Expected null second byte in length prefix")
 
         val start = offset + 2
         val end = start + length
-        if (end > buf.size) throw IllegalArgumentException("String length exceeds buffer")
+        require(end <= buf.size) { "String length exceeds buffer" }
 
         val string = buf.sliceArray(start until end).toString(Charsets.UTF_8)
         return string to end
@@ -35,11 +36,11 @@ object AppNotificationIO {
 
     fun decodeNotificationPacket(buf: ByteArray): AppNotification {
         var offset = 0
-        if (buf.size < 6) throw IllegalArgumentException("Buffer too short")
+        require(buf.size >= 6) { "Buffer too short" }
         offset += 6
 
         val typeByte = buf[offset++].toInt()
-        val notifType = NotificationType.entries.getOrNull(typeByte)
+        val notifyType = NotificationType.entries.getOrNull(typeByte)
             ?: throw IllegalArgumentException("Invalid NotificationType: $typeByte")
 
         val timestamp = buf.sliceArray(offset until offset + 15).toString(Charsets.US_ASCII)
@@ -51,7 +52,7 @@ object AppNotificationIO {
         val (text, _) = readLengthPrefixedString(buf, offset3)
 
         return AppNotification(
-            type = notifType,
+            type = notifyType,
             timestamp = timestamp,
             app = app,
             title = title,
@@ -85,7 +86,7 @@ object AppNotificationIO {
      */
     private fun writeLengthPrefixedString(text: String): ByteArray {
         val encoded = text.toByteArray(Charsets.UTF_8)
-        if (encoded.size > 255) throw IllegalArgumentException("Encoded string too long")
+        require(encoded.size <= 255) { "Encoded string too long" }
         return byteArrayOf(encoded.size.toByte(), 0x00) + encoded
     }
 

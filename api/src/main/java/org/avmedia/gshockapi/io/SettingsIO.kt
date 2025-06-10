@@ -202,7 +202,6 @@ pwr. saving off:00010000
 
     object SettingsEncoder {
         fun encode(settings: JSONObject): ByteArray {
-            // val arr = ByteArray(12)
             val arr = ByteArray(17)
 
             arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()

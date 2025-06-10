@@ -51,7 +51,7 @@ object Connection {
         runCatching {
             bleManager.connectionState
         }.onFailure { error ->
-            Timber.e("Connection not initialized. Call Connection.init() before calling this function")
+            Timber.e("Connection not initialized. Call Connection.init() before calling this function. ${error.message}")
         }.getOrDefault(ConnectionState.DISCONNECTED)
 
     fun isConnected(): Boolean =

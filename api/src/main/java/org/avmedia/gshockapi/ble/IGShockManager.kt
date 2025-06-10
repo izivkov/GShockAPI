@@ -266,16 +266,6 @@ private class GShockManagerImpl(
         return false
     }
 
-    private fun printCharacteristics(gatt: BluetoothGatt) {
-        gatt.services.forEach { service ->
-            println("Service: ${service.uuid}")
-            service.characteristics.forEach { char ->
-                val properties = propsToString(char.properties)
-                println("  └─ Characteristic: ${char.uuid} ($properties)")
-            }
-        }
-    }
-
     private fun propsToString(properties: Int): String {
         val props = mutableListOf<String>()
         if (properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) props.add("READ")
