@@ -12,149 +12,67 @@ import java.util.Locale
 
 object Utils {
 
-    fun String.hexToBytes() =
+    fun String.hexToBytes(): ByteArray =
         this.chunked(2).map { it.uppercase(Locale.US).toInt(16).toByte() }.toByteArray()
 
-    fun byteArrayOfInts(vararg ints: Int) =
+    fun byteArrayOfInts(vararg ints: Int): ByteArray =
         ByteArray(ints.size) { pos -> ints[pos].toByte() }
 
-    fun byteArrayOfIntArray(intArray: IntArray) =
+    fun byteArrayOfIntArray(intArray: IntArray): ByteArray =
         ByteArray(intArray.size) { pos -> intArray[pos].toByte() }
 
-    private fun toByteArray(string: String): ByteArray {
-        val charset = Charsets.UTF_8
-        return string.toByteArray(charset)
-    }
+    private fun toByteArray(string: String): ByteArray =
+        string.toByteArray(Charsets.UTF_8)
 
-    fun fromByteArrayToHexStr(byteArray: ByteArray): String {
-        val result = StringBuilder()
-        for (b in byteArray) {
-            result.append(String.format("%02X", b))
-        }
-        return result.toString()
-    }
+    fun fromByteArrayToHexStr(byteArray: ByteArray): String =
+        byteArray.joinToString(separator = "") { String.format("%02X", it) }
 
-    fun fromByteArrayToHexStrWithSpaces(byteArray: ByteArray): String {
-        val result = StringBuilder()
-        result.append("0x")
-        for (b in byteArray) {
-            result.append(String.format("%02X ", b))
-        }
-        return result.toString()
-    }
+    fun fromByteArrayToHexStrWithSpaces(byteArray: ByteArray): String =
+        "0x" + byteArray.joinToString(separator = " ") { String.format("%02X", it) }
 
-    fun toByteArray(string: String, maxLen: Int): ByteArray {
-        val charset = Charsets.UTF_8
-        val retArr = string.toByteArray(charset)
-        if (retArr.size > maxLen) {
-            return retArr.take(maxLen).toByteArray()
-        }
-        if (retArr.size < maxLen) {
-            return retArr + ByteArray(maxLen - retArr.size)
-        }
+    fun toByteArray(string: String, maxLen: Int): ByteArray =
+        string.toByteArray(Charsets.UTF_8).copyOf(maxLen)
 
-        return retArr
-    }
+    fun toHexStr(asciiStr: String): String =
+        toByteArray(asciiStr).joinToString(separator = "") { "%02x".format(it) }
 
-    fun toHexStr(asciiStr: String): String {
-        val byteArr = toByteArray(asciiStr)
-        var hexStr = ""
-        byteArr.forEach {
-            hexStr += "%02x".format(it)
-        }
-        return hexStr
-    }
+    fun byteArray(vararg bytes: Byte): ByteArray =
+        ByteArray(bytes.size) { pos -> bytes[pos] }
 
-    fun byteArray(vararg bytes: Byte) = ByteArray(bytes.size) { pos -> bytes[pos] }
+    fun toIntArray(hexStr: String): ArrayList<Int> =
+        (if (hexStr.contains(' ')) hexStr.split(' ') else hexStr.chunked(2))
+            .map { Integer.parseInt(it.removePrefix("0x"), 16) }
+            .toCollection(ArrayList())
 
-    fun toIntArray(hexStr: String): ArrayList<Int> {
-        val intArr = ArrayList<Int>()
-        val strArray = hexStr.split(' ')
-        strArray.forEach {
-            var s = it
-            if (s.startsWith("0x")) {
-                s = s.removePrefix("0x")
+    fun toAsciiString(hexStr: String, commandLengthToSkip: Int): String =
+        (if (hexStr.contains(' ')) hexStr.split(' ') else hexStr.chunked(2))
+            .drop(commandLengthToSkip)
+            .filter { it != "00" }
+            .joinToString("") {
+                Integer.parseInt(it.removePrefix("0x"), 16).toChar().toString()
             }
-            intArr.add(Integer.parseInt(s, 16))
+
+    fun toCompactString(hexStr: String): String =
+        hexStr.split(' ').joinToString(separator = "") {
+            if (it.startsWith("0x")) it.removePrefix("0x") else it
         }
 
-        return intArr
-    }
+    // JSON safe extension functions
+    fun JSONObject.getStringSafe(name: String): String? =
+        if (!has(name)) null else getString(name)
 
-    fun toAsciiString(hexStr: String, commandLengthToSkip: Int): String {
-        var asciiStr = ""
-        var strArrayWithCommand = hexStr.split(' ')
-        if (strArrayWithCommand.size == 1) { // no spaces between hex values, i.e. 4C4F4E444F4E
-            strArrayWithCommand = hexStr.chunked(2)
-        }
+    fun JSONObject.getBooleanSafe(name: String): Boolean? =
+        if (!has(name)) null else getBoolean(name)
 
-        // skip command
-        val strArray = strArrayWithCommand.subList(commandLengthToSkip, strArrayWithCommand.size)
-        strArray.forEach {
-            if (it != "00") {
-                var s = it
-                if (s.startsWith("0x")) {
-                    s = s.removePrefix("0x")
-                }
-                asciiStr += Integer.parseInt(s, 16).toChar()
-            }
-        }
+    fun JSONObject.getJSONObjectSafe(name: String): JSONObject? =
+        if (!has(name)) null else getJSONObject(name)
 
-        return asciiStr
-    }
+    fun JSONObject.getJSONArraySafe(name: String): JSONArray? =
+        if (!has(name)) null else getJSONArray(name)
 
-    fun toCompactString(hexStr: String): String {
-        var compactString = ""
-        val strArray = hexStr.split(' ')
-        strArray.forEach {
-            var s = it
-            if (s.startsWith("0x")) {
-                s = s.removePrefix("0x")
-            }
-            compactString += s
-        }
+    fun JSONObject.getIntSafe(name: String): Int? =
+        if (!has(name)) null else getInt(name)
 
-        return compactString
-    }
-
-    // JSON safe functions, prevent throwing exceptions
-    fun JSONObject.getStringSafe(name: String): String? {
-        if (!has(name)) {
-            return null
-        }
-        return getString(name)
-    }
-
-    fun JSONObject.getBooleanSafe(name: String): Boolean? {
-        if (!has(name)) {
-            return null
-        }
-        return getBoolean(name)
-    }
-
-    fun JSONObject.getJSONObjectSafe(name: String): JSONObject? {
-        if (!has(name)) {
-            return null
-        }
-        return getJSONObject(name)
-    }
-
-    fun JSONObject.getJSONArraySafe(name: String): JSONArray? {
-        if (!has(name)) {
-            return null
-        }
-        return getJSONArray(name)
-    }
-
-    fun JSONObject.getIntSafe(name: String): Int? {
-        if (!has(name)) {
-            return null
-        }
-        return getInt(name)
-    }
-
-    fun trimNonAsciiCharacters(string: String): String {
-        val pattern = Regex("[^\\x00-\\x7F]")
-        return pattern.replace(string, "")
-    }
+    fun trimNonAsciiCharacters(string: String): String =
+        Regex("[^\\x00-\\x7F]").replace(string, "")
 }
