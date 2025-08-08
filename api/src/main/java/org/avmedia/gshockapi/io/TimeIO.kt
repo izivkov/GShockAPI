@@ -127,7 +127,9 @@ object TimeIO {
     private suspend fun initializeForSettingTime() {
         writeDST()
         writeDSTForWorldCities()
-        writeWorldCities()
+        if (WatchInfo.hasWorldCities) {
+            writeWorldCities()
+        }
     }
 
     private suspend fun <T> readAndWrite(

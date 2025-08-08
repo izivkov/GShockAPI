@@ -32,6 +32,7 @@ data object WatchInfo {
     var hasHealthFunctions = false
     var hasMessages = false
     var hasDateFormat = true
+    var hasWorldCities = true
 
     enum class WatchModel {
         GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, UNKNOWN,
@@ -60,6 +61,7 @@ data object WatchInfo {
         val hasHealthFunctions: Boolean = false,
         val hasMessages: Boolean = false,
         val hasDateFormat: Boolean = true,
+        val hasWorldCities: Boolean = true
     )
 
     private val models = listOf(
@@ -117,7 +119,8 @@ data object WatchInfo {
             hasAutoLight = false,
             hasReminders = false,
             hasTemperature = false,
-            hasBatteryLevel = false
+            hasBatteryLevel = false,
+            hasWorldCities = false,
         ),
         ModelInfo(
             model = WatchModel.GA,
@@ -242,6 +245,7 @@ data object WatchInfo {
                 this@WatchInfo.hasHealthFunctions = hasHealthFunctions
                 this@WatchInfo.hasMessages = hasMessages
                 this@WatchInfo.hasDateFormat = hasDateFormat
+                this@WatchInfo.hasWorldCities = hasWorldCities
             }
         } ?: modelMap[WatchModel.UNKNOWN]?.let { defaultModel ->
             with(defaultModel) {
@@ -266,6 +270,7 @@ data object WatchInfo {
                 this@WatchInfo.hasHealthFunctions = hasHealthFunctions
                 this@WatchInfo.hasMessages = hasMessages
                 this@WatchInfo.hasDateFormat = hasDateFormat
+                this@WatchInfo.hasWorldCities = hasWorldCities
             }
         }
 

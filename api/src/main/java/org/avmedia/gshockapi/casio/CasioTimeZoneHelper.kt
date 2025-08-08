@@ -103,6 +103,17 @@ object CasioTimeZoneHelper {
         private fun adjustRules(dstOffset: Long, dstRules: Int) =
             if (dstOffset == 0L) 0 else dstRules
 
+        /**
+         * Calculates the daylight saving time (DST) offset duration for the current time zone.
+         *
+         * - Gets the DST rules for the current `zoneId`.
+         * - Checks the current instant (`now`).
+         * - Finds the next DST transition after `now`.
+         * - If currently in DST, uses `now`; otherwise, uses the instant just after the next transition.
+         * - Returns the DST offset as a `Duration`.
+         *
+         * @return Duration representing the DST offset for this zone, or zero if not applicable.
+         */
         private fun getDTSDuration(): Duration {
             val rules = zoneId.rules ?: return Duration.ZERO
             val now = Instant.now()
@@ -172,7 +183,7 @@ object CasioTimeZoneHelper {
         CasioTimeZone("PONTA DELGADA", "Atlantic/Azores", 0x02),
     )
 
-    val timeZoneMap by lazy {
+    private val timeZoneMap by lazy {
         timeZoneTable.associateBy { it.zoneName }.toMap()
     }
 
