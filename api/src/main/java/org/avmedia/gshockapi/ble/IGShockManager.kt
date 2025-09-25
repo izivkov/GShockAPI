@@ -112,9 +112,9 @@ private class GShockManagerImpl(
             .useAutoConnect(true)
             .done {
                 requestMtu(256).enqueue()
-                Timber.d("BLE", "Connected with autoConnect!")
+                Timber.d("Connected with autoConnect!")
             }
-            .fail { _, status -> Timber.d("BLE", "Failed with status $status") }
+            .fail { _, status -> Timber.d("Failed with status $status") }
             .enqueue()
     }
 

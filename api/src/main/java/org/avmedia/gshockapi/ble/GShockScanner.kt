@@ -8,13 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.onStart
-import no.nordicsemi.android.kotlin.ble.core.ServerDevice
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleNumOfMatches
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanFilter
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
@@ -54,11 +52,6 @@ object GShockScanner {
         cancelFlow()
 
         scannerFlow = BleScanner(context).scan(filters = gShockFilters, settings = gShockSettings)
-            .filter {
-                val device: ServerDevice = it.device
-                val ret = (device.name as String).startsWith("CASIO")
-                ret
-            }
             .onStart {
                 ProgressEvents.onNext("BLE Scanning Started")
             }
