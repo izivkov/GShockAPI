@@ -204,6 +204,7 @@ data object WatchInfo {
         model = when {
             shortName.startsWith("MRG-B5000") -> WatchModel.MRG_B5000
             shortName.startsWith("GCW-B5000") -> WatchModel.GCW_B5000
+            shortName.startsWith("GM-B2100") -> WatchModel.GA
             shortName.startsWith("ABL-100") -> WatchModel.ABL_100
             shortName.startsWith("G-B001") -> WatchModel.GB001
             shortName.startsWith("GMW") -> WatchModel.GMW
