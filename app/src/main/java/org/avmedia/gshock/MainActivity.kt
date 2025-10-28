@@ -54,11 +54,15 @@ class MainActivity : ComponentActivity() {
         listenToProgressEvents()
 
         setContent {
-            GShockAPITheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
-                    Box(Modifier.padding(padding)) {
-                        MainScreen()
-                        Run()
+
+            CheckPermissions {
+
+                GShockAPITheme {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                        Box(Modifier.padding(padding)) {
+                            MainScreen()
+                            Run()
+                        }
                     }
                 }
             }

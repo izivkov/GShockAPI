@@ -41,8 +41,8 @@ object GShockScanner {
         )
 
         val gShockSettings = BleScannerSettings(
-            includeStoredBondedDevices = false,
-            numOfMatches = BleNumOfMatches.MATCH_NUM_ONE_ADVERTISEMENT,
+            // includeStoredBondedDevices = false,
+            // numOfMatches = BleNumOfMatches.MATCH_NUM_ONE_ADVERTISEMENT,
             matchMode = BleScannerMatchMode.MATCH_MODE_AGGRESSIVE,
             scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
         )
