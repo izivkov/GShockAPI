@@ -148,11 +148,18 @@ class MainActivity : ComponentActivity() {
         println("Timer: ${api.getTimer()}")
         println("App Info: ${api.getAppInfo()}")
 
-        println("Home Time: ${api.getHomeTime()}")
-        println("Temperature: ${api.getWatchTemperature()}")
+        if (WatchInfo.hasHomeTime) {
+            println("Home Time: ${api.getHomeTime()}")
+        }
+        if (WatchInfo.hasTemperature) {
+            println("Temperature: ${api.getWatchTemperature()}")
+        }
 
         getDSTState()
-        getWorldCities()
+
+        if (WatchInfo.hasWorldCities) {
+            getWorldCities()
+        }
         getDSTForWorldCities()
 
         generateCustomEvent()

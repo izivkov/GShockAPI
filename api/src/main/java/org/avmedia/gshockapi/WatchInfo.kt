@@ -33,9 +33,10 @@ data object WatchInfo {
     var hasMessages = false
     var hasDateFormat = true
     var hasWorldCities = true
+    var hasHomeTime = true
 
     enum class WatchModel {
-        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, UNKNOWN,
+        GA, GW, DW, GMW, GPR, GST, MSG, GB001, GBD, GBD_800, MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, UNKNOWN,
     }
 
     data class ModelInfo(
@@ -61,7 +62,8 @@ data object WatchInfo {
         val hasHealthFunctions: Boolean = false,
         val hasMessages: Boolean = false,
         val hasDateFormat: Boolean = true,
-        val hasWorldCities: Boolean = true
+        val hasWorldCities: Boolean = true,
+        val hasHomeTime: Boolean = true,
     )
 
     private val models = listOf(
@@ -172,6 +174,15 @@ data object WatchInfo {
             hasTemperature = false
         ),
         ModelInfo(
+            model = WatchModel.GBD_800,
+            hasAutoLight = true,
+            hasReminders = false,
+            hasTemperature = false,
+            hasBatteryLevel = false,
+            hasWorldCities = false,
+            hasHomeTime = false,
+        ),
+        ModelInfo(
             model = WatchModel.EQB,
             hasAutoLight = true,
             hasReminders = false,
@@ -211,6 +222,7 @@ data object WatchInfo {
             shortName.startsWith("GST") -> WatchModel.GST
             shortName.startsWith("GPR") -> WatchModel.GPR
             shortName.startsWith("MSG") -> WatchModel.MSG
+            shortName.startsWith("GBD_800") -> WatchModel.GBD_800
             shortName.startsWith("GBD") -> WatchModel.GBD
             shortName.startsWith("EQB") -> WatchModel.EQB
             shortName.startsWith("GMB") -> WatchModel.GA
@@ -247,6 +259,7 @@ data object WatchInfo {
                 this@WatchInfo.hasMessages = hasMessages
                 this@WatchInfo.hasDateFormat = hasDateFormat
                 this@WatchInfo.hasWorldCities = hasWorldCities
+                this@WatchInfo.hasHomeTime = hasHomeTime
             }
         } ?: modelMap[WatchModel.UNKNOWN]?.let { defaultModel ->
             with(defaultModel) {
@@ -272,6 +285,7 @@ data object WatchInfo {
                 this@WatchInfo.hasMessages = hasMessages
                 this@WatchInfo.hasDateFormat = hasDateFormat
                 this@WatchInfo.hasWorldCities = hasWorldCities
+                this@WatchInfo.hasHomeTime = hasHomeTime
             }
         }
 

@@ -8,13 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.onStart
-import no.nordicsemi.android.kotlin.ble.core.ServerDevice
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleNumOfMatches
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanFilter
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
@@ -23,7 +21,6 @@ import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerSettings
 import no.nordicsemi.android.kotlin.ble.core.scanner.FilteredServiceUuid
 import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import org.avmedia.gshockapi.ProgressEvents
-import timber.log.Timber
 
 object GShockScanner {
     @SuppressLint("MissingPermission")
@@ -44,8 +41,8 @@ object GShockScanner {
         )
 
         val gShockSettings = BleScannerSettings(
-            includeStoredBondedDevices = false,
-            numOfMatches = BleNumOfMatches.MATCH_NUM_ONE_ADVERTISEMENT,
+            // includeStoredBondedDevices = false,
+            // numOfMatches = BleNumOfMatches.MATCH_NUM_ONE_ADVERTISEMENT,
             matchMode = BleScannerMatchMode.MATCH_MODE_AGGRESSIVE,
             scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
         )
@@ -54,15 +51,7 @@ object GShockScanner {
         val deviceSet = mutableSetOf<String>()
         cancelFlow()
 
-        scannerFlow = BleScanner(context).scan(
-//            filters = gShockFilters,
-            settings = gShockSettings)
-//            .filter {
-//                val device: ServerDevice = it.device
-//                Timber.d("Found device: ${device.name} - ${device.address}")
-//                val ret = (device.name as String).startsWith("CASIO")
-//                ret
-//            }
+        scannerFlow = BleScanner(context).scan(filters = gShockFilters, settings = gShockSettings)
             .onStart {
                 ProgressEvents.onNext("BLE Scanning Started")
             }
@@ -74,7 +63,6 @@ object GShockScanner {
             }
             .onEach {
                 val device = it.device
-                Timber.d("Device: ${device.name} - ${device.address}")
                 if (device.address !in deviceSet) {
                     deviceSet.add(device.address)
                     scannedName = (device.name as String)
