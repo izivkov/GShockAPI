@@ -180,7 +180,9 @@ class MainActivity : ComponentActivity() {
         alarms[4] = Alarm(9, 25, enabled = false)
         api.setAlarms(alarms)
 
-        handleReminders()
+        if (WatchInfo.hasReminders) {
+            handleReminders()
+        }
         handleSettings()
     }
 

@@ -222,7 +222,7 @@ data object WatchInfo {
             shortName.startsWith("GST") -> WatchModel.GST
             shortName.startsWith("GPR") -> WatchModel.GPR
             shortName.startsWith("MSG") -> WatchModel.MSG
-            shortName.startsWith("GBD_800") -> WatchModel.GBD_800
+            shortName.startsWith("GBD-800") -> WatchModel.GBD_800
             shortName.startsWith("GBD") -> WatchModel.GBD
             shortName.startsWith("EQB") -> WatchModel.EQB
             shortName.startsWith("GMB") -> WatchModel.GA
