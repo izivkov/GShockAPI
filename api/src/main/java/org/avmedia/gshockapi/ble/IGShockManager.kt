@@ -340,7 +340,6 @@ private class GShockManagerImpl(
             Timber.e("ApiError", "${handle.name.lowercase()} feature not supported")
             return
         }
-
         val characteristic = when (handle) {
             GetSetMode.GET -> readCharacteristicHolder
             GetSetMode.SET -> writeCharacteristicHolder
@@ -351,7 +350,6 @@ private class GShockManagerImpl(
                 return
             }
         }
-
         val writeType =
             if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY)
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE

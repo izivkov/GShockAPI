@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.onStart
-import no.nordicsemi.android.kotlin.ble.core.scanner.BleNumOfMatches
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanFilter
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerMatchMode
