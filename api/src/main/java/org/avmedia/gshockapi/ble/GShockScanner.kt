@@ -36,8 +36,16 @@ object GShockScanner {
         scanCallback: (DeviceInfo?) -> Unit
     ) {
         val gShockFilters: List<BleScanFilter> = listOf(
-            BleScanFilter(serviceUuid = FilteredServiceUuid(ParcelUuid.fromString(CASIO_SERVICE_UUID)))
+
+            BleScanFilter(
+                serviceUuid = FilteredServiceUuid(
+                    ParcelUuid.fromString(
+                        CASIO_SERVICE_UUID
+                    )
+                )
+            ),
         )
+        val noFilters = emptyList<BleScanFilter>()
 
         val gShockSettings = BleScannerSettings(
             // includeStoredBondedDevices = false,
@@ -50,7 +58,10 @@ object GShockScanner {
         val deviceSet = mutableSetOf<String>()
         cancelFlow()
 
-        scannerFlow = BleScanner(context).scan(filters = gShockFilters, settings = gShockSettings)
+        scannerFlow = BleScanner(context).scan(
+            filters = gShockFilters,
+            settings = gShockSettings
+        )
             .onStart {
                 ProgressEvents.onNext("BLE Scanning Started")
             }
@@ -60,13 +71,16 @@ object GShockScanner {
             .onCompletion {
                 ProgressEvents.onNext("BLE Scanning Completed")
             }
-            .onEach {
-                val device = it.device
+            .onEach { scanResult ->
+                val device = scanResult.device
                 if (device.address !in deviceSet) {
                     deviceSet.add(device.address)
-                    scannedName = (device.name as String)
-                    scanCallback(DeviceInfo(device.name as String, device.address))
-                    cancelFlow()
+                    device.name?.let { scannedName ->
+                        if (scannedName.startsWith("CASIO", ignoreCase = false)) {
+                            scanCallback(DeviceInfo(scannedName, device.address))
+                            cancelFlow()
+                        }
+                    }
                 }
             }
             .cancellable()
