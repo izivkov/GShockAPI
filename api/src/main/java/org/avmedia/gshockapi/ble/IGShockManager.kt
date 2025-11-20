@@ -337,7 +337,7 @@ private class GShockManagerImpl(
         }
 
         if (!isServiceSupported(handle)) {
-            Timber.e("ApiError", "${handle.name.lowercase()} feature not supported")
+            Timber.e("${handle.name.lowercase()} feature not supported")
             return
         }
         val characteristic = when (handle) {
