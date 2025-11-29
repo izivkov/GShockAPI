@@ -145,45 +145,48 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun runCommands() {
         // private suspend fun runCommands() {
-        println("Button pressed: ${api.getPressedButton()}")
-        println("Name returned: ${api.getWatchName()}")
-
-        println("Battery Level: ${api.getBatteryLevel()}")
-        println("Timer: ${api.getTimer()}")
-        println("App Info: ${api.getAppInfo()}")
-
-        if (WatchInfo.hasHomeTime) {
-            println("Home Time: ${api.getHomeTime()}")
-        }
-        if (WatchInfo.hasTemperature) {
-            println("Temperature: ${api.getWatchTemperature()}")
-        }
-
-        getDSTState()
-
-        if (WatchInfo.hasWorldCities) {
-            getWorldCities()
-        }
-        getDSTForWorldCities()
-
-        generateCustomEvent()
-
-        val currentTZ = TimeZone.getDefault().id
-        api.setTime("Europe/Sofia")
-        api.setTime("Asia/Kolkata")
-        api.setTime(currentTZ)
+//        println("Button pressed: ${api.getPressedButton()}")
+//        println("Name returned: ${api.getWatchName()}")
+//
+//        println("Battery Level: ${api.getBatteryLevel()}")
+//        println("Timer: ${api.getTimer()}")
+//        println("App Info: ${api.getAppInfo()}")
+//
+//        if (WatchInfo.hasHomeTime) {
+//            println("Home Time: ${api.getHomeTime()}")
+//        }
+//        if (WatchInfo.hasTemperature) {
+//            println("Temperature: ${api.getWatchTemperature()}")
+//        }
+//
+//        getDSTState()
+//
+//        if (WatchInfo.hasWorldCities) {
+//            getWorldCities()
+//        }
+//        getDSTForWorldCities()
+//
+//        generateCustomEvent()
+//
+//        val currentTZ = TimeZone.getDefault().id
+//        api.setTime("Europe/Sofia")
+//        api.setTime("Asia/Kolkata")
+//        api.setTime(currentTZ)
 
         val alarms = api.getAlarms()
         println("Alarm model: $alarms")
 
-        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false)
-        alarms[4] = Alarm(9, 25, enabled = false)
+        alarms[0] = Alarm(6, 45, enabled = true, hasHourlyChime = false, code = 1)
+        alarms[4] = Alarm(9, 25, enabled = false, code = 5)
         api.setAlarms(alarms)
 
-        if (WatchInfo.hasReminders) {
-            handleReminders()
-        }
-        handleSettings()
+        val updatedAlarms = api.getAlarms()
+        println("Updated Alarm model: $updatedAlarms")
+
+    //        if (WatchInfo.hasReminders) {
+//            handleReminders()
+//        }
+//        handleSettings()
     }
 
     private suspend fun runAppNotificationTest() {

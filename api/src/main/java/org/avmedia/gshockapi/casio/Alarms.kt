@@ -18,7 +18,7 @@ object Alarms {
 
     private const val ALARM_CONSTANT_VALUE = 0x40
 
-    class Alarm(val hour: Int, val minute: Int, val enabled: Boolean, val hasHourlyChime: Boolean)
+    class Alarm(val hour: Int, val minute: Int, val enabled: Boolean, val hasHourlyChime: Boolean, val code:Int = 0)
 
     fun fromJsonAlarmFirstAlarm(alarmJson: JSONObject): ByteArray {
         val gson = Gson()
@@ -36,7 +36,7 @@ object Alarms {
         return Utils.byteArrayOfInts(
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code,
             flag,
-            ALARM_CONSTANT_VALUE,
+            ALARM_CONSTANT_VALUE or alarm.code,
             alarm.hour,
             alarm.minute
         )

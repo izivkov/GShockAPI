@@ -4,10 +4,11 @@ data class Alarm(
     val hour: Int,
     val minute: Int,
     val enabled: Boolean,
-    val hasHourlyChime: Boolean = false
+    val hasHourlyChime: Boolean = false,
+    val code: Int = 0
 ) {
     override fun toString(): String =
-        "Alarm(hour=$hour, minute=$minute, enabled=$enabled, hasHourlyChime=$hasHourlyChime)"
+        "Alarm(hour=$hour, minute=$minute, enabled=$enabled, hasHourlyChime=$hasHourlyChime, code=$code)"
 
     companion object {
         private var alarms = ArrayList<Alarm>()
