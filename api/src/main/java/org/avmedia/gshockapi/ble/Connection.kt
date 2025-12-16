@@ -88,9 +88,13 @@ object Connection {
     fun startConnection(context: Context, deviceId: String?) {
 
         scope.launch {
+            stopBleScan()
             if (deviceId.isNullOrEmpty()) {
-                stopBleScan()
-                GShockScanner.scan(context) { deviceInfo ->
+                if (!isBluetoothEnabled(context)) {
+                    ProgressEvents.onNext("ApiError", "Bluetooth is disabled")
+                    return@launch
+                }
+                GShockScanner.scan(context.applicationContext) { deviceInfo ->
                     scope.launch {
                         deviceInfo?.address?.let { address ->
                             connectToAddress(address)

@@ -3,9 +3,11 @@ package org.avmedia.gshockapi.ble
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.ParcelUuid
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -13,6 +15,8 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanFilter
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerMatchMode
@@ -58,36 +62,49 @@ object GShockScanner {
         val deviceSet = mutableSetOf<String>()
         cancelFlow()
 
-        scannerFlow = BleScanner(context).scan(
-            filters = gShockFilters,
-            settings = gShockSettings
-        )
-            .onStart {
-                ProgressEvents.onNext("BLE Scanning Started")
-            }
-            .onEmpty {
-                ProgressEvents.onNext("ApiError", "No devices found while scanning")
-            }
-            .onCompletion {
-                ProgressEvents.onNext("BLE Scanning Completed")
-            }
-            .onEach { scanResult ->
-                val device = scanResult.device
-                if (device.address !in deviceSet) {
-                    deviceSet.add(device.address)
-                    device.name?.let { scannedName ->
-                        if (scannedName.startsWith("CASIO", ignoreCase = false)) {
-                            scanCallback(DeviceInfo(scannedName, device.address))
-                            cancelFlow()
+        scannerFlow = scope.launch {
+            while (isActive) {
+                try {
+                    BleScanner(context).scan(
+                        filters = gShockFilters,
+                        settings = gShockSettings
+                    )
+                        .onStart {
+                            ProgressEvents.onNext("BLE Scanning Started")
                         }
-                    }
+                        .onEmpty {
+                            ProgressEvents.onNext("ApiError", "No devices found while scanning")
+                        }
+                        .onCompletion {
+                            ProgressEvents.onNext("BLE Scanning Completed")
+                        }
+                        .onEach { scanResult ->
+                            val device = scanResult.device
+                            if (device.address !in deviceSet) {
+                                deviceSet.add(device.address)
+                                device.name?.let { deviceName ->
+                                    if (deviceName.startsWith("CASIO", ignoreCase = false)) {
+                                        scanCallback(DeviceInfo(deviceName, device.address))
+                                        cancelFlow()
+                                    }
+                                }
+                            }
+                        }
+                        .cancellable()
+                        .catch { e ->
+                            ProgressEvents.onNext("ApiError", "BLE Scanning Error $e")
+                        }
+                        .collect {}
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    ProgressEvents.onNext("ApiError", "Failed to start BLE Scanner: ${e.message}")
+                }
+
+                if (isActive) {
+                    delay(3000)
                 }
             }
-            .cancellable()
-            .catch { e ->
-                ProgressEvents.onNext("ApiError", "BLE Scanning Error $e")
-            }
-            .launchIn(scope)
+        }
     }
 
     fun cancelFlow() {
