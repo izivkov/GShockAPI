@@ -58,36 +58,40 @@ object GShockScanner {
         val deviceSet = mutableSetOf<String>()
         cancelFlow()
 
-        scannerFlow = BleScanner(context).scan(
-            filters = gShockFilters,
-            settings = gShockSettings
-        )
-            .onStart {
-                ProgressEvents.onNext("BLE Scanning Started")
-            }
-            .onEmpty {
-                ProgressEvents.onNext("ApiError", "No devices found while scanning")
-            }
-            .onCompletion {
-                ProgressEvents.onNext("BLE Scanning Completed")
-            }
-            .onEach { scanResult ->
-                val device = scanResult.device
-                if (device.address !in deviceSet) {
-                    deviceSet.add(device.address)
-                    device.name?.let { scannedName ->
-                        if (scannedName.startsWith("CASIO", ignoreCase = false)) {
-                            scanCallback(DeviceInfo(scannedName, device.address))
-                            cancelFlow()
+        try {
+            scannerFlow = BleScanner(context).scan(
+                filters = gShockFilters,
+                settings = gShockSettings
+            )
+                .onStart {
+                    ProgressEvents.onNext("BLE Scanning Started")
+                }
+                .onEmpty {
+                    ProgressEvents.onNext("ApiError", "No devices found while scanning")
+                }
+                .onCompletion {
+                    ProgressEvents.onNext("BLE Scanning Completed")
+                }
+                .onEach { scanResult ->
+                    val device = scanResult.device
+                    if (device.address !in deviceSet) {
+                        deviceSet.add(device.address)
+                        device.name?.let { deviceName ->
+                            if (deviceName.startsWith("CASIO", ignoreCase = false)) {
+                                scanCallback(DeviceInfo(deviceName, device.address))
+                                cancelFlow()
+                            }
                         }
                     }
                 }
-            }
-            .cancellable()
-            .catch { e ->
-                ProgressEvents.onNext("ApiError", "BLE Scanning Error $e")
-            }
-            .launchIn(scope)
+                .cancellable()
+                .catch { e ->
+                    ProgressEvents.onNext("ApiError", "BLE Scanning Error $e")
+                }
+                .launchIn(scope)
+        } catch (e: Exception) {
+            ProgressEvents.onNext("ApiError", "Failed to start BLE Scanner: ${e.message}")
+        }
     }
 
     fun cancelFlow() {
