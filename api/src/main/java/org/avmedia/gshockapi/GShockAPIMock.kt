@@ -281,10 +281,6 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         Timber.i("Disconnected")
     }
 
-    override fun stopScan() {
-        Timber.i("Scan stopped")
-    }
-
     override fun isBluetoothEnabled(context: Context): Boolean {
         return false
     }
@@ -315,6 +311,41 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     }
 
     override suspend fun setScratchpadData(data: ByteArray, startIndex: Int) {}
-    override suspend fun getScratchpadData(index: Int, length: Int): ByteArray {return byteArrayOf()}
-    override fun isScratchpadReset(): Boolean {return false}
+    override suspend fun getScratchpadData(index: Int, length: Int): ByteArray {
+        return byteArrayOf()
+    }
+
+    override fun isScratchpadReset(): Boolean {
+        return false
+    }
+
+    override fun associate(context: Context, delegate: ICDPDelegate) {}
+    override fun disassociate(context: Context, address: String) {}
+    override fun getAssociationsWithNames(context: Context): List<IGShockAPI.Association> {
+        return emptyList()
+    }
+
+    override fun getAssociations(context: Context): List<String> {
+        return emptyList()
+    }
+
+    override fun startObservingDevicePresence(
+        context: Context,
+        address: String
+    ) {
+    }
+
+    override fun stopObservingDevicePresence(
+        context: Context,
+        address: String
+    ) {
+    }
+
+    override fun scan(
+        context: Context,
+        filter: (DeviceInfo) -> Boolean,
+        onDeviceFound: (DeviceInfo) -> Unit
+    ) {
+    }
+
 }

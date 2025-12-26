@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.DeviceInfo
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
@@ -86,25 +87,26 @@ object Connection {
         bleManager.isServiceSupported(handle)
 
     fun startConnection(context: Context, deviceId: String?) {
-
+        ProgressEvents.onNext("ConnectionStarted")
         scope.launch {
-            stopBleScan()
             if (deviceId.isNullOrEmpty()) {
                 if (!isBluetoothEnabled(context)) {
                     ProgressEvents.onNext("ApiError", "Bluetooth is disabled")
                     return@launch
                 }
-                GShockScanner.scan(context.applicationContext) { deviceInfo ->
-                    scope.launch {
-                        deviceInfo?.address?.let { address ->
-                            connectToAddress(address)
-                        }
-                    }
-                }
+                Timber.w("deviceId is null or empty. Listening for any device.")
             } else {
                 connectToAddress(deviceId)
             }
         }
+    }
+
+    fun scan(
+        context: Context,
+        filter: (DeviceInfo) -> Boolean,
+        onDeviceFound: (DeviceInfo) -> Unit
+    ) {
+        GShockScanner.scan(context, filter, onDeviceFound)
     }
 
     private suspend fun connectToAddress(address: String) {

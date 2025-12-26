@@ -8,6 +8,15 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_PROFILE_WATCH" />
+
+    <uses-feature
+        android:name="android.software.companion_device_setup"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -30,6 +39,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="org.avmedia.services.GShockCompanionDeviceService"
+            android:exported="true"
+            android:foregroundServiceType="connectedDevice"
+            android:permission="android.permission.BIND_COMPANION_DEVICE_SERVICE">
+            <intent-filter>
+                <action android:name="android.companion.CompanionDeviceService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="org.avmedia.services.GShockScanService"
+            android:enabled="true"
+            android:exported="false" />
     </application>
 
 </manifest>

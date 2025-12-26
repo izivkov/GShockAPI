@@ -1,41 +1,58 @@
 package org.avmedia.gshock
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.avmedia.gshock.ui.theme.GShockAPITheme
 import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.AppNotification
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.GShockAPI
+import org.avmedia.gshockapi.IGShockAPI
 import org.avmedia.gshockapi.NotificationType
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.WatchInfo
+import org.avmedia.gshockapi.ble.Connection
+import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.IO
+import org.avmedia.services.GShockScanService
 import java.time.ZoneId
 import java.util.TimeZone
 import kotlin.system.measureTimeMillis
@@ -44,24 +61,34 @@ import kotlin.system.measureTimeMillis
 class MainActivity : ComponentActivity() {
 
     private val api = GShockAPI(this)
-    private lateinit var permissionManager: PermissionManager
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val customEventName =
         "************** My Oun Event Generated from the App.!!!! ************"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        listenToProgressEvents()
-
         setContent {
+            val viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+            LaunchedEffect(Unit) {
+                listenToProgressEvents(viewModel)
+
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    startService(Intent(this@MainActivity, GShockScanService::class.java))
+                } else {
+                    GShockPairingManager.getAssociations(this@MainActivity).forEach { address ->
+                        api.startObservingDevicePresence(this@MainActivity, address)
+                    }
+                }
+            }
 
             CheckPermissions {
-
                 GShockAPITheme {
                     Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                         Box(Modifier.padding(padding)) {
-                            MainScreen()
-                            Run()
+                            MainScreen(viewModel)
+                            Run(viewModel)
                         }
                     }
                 }
@@ -69,11 +96,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun listenToProgressEvents() {
+
+    private fun listenToProgressEvents(viewModel: MainScreenViewModel) {
 
         val eventActions = arrayOf(
             EventAction("ConnectionSetupComplete") {
                 println("Got \"ConnectionSetupComplete\" event")
+            },
+            EventAction("DeviceAppeared") {
+                val address = ProgressEvents.getPayload("DeviceAppeared") as String
+                println("Found a paired device: $address. Connecting...")
+                scope.launch {
+                    api.waitForConnection(address)
+                    viewModel.updateAssociations(this@MainActivity)
+                    api.waitForConnection(address)
+                }
             },
             EventAction("Disconnect") {
                 println("Got \"Disconnect\" event")
@@ -84,6 +121,9 @@ class MainActivity : ComponentActivity() {
             EventAction(customEventName) {
                 println("Got \"$customEventName\" event")
             },
+            EventAction("WatchInitializationCompleted") {
+                println("Got \"WatchInitializationCompleted\" event")
+            },
         )
 
         ProgressEvents.runEventActions(this.javaClass.simpleName, eventActions)
@@ -92,28 +132,108 @@ class MainActivity : ComponentActivity() {
     // ViewModel to hold the updatable text
     class MainScreenViewModel : ViewModel() {
         var dynamicText by mutableStateOf("...") // Mutable state to hold dynamic text
+        val associations = mutableStateListOf<IGShockAPI.Association>()
+
+        fun updateAssociations(context: android.content.Context) {
+            associations.clear()
+            associations.addAll(GShockPairingManager.getAssociationsWithNames(context))
+        }
     }
 
     @Composable
     fun MainScreen(viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
-        // Observe the state from the ViewModel
-        val dynamicText by viewModel::dynamicText
+        val context = LocalContext.current
+        val associations = viewModel.associations
+
+        val pairingLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartIntentSenderForResult(),
+            onResult = { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    viewModel.updateAssociations(context)
+                    // Start observing presence for all associated devices
+                    GShockPairingManager.getAssociations(context).forEach { address ->
+                        api.startObservingDevicePresence(context, address)
+                    }
+                }
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            viewModel.updateAssociations(context)
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp), // Margin around the entire column
-            verticalArrangement = Arrangement.SpaceEvenly, // Equal vertical space between items
-            horizontalAlignment = Alignment.CenterHorizontally // Center align items horizontally
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Long-press the BOTTOM-LEFT button on your watch to connect and run tests.",
+                text = "Companion Device Pairing",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Button(onClick = {
+                GShockPairingManager.associate(context, { intentSender ->
+                    pairingLauncher.launch(
+                        androidx.activity.result.IntentSenderRequest.Builder(intentSender).build()
+                    )
+                }, { error ->
+                    println("Pairing error: $error")
+                })
+            }) {
+                Text("Pair New Watch")
+            }
+
+            HorizontalDivider()
+
+            Text(
+                text = "Paired Devices:",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                items(associations) { association ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = association.name ?: "Unknown")
+                            Text(
+                                text = association.address,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Button(onClick = {
+                            api.stopObservingDevicePresence(context, association.address)
+                            GShockPairingManager.disassociate(context, association.address)
+                            viewModel.updateAssociations(context)
+                        }) {
+                            Text("Unpair")
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider()
+
+            Text(
+                text = "Status: ${viewModel.dynamicText}",
                 style = MaterialTheme.typography.bodyLarge
             )
 
             Text(
-                text = dynamicText, // Bind the text to the ViewModel's state
-                style = MaterialTheme.typography.bodyLarge
+                text = "Long-press the BOTTOM-LEFT button on your watch to connect.",
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -126,25 +246,31 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Run(viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
 
-        LaunchedEffect(Unit) {
-            api.waitForConnection()
+        val eventActions = arrayOf(
+            EventAction("WatchInitializationCompleted") {
+                scope.launch {
+                    updateDynamicText(viewModel, "Connected...")
+                    updateDynamicText(viewModel, "Running tests...Take a look at your debug logs.")
 
-            updateDynamicText(viewModel, "Connected...")
-            updateDynamicText(viewModel, "Running tests...Take a look at your debug logs.")
+                    runCommands()
 
-            runCommands()
-            if (api.supportsAppNotifications()) {
-                runAppNotificationTest()
+                    if (api.supportsAppNotifications()) {
+                        runAppNotificationTest()
+                    }
+
+                    api.disconnect()
+                    updateDynamicText(viewModel, "Disconnected")
+                    updateDynamicText(viewModel, "Tests Ended..")
+                }
             }
+        )
 
-            api.disconnect()
-            updateDynamicText(viewModel, "Disconnected")
-            updateDynamicText(viewModel, "Tests Ended..")
+        LaunchedEffect(Unit) {
+            ProgressEvents.runEventActions("Run", eventActions)
         }
     }
 
     private suspend fun runCommands() {
-        // private suspend fun runCommands() {
         println("Button pressed: ${api.getPressedButton()}")
         println("Name returned: ${api.getWatchName()}")
 

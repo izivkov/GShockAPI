@@ -10,6 +10,7 @@ import java.util.TimeZone
 
 interface IGShockAPI {
     suspend fun waitForConnection(deviceId: String? = "")
+
     suspend fun init(): Boolean
     fun isConnected(): Boolean
     fun teardownConnection(device: BluetoothDevice)
@@ -42,7 +43,6 @@ interface IGShockAPI {
     suspend fun getTimeAdjustment(): TimeAdjustmentInfo
     fun setSettings(settings: Settings)
     fun disconnect()
-    fun stopScan()
     fun close()
     fun isBluetoothEnabled(context: Context): Boolean
     fun sendAppNotification(notification: AppNotification)
@@ -57,4 +57,18 @@ interface IGShockAPI {
     fun preventReconnection(): Boolean
     suspend fun getScratchpadData(index: Int, length: Int): ByteArray
     fun isScratchpadReset(): Boolean
+
+    fun associate(context: Context, delegate: ICDPDelegate)
+    fun disassociate(context: Context, address: String)
+
+    data class Association(val address: String, val name: String?)
+
+    fun getAssociationsWithNames(context: Context): List<Association>
+
+    fun getAssociations(context: Context): List<String>
+
+    fun startObservingDevicePresence(context: Context, address: String)
+    fun stopObservingDevicePresence(context: Context, address: String)
+
+    fun scan(context: Context, filter: (DeviceInfo) -> Boolean, onDeviceFound: (DeviceInfo) -> Unit)
 }
