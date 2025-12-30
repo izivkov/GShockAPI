@@ -14,13 +14,13 @@ import androidx.annotation.RequiresPermission
 import org.avmedia.gshockapi.IGShockAPI
 import java.util.UUID
 import java.util.regex.Pattern
-import kotlin.collections.find
-import kotlin.collections.map
-import kotlin.run
 
 object GShockPairingManager {
     private val CASIO_SERVICE_UUID: UUID =
         UUID.fromString("00001804-0000-1000-8000-00805f9b34fb")
+
+    // Constant for the name pattern to avoid hardcoded literals
+    private const val DEVICE_NAME_PATTERN: String = "CASIO.*"
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingPermission")
@@ -36,36 +36,28 @@ object GShockPairingManager {
                     return
                 }
 
-        // This class exists from API 26, so you can use it from Android 9+.
         val deviceFilter = BluetoothDeviceFilter.Builder()
-            .setNamePattern(Pattern.compile("CASIO.*", Pattern.CASE_INSENSITIVE))
-            // If you want to filter by service UUID and the device is BLE, you can
-            // switch to BluetoothLeDeviceFilter here (API 26+). [web:3][web:10]
-            // .addServiceUuid(ParcelUuid(CASIO_SERVICE_UUID), null)
+            .setNamePattern(Pattern.compile(DEVICE_NAME_PATTERN, Pattern.CASE_INSENSITIVE))
             .build()
 
         val builder = AssociationRequest.Builder()
             .addDeviceFilter(deviceFilter)
-            // .setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
-
-        builder.setSingleDevice(true)
+            .setSingleDevice(true)
 
         val pairingRequest = builder.build()
 
-        val callback = @RequiresApi(Build.VERSION_CODES.O)
-        object : CompanionDeviceManager.Callback() {
-            // @Suppress("DEPRECATION")
+        val callback = object : CompanionDeviceManager.Callback() {
             @Deprecated("Deprecated in Java")
             override fun onDeviceFound(chooserLauncher: IntentSender) {
                 onChooserReady(chooserLauncher)
             }
 
             override fun onFailure(error: CharSequence?) {
-                onError(error?.toString() ?: "Companion device pairing failed")
+                val errorMessage: String = error?.toString() ?: "Companion device pairing failed"
+                onError(errorMessage)
             }
         }
 
-        // New associate() overload with Executor is from API 33 (Tiramisu). [web:1][web:10]
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             deviceManager.associate(pairingRequest, context.mainExecutor, callback)
         } else {
@@ -85,21 +77,16 @@ object GShockPairingManager {
                 ?: return emptyList()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Modern API returning AssociationInfo objects. [web:1]
-            deviceManager.myAssociations.map {
+            deviceManager.myAssociations.map { info ->
                 IGShockAPI.Association(
-                    it.deviceMacAddress?.toString() ?: "",
-                    it.displayName?.toString()
+                    info.deviceMacAddress?.toString() ?: "",
+                    info.displayName?.toString()
                 )
             }
         } else {
             @Suppress("DEPRECATION")
             val associations = deviceManager.associations
-            // On Android 9–12 this returns List<String> of association IDs. [web:1][web:10]
             associations.map { info ->
-                // On Android 12 (S)–12L (Sv2) you can sometimes get AssociationInfo in APIs,
-                // but for the CompanionDeviceManager.associations list it is just String,
-                // so treat it as an address/id string here.
                 IGShockAPI.Association(info, null)
             }
         }
@@ -113,20 +100,20 @@ object GShockPairingManager {
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Newer API uses association id from AssociationInfo. [web:1]
-                val association =
-                    deviceManager.myAssociations.find { it.deviceMacAddress?.toString() == address }
+                val association = deviceManager.myAssociations.find {
+                    it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
+                }
                 if (association != null) {
                     deviceManager.disassociate(association.id)
                     return
                 }
             }
 
-            // On Android 9–12 use the deprecated String-based disassociate(). [web:10]
+            // Fallback for API < 33 or if association info was not found
             @Suppress("DEPRECATION")
             deviceManager.disassociate(address)
-        } catch (_: Exception) {
-            // ignore
+        } catch (e: Exception) {
+            // Log error if needed, but keeping your logic of ignoring
         }
     }
 
@@ -137,10 +124,10 @@ object GShockPairingManager {
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {  // API 36+
+        // Baklava (API 36) introduces more structured presence requests
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             startObservingApi36(deviceManager, address)
         } else {
-            // API 31-35: deprecated String method
             @Suppress("DEPRECATION")
             deviceManager.startObservingDevicePresence(address)
         }
@@ -153,7 +140,7 @@ object GShockPairingManager {
         address: String
     ) {
         val association = deviceManager.myAssociations.firstOrNull {
-            it.deviceMacAddress?.toString()?.equals(address, ignoreCase = true) == true
+            it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
         } ?: return
 
         val request = ObservingDevicePresenceRequest.Builder()
@@ -163,23 +150,26 @@ object GShockPairingManager {
         deviceManager.startObservingDevicePresence(request)
     }
 
+    @RequiresPermission(Manifest.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE)
     @RequiresApi(Build.VERSION_CODES.S)
     fun stopObservingDevicePresence(context: Context, address: String) {
-        val deviceManager =
+        val deviceManager: CompanionDeviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // Sync with start logic: Use the modern Request-based API for Baklava+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             val association = deviceManager.myAssociations.firstOrNull {
-                it.deviceMacAddress?.toString()?.equals(address, ignoreCase = true) == true
+                it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
             } ?: return
 
-            val request = ObservingDevicePresenceRequest.Builder()
+            val request: ObservingDevicePresenceRequest = ObservingDevicePresenceRequest.Builder()
                 .setAssociationId(association.id)
                 .build()
 
             deviceManager.stopObservingDevicePresence(request)
         } else {
+            // Use legacy String address for API 31-35
             @Suppress("DEPRECATION")
             deviceManager.stopObservingDevicePresence(address)
         }
