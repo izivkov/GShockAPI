@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.ble
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.companion.AssociationRequest
 import android.companion.BluetoothDeviceFilter
@@ -9,6 +10,7 @@ import android.content.Context
 import android.content.IntentSender
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import org.avmedia.gshockapi.IGShockAPI
 import java.util.UUID
 import java.util.regex.Pattern
@@ -128,26 +130,37 @@ object GShockPairingManager {
         }
     }
 
+    @RequiresPermission(Manifest.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE)
     @RequiresApi(Build.VERSION_CODES.S)
     fun startObservingDevicePresence(context: Context, address: String) {
         val deviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val association = deviceManager.myAssociations.firstOrNull {
-                it.deviceMacAddress?.toString()?.equals(address, ignoreCase = true) == true
-            } ?: return
-
-            val request = ObservingDevicePresenceRequest.Builder()
-                .setAssociationId(association.id)
-                .build()
-
-            deviceManager.startObservingDevicePresence(request)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {  // API 36+
+            startObservingApi36(deviceManager, address)
         } else {
+            // API 31-35: deprecated String method
             @Suppress("DEPRECATION")
             deviceManager.startObservingDevicePresence(address)
         }
+    }
+
+    @RequiresPermission(Manifest.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE)
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private fun startObservingApi36(
+        deviceManager: CompanionDeviceManager,
+        address: String
+    ) {
+        val association = deviceManager.myAssociations.firstOrNull {
+            it.deviceMacAddress?.toString()?.equals(address, ignoreCase = true) == true
+        } ?: return
+
+        val request = ObservingDevicePresenceRequest.Builder()
+            .setAssociationId(association.id)
+            .build()
+
+        deviceManager.startObservingDevicePresence(request)
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
