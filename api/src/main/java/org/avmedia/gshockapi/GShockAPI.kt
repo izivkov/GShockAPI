@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import java.time.ZoneId
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
@@ -28,12 +29,11 @@ import org.avmedia.gshockapi.io.WaitForConnectionIO
 import org.avmedia.gshockapi.io.WatchConditionIO
 import org.avmedia.gshockapi.io.WatchNameIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
+import org.avmedia.gshockapi.utils.AndroidVersion
 import timber.log.Timber
-import java.time.ZoneId
 
 /**
  * This class contains all the API functions. This should the the main interface to the library.
- *
  *
  * Here is how to use it:
  *
@@ -65,18 +65,17 @@ import java.time.ZoneId
  * }
  * ```
  */
-
 @RequiresApi(Build.VERSION_CODES.O)
 class GShockAPI(private val context: Context) : IGShockAPI {
 
     /**
-     * This function waits for the watch to connect to the phone.
-     * When connected, it returns and emits a `ConnectionSetupComplete` event, which
-     * can inform other parts of the app that the connection has taken place.
-     * @param[deviceId] Optional parameter containing a the Bluetooth ID
-     * of a watch which was previously connected. Providing this parameter will
-     * speed up connection. Its value can be saved in local storage for future use,
-     * and can be obtained after connection by calling `getDeviceId()`. Here is an example:
+     * This function waits for the watch to connect to the phone. When connected, it returns and
+     * emits a `ConnectionSetupComplete` event, which can inform other parts of the app that the
+     * connection has taken place.
+     * @param[deviceId] Optional parameter containing a the Bluetooth ID of a watch which was
+     * previously connected. Providing this parameter will speed up connection. Its value can be
+     * saved in local storage for future use, and can be obtained after connection by calling
+     * `getDeviceId()`. Here is an example:
      * ```
      * private suspend fun waitForConnectionCached() {
      *      var cachedDeviceAddress: String? =
@@ -86,7 +85,6 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *   }
      * ```
      */
-
     override suspend fun waitForConnection(deviceId: String?) {
         Connection.init(context)
         val connectedStatus = WaitForConnectionIO.request(context, deviceId)
@@ -113,61 +111,56 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param onDeviceFound A callback invoked when a matching device is found.
      */
     override fun scan(
-        context: Context,
-        filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
+            context: Context,
+            filter: (DeviceInfo) -> Boolean,
+            onDeviceFound: (DeviceInfo) -> Unit
     ) {
         Connection.scan(context, filter, onDeviceFound)
     }
 
-    /**
-     * Returns a Boolean value indicating if the watch is currently commenced to the phone
-     */
-    override fun isConnected(): Boolean =
-        Connection.isConnected()
+    /** Returns a Boolean value indicating if the watch is currently commenced to the phone */
+    override fun isConnected(): Boolean = Connection.isConnected()
 
     /**
      * Close the connection and free all associated resources.
-     * @param[deviceId] The deviceId associated with current connection.
-     * The `deviceId` can be obtained by calling `getDeviceId()` or from the
-     * payload in the `ProgressEvents.Events.Disconnect` event
+     * @param[deviceId] The deviceId associated with current connection. The `deviceId` can be
+     * obtained by calling `getDeviceId()` or from the payload in the
+     * `ProgressEvents.Events.Disconnect` event
      */
     override fun teardownConnection(device: BluetoothDevice) {
         Connection.teardownConnection()
     }
 
     /**
-     * This function tells us which button was pressed on the watch to
-     * initiate the connection. Remember, the connection between the phone and the
-     * watch can only be initiated from the <b>watch</b>.
-     *
+     * This function tells us which button was pressed on the watch to initiate the connection.
+     * Remember, the connection between the phone and the watch can only be initiated from the
+     * <b>watch</b>.
      *
      * The return values are interpreted as follows:
      *
-     * - `LOWER_LEFT` - this connection is initiated by a long-press of the lower-left button on the watch.
-     * The app receiving this type of connection can now send and receive commands to the watch.
+     * - `LOWER_LEFT` - this connection is initiated by a long-press of the lower-left button on the
+     * watch. The app receiving this type of connection can now send and receive commands to the
+     * watch.
      * - `LOWER_RIGHT` - this connection is initiated by a short-press of the lower-right button,
-     * which is usually used to set time. But the app can use this signal to perform other arbitrary functions.
-     * Therefore, this button is also referred as `ACTION BUTTON`.
-     * The connection will automatically disconnect in about 20 seconds.
-     * - `NO_BUTTON` - this connection is initiated automatically, periodically
-     * from the watch, without user input. It will automatically disconnect in about 20 seconds.
+     * which is usually used to set time. But the app can use this signal to perform other arbitrary
+     * functions. Therefore, this button is also referred as `ACTION BUTTON`. The connection will
+     * automatically disconnect in about 20 seconds.
+     * - `NO_BUTTON` - this connection is initiated automatically, periodically from the watch,
+     * without user input. It will automatically disconnect in about 20 seconds.
      *
+     * *This function is relatively expensive, since it performs round trip to the watch to get the
+     * value. Therefore, it should be called only once each time the connection is established. The
+     * returned values will not change for the duration of the connection. After that, the user can
+     * call one of these lightweight functions:*
      *
-     * *This function is relatively expensive, since it performs round trip to the watch to get the value. Therefore, it should be called only once each time the connection is established. The returned values will not change for the duration of the connection. After that, the user can call one of these lightweight functions:*
+     * [isActionButtonPressed]
      *
+     * [isNormalButtonPressed]
      *
-     *   [isActionButtonPressed]
-     *
-     *
-     *   [isNormalButtonPressed]
-     *
-     *
-     *   [isAutoTimeStarted]
-     *
+     * [isAutoTimeStarted]
      *
      * @return [BluetoothWatch.WATCH_BUTTON]
-     **
+     *
      * @seeCasioIO.WATCH_BUTTON
      */
     /* Do not get value from cache, because we do not want to
@@ -179,8 +172,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * This function tells us if the connection was initiated by short-pressing the lower-right button on the
-     * watch, also known as ACTION BUTTON
+     * This function tells us if the connection was initiated by short-pressing the lower-right
+     * button on the watch, also known as ACTION BUTTON
      *
      * @return **true** if the lower-right button initiated the connection, **false** otherwise.
      */
@@ -190,9 +183,11 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * Checks if the connection was initiated by a button press that keeps the watch always connected.
+     * Checks if the connection was initiated by a button press that keeps the watch always
+     * connected.
      *
-     * @return **true** if the connection was initiated by the "Always Connected" button, **false** otherwise.
+     * @return **true** if the connection was initiated by the "Always Connected" button, **false**
+     * otherwise.
      */
     override fun isAlwaysConnectedConnectionPressed(): Boolean {
         val button = ButtonPressedIO.get()
@@ -200,8 +195,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * This function tells us if the connection was initiated by long-pressing the lower-left
-     * button on the watch
+     * This function tells us if the connection was initiated by long-pressing the lower-left button
+     * on the watch
      *
      * @return **true** if the lower-left button initiated the connection, **false** otherwise.
      */
@@ -211,9 +206,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * This function tells us if the connection was initiated automatically by the watch, without the user
-     * pressing any button. This happens if Auto-Time is set in the setting. In this case, the
-     * watch will periodically connect at around 00:30, 06:30, 12:30 and 18:30
+     * This function tells us if the connection was initiated automatically by the watch, without
+     * the user pressing any button. This happens if Auto-Time is set in the setting. In this case,
+     * the watch will periodically connect at around 00:30, 06:30, 12:30 and 18:30
      *
      * @return **true** if watch automatically initiated the connection, **false** otherwise.
      */
@@ -223,8 +218,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * This function tells us if the connection was initiated by ling-pressing the lower-right button on the
-     * watch, used to activate FIND PHONE action
+     * This function tells us if the connection was initiated by ling-pressing the lower-right
+     * button on the watch, used to activate FIND PHONE action
      *
      * @return **true** if button pressed to activate FIND PHONE function, **false** otherwise.
      */
@@ -256,8 +251,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * Get the **Daylight Saving Time** for a particular World City set on the watch.
-     * There are 6 world cities that can be stored.
+     * Get the **Daylight Saving Time** for a particular World City set on the watch. There are 6
+     * world cities that can be stored.
      *
      * @param cityNumber: index of the world city (0..5)
      *
@@ -268,8 +263,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * Get the name for a particular World City set on the watch.
-     * There are 6 world cities that can be stored.
+     * Get the name for a particular World City set on the watch. There are 6 world cities that can
+     * be stored.
      *
      * @param cityNumber Index of the world city (0..5)
      *
@@ -309,7 +304,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * Get Timer value in seconds.
      *
-     * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3 minutes.
+     * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3
+     * minutes.
      */
     override suspend fun getTimer(): Int {
         return TimerIO.request()
@@ -318,16 +314,17 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * Set Timer value in seconds.
      *
-     * @param timerValue Timer number of seconds as an Int.  E.g.: 180 means the timer will be set for 3 minutes.
+     * @param timerValue Timer number of seconds as an Int. E.g.: 180 means the timer will be set
+     * for 3 minutes.
      */
     override fun setTimer(timerValue: Int) {
         TimerIO.set(timerValue)
     }
 
     /**
-     * Gets and internally sets app info to the watch.
-     * This is needed to re-enable lower-right button after the watch has been reset or BLE has been cleared.
-     * Call this function after each time the connection has been established.
+     * Gets and internally sets app info to the watch. This is needed to re-enable lower-right
+     * button after the watch has been reset or BLE has been cleared. Call this function after each
+     * time the connection has been established.
      *
      * @return appInfo string from the watch.
      */
@@ -348,11 +345,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return AppInfoIO.wasScratchpadReset
     }
 
-
     /**
-     * Sets the current time on the watch from the time on the phone. In addition, it can optionally set the Home Time
-     * to the current time zone. If timezone changes during travel, the watch will automatically be set to the
-     * correct time and timezone after running this function.
+     * Sets the current time on the watch from the time on the phone. In addition, it can optionally
+     * set the Home Time to the current time zone. If timezone changes during travel, the watch will
+     * automatically be set to the correct time and timezone after running this function.
      *
      * @param timeZone Optional String parameter of form "region/city', i.e.: "Europe/Sofia".
      * Example:
@@ -360,7 +356,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *      setTime()
      *      setTime(TimeZone.getDefault().id)
      *      setTime("Europe/Sofia")
-     *  ```
+     *
+     * ```
      */
     override suspend fun setTime(timeZone: String, timeMs: Long?) {
 
@@ -379,7 +376,6 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @return ArrayList<[Alarm]>
      */
-
     override suspend fun getAlarms(): ArrayList<Alarm> {
         return AlarmsIO.request()
     }
@@ -389,9 +385,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @param ArrayList<[Alarm]>
      */
-
     override fun setAlarms(alarms: ArrayList<Alarm>) {
-        AlarmsIO.set(alarms)  // Renamed for clarity
+        AlarmsIO.set(alarms) // Renamed for clarity
     }
 
     /**
@@ -432,7 +427,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * Clears all  events (reminders) from the watch. Up to 5 events are supported.
+     * Clears all events (reminders) from the watch. Up to 5 events are supported.
      *
      * @param none
      */
@@ -451,7 +446,6 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * ```
      * @return [Settings]
      */
-
     override suspend fun getSettings(): Settings {
         val settings = getBasicSettings()
         val timeAdjustment = getTimeAdjustment()
@@ -494,7 +488,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @param notification AppNotification object containing all notification details
      * @see AppNotification for notification object structure
-     * @see NotificationType for supported notification types */
+     * @see NotificationType for supported notification types
+     * ```
+     */
     override fun sendAppNotification(notification: AppNotification) {
         val encodedBuffer = AppNotificationIO.encodeNotificationPacket(notification)
         val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
@@ -502,7 +498,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     override fun supportsAppNotifications(): Boolean =
-        Connection.isServiceSupported(GetSetMode.NOTIFY)
+            Connection.isServiceSupported(GetSetMode.NOTIFY)
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:
@@ -536,15 +532,14 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         Connection.disconnect()
     }
 
-    /**
-     * Terminate the connection and release resources.
-     */
+    /** Terminate the connection and release resources. */
     override fun close() {
         Connection.close()
     }
 
     /**
-     * Tells us if Bluetooth is currently enabled on the phone. If not, the app can take action to enable it.
+     * Tells us if Bluetooth is currently enabled on the phone. If not, the app can take action to
+     * enable it.
      *
      * @return *true* if enables, *false* otherwise.
      */
@@ -562,9 +557,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         MessageDispatcher.sendToWatch(message)
     }
 
-    /**
-     * Resets the hand position of the watch.
-     */
+    /** Resets the hand position of the watch. */
     override fun resetHand() {
         sendMessage("{action: \"RESET_HAND\", value: \"\"}")
     }
@@ -629,14 +622,14 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     }
 
     /**
-     * Start observing device presence for a specific device.
-     * This allows the app to be notified when the device appears or disappears.
+     * Start observing device presence for a specific device. This allows the app to be notified
+     * when the device appears or disappears.
      *
      * @param context [Context]
      * @param address The Bluetooth address of the device to observe.
      */
     override fun startObservingDevicePresence(context: Context, address: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (AndroidVersion.isSOrAbove) {
             GShockPairingManager.startObservingDevicePresence(context, address)
         }
     }
@@ -648,7 +641,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param address The Bluetooth address of the device to stop observing.
      */
     override fun stopObservingDevicePresence(context: Context, address: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (AndroidVersion.isSOrAbove) {
             GShockPairingManager.stopObservingDevicePresence(context, address)
         }
     }
