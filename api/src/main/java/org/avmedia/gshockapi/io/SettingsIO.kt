@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
@@ -16,9 +17,7 @@ import kotlin.experimental.inv
 import kotlin.experimental.or
 
 object SettingsIO {
-    private data class State(
-        val deferredResult: CompletableDeferred<Settings>? = null
-    )
+    private data class State(val deferredResult: CompletableDeferred<Settings>? = null)
 
     private var state = State()
 
@@ -29,11 +28,16 @@ object SettingsIO {
     private const val POWER_SAVING_MODE = 0b00010000
     private const val DO_NOT_DISTURB_OFF = 0b01000000
 
+    private const val LIGHT_DURATION_LONG = 0b00000001
+    private const val RESET_VALUE = 0
+    private const val FONT_CLASSIC_MASK = 0x20
+
+
     // Button tone and vibration settings (DW-H5600 specific)
-    private const val SOUND_AND_VIBRATION = 0b1100  // Both sound and vibration (0xC)
-    private const val VIBRATION_ONLY = 0b1000       // Vibration only (0x8)
-    private const val SOUND_ONLY = 0b0100           // Sound only (0x4)
-    private const val SILENT = 0b0000               // silent (0x0)
+    private const val SOUND_AND_VIBRATION = 0b1100 // Both sound and vibration (0xC)
+    private const val VIBRATION_ONLY = 0b1000 // Vibration only (0x8)
+    private const val SOUND_ONLY = 0b0100 // Sound only (0x4)
+    private const val SILENT = 0b0000 // silent (0x0)
 
     private const val CHIME = 0b00100000
 
@@ -50,9 +54,7 @@ object SettingsIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun set(settings: Settings) {
-        settings.let {
-            Gson().toJson(it)
-        }.let { settingJson ->
+        settings.let { Gson().toJson(it) }.let { settingJson ->
             CachedIO.set("GET_SETTINGS") {
                 Connection.sendMessage("{action: \"SET_SETTINGS\", value: $settingJson}")
             }
@@ -70,58 +72,64 @@ object SettingsIO {
     }
 
     /*
-Time Format:
-24 h:   13 05 00 00 00 00 00 00 00 00 00 00
-12 h:   13 04 00 00 00 00 00 00 00 00 00 00
+    Time Format:
+    24 h:   13 05 00 00 00 00 00 00 00 00 00 00
+    12 h:   13 04 00 00 00 00 00 00 00 00 00 00
 
-Date format:
-mm:dd   13 04 00 00 00 00 00 00 00 00 00 00
-dd:mm   13 04 00 00 01 00 00 00 00 00 00 00
+    Date format:
+    mm:dd   13 04 00 00 00 00 00 00 00 00 00 00
+    dd:mm   13 04 00 00 01 00 00 00 00 00 00 00
 
-Languages:
-english:13 04 00 00 00 00 00 00 00 00 00 00
-spanish:13 04 00 00 00 01 00 00 00 00 00 00
-fr:     13 04 00 00 00 02 00 00 00 00 00 00
-german: 13 04 00 00 00 03 00 00 00 00 00 00
-italian:13 04 00 00 00 04 00 00 00 00 00 00
-russian:13 04 00 00 00 05 00 00 00 00 00 00
+    Languages:
+    english:13 04 00 00 00 00 00 00 00 00 00 00
+    spanish:13 04 00 00 00 01 00 00 00 00 00 00
+    fr:     13 04 00 00 00 02 00 00 00 00 00 00
+    german: 13 04 00 00 00 03 00 00 00 00 00 00
+    italian:13 04 00 00 00 04 00 00 00 00 00 00
+    russian:13 04 00 00 00 05 00 00 00 00 00 00
 
-Button Tone:
-on:     13 04 00 00 00 00 00 00 00 00 00 00
-off:    13 06 00 00 00 00 00 00 00 00 00 00
+    Button Tone:
+    on:     13 04 00 00 00 00 00 00 00 00 00 00
+    off:    13 06 00 00 00 00 00 00 00 00 00 00
 
-For DW-H5600
-        13 00 00 00 00 00 00 00 00 00 00 00 04 00 00 06 00  // sound    0b0100
-        13 00 00 00 00 00 00 00 00 00 00 00 08 00 00 06 00  // vibrate  0b1000
-        13 00 00 00 00 00 00 00 00 00 00 00 0c 00 00 06 00  // both     0b1100
-        13 04 00 00 00 00 00 00 00 00 00 00 00 00 00 06 2d  // silent   0b0000
+    For GMW-BZ5000
+    standard font:          13 05 01 00 01 00 00 00 00 00 00 00
+    classic font:           13 05 00 00 01 00 00 00 20 00 00 00
+    light duration 1.5s:    13 05 00 00 01 00 00 00 20 00 00 00
+    light duration 3s:      13 05 01 00 01 00 00 00 20 00 00 00
 
-Auto Light: ?????
-on:     13 00 00 00 00 00 00 00 00 00 00 00
-off:    13 04 00 00 00 00 00 00 00 00 00 00
+    For DW-H5600
+            13 00 00 00 00 00 00 00 00 00 00 00 04 00 00 06 00  // sound    0b0100
+            13 00 00 00 00 00 00 00 00 00 00 00 08 00 00 06 00  // vibrate  0b1000
+            13 00 00 00 00 00 00 00 00 00 00 00 0c 00 00 06 00  // both     0b1100
+            13 04 00 00 00 00 00 00 00 00 00 00 00 00 00 06 2d  // silent   0b0000
 
-Light Duration:
-2s      13 04 00 00 00 00 00 00 00 00 00 00
-4s      13 04 01 00 00 00 00 00 00 00 00 00
+    Auto Light: ?????
+    on:     13 00 00 00 00 00 00 00 00 00 00 00
+    off:    13 04 00 00 00 00 00 00 00 00 00 00
 
-Power Saving:
-on      13 04 00 00 00 00 00 00 00 00 00 00
-off     13 14 00 00 00 00 00 00 00 00 00 00
+    Light Duration:
+    2s      13 04 00 00 00 00 00 00 00 00 00 00
+    4s      13 04 01 00 00 00 00 00 00 00 00 00
 
-Combination:
-auto light: on
-Power Saving: off
-        13 02 00 00 00 00 00 00 00 00 00 00
+    Power Saving:
+    on      13 04 00 00 00 00 00 00 00 00 00 00
+    off     13 14 00 00 00 00 00 00 00 00 00 00
 
-24 hours:
-        13 03 00 00 00 00 00 00 00 00 00 00
+    Combination:
+    auto light: on
+    Power Saving: off
+            13 02 00 00 00 00 00 00 00 00 00 00
 
-Byte 2 as binary:
-24 hours:       00000001
-button tone     00000010
-light off:      00000100
-pwr. saving off:00010000
- */
+    24 hours:
+            13 03 00 00 00 00 00 00 00 00 00 00
+
+    Byte 2 as binary:
+    24 hours:       00000001
+    button tone     00000010
+    light off:      00000100
+    pwr. saving off:00010000
+     */
     private fun decodeToJson(casioArray: String): JSONObject {
         return createJsonSettings(casioArray)
     }
@@ -178,10 +186,23 @@ pwr. saving off:00010000
         if (settingArray[5] == 5) {
             settings.language = "Russian"
         }
-        if (settingArray[2] == 1) {
+
+        val flags = settingArray[2]
+
+        // Check Bit 0 for Light Duration
+        // Using bitwise AND to isolate the specific flag
+        if ((flags and LIGHT_DURATION_LONG) != 0) {
             settings.lightDuration = "4s"
         } else {
             settings.lightDuration = "2s"
+        }
+
+        if (WatchInfo.hasMultipleFonts) {
+            if (settingArray[8] and FONT_CLASSIC_MASK != 0) {
+                settings.font = "Classic"
+            } else {
+                settings.font = "Standard"
+            }
         }
 
         return JSONObject(Gson().toJson(settings))
@@ -191,7 +212,9 @@ pwr. saving off:00010000
     fun sendToWatch(message: String) {
         IO.writeCmd(
             GetSetMode.GET,
-            Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte())
+            Utils.byteArray(
+                CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
+            )
         )
     }
 
@@ -229,9 +252,28 @@ pwr. saving off:00010000
             if (settings.get("DnD") == false) {
                 arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
             }
-            if (settings.get("lightDuration") == "4s") {
-                arr[2] = 1
-            }
+
+            { // Build the bitmask for light duration and font
+                var flags = RESET_VALUE
+                // Set Bit 0 if duration is long
+                if (settings["lightDuration"] == "4s") {
+                    flags = flags or LIGHT_DURATION_LONG
+                }
+
+                // Assign the final bitmask back to the array
+                arr[2] = flags.toByte()
+            }();
+
+            {
+                var flags = RESET_VALUE
+                if (WatchInfo.hasMultipleFonts) {
+                    if (settings["font"] == "Classic") {
+                        flags = flags or FONT_CLASSIC_MASK
+                    }
+                }
+                arr[8] = flags.toByte()
+            }()
+
             if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
 
             when (settings.get("language")) {
@@ -247,8 +289,8 @@ pwr. saving off:00010000
         }
 
         private fun setDnDFlag(flag: Byte, value: Boolean): Byte {
-            return if (value) flag or DO_NOT_DISTURB_OFF.toByte() else flag and DO_NOT_DISTURB_OFF.toByte()
-                .inv()
+            return if (value) flag or DO_NOT_DISTURB_OFF.toByte()
+            else flag and DO_NOT_DISTURB_OFF.toByte().inv()
         }
     }
 }
