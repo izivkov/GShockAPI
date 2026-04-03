@@ -182,7 +182,7 @@ private class GShockManagerImpl(
         override fun onDeviceReady(device: BluetoothDevice) {
             Timber.i("$device DeviceReady!!!!!!")
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && device.bondState != BluetoothDevice.BOND_BONDED) {
                 device.createBond()
             }
 

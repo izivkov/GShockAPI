@@ -42,6 +42,8 @@ dependencies {
 
 The [Casio GShock Smart Sync](https://github.com/izivkov/CasioGShockSmartSync) app integrates G-Shock B5000/B5600/B2100 watches with Google services such as `Google Calendar` events. `Google Alarm Clock`, etc.
 
+[WristVault]((https://github.com/remigius-labs/WristVault)) turns your Casio G-Shock into encrypted micro-storage for passwords & keys up to 39 characters.
+
 If you like us to list your project which uses this library, [contact us](mailto:izivkov@gmail.com) and we will include a link.
 
 ## Related Project
