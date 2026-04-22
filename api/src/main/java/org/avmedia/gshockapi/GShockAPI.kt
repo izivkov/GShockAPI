@@ -117,7 +117,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         filter: (DeviceInfo) -> Boolean,
         onDeviceFound: (DeviceInfo) -> Unit
     ) {
-        Connection.scan(context, filter, onDeviceFound)
+        // No longer needed since the connection is initiated from the watch, but we keep it here for backward compatibility and for users who want to implement their own connection logic.
     }
 
     /**

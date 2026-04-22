@@ -101,14 +101,6 @@ object Connection {
         }
     }
 
-    fun scan(
-        context: Context,
-        filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
-    ) {
-        GShockScanner.scan(context, filter, onDeviceFound)
-    }
-
     private suspend fun connectToAddress(address: String) {
         getDefaultAdapter()
             ?.getRemoteDevice(address)
@@ -120,10 +112,6 @@ object Connection {
         val bluetoothManager =
             context.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
         return bluetoothManager.adapter.isEnabled
-    }
-
-    fun stopBleScan() {
-        GShockScanner.cancelFlow()
     }
 
     fun breakWait() {

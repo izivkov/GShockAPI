@@ -2,99 +2,133 @@ package org.avmedia.gshockapi.ble
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.ParcelUuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanFilter
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerMatchMode
 import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerSettings
-import no.nordicsemi.android.kotlin.ble.core.scanner.FilteredServiceUuid
-import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import org.avmedia.gshockapi.DeviceInfo
-import org.avmedia.gshockapi.ProgressEvents
+import timber.log.Timber
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
+import android.bluetooth.BluetoothManager
 
 object GShockScanner {
-    @SuppressLint("MissingPermission")
-    val CASIO_SERVICE_UUID = "00001804-0000-1000-8000-00805f9b34fb"
 
-    private lateinit var scannerFlow: Job
+    private val scanSettings = BleScannerSettings(
+        matchMode = BleScannerMatchMode.MATCH_MODE_STICKY,
+        scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
+        reportDelay = 0
+    )
 
+    private var loopJob: Job? = null
+    private val loopScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /**
+     * Start a repeating scan loop:
+     *   - scan for [SCAN_DURATION_MS] ms
+     *   - pause for [SCAN_INTERVAL_MS] ms, then repeat
+     *   - if BT is off, wait [BLUETOOTH_RETRY_DELAY_MS] ms and retry
+     *   - each address fires [onDeviceFound] at most once per scan window
+     *
+     * Safe to call multiple times — ignores the call if already running.
+     */
     @SuppressLint("MissingPermission")
-    fun scan(
+    fun startScan(
         context: Context,
+        isBluetoothOn: () -> Boolean,
         filter: (DeviceInfo) -> Boolean,
         onDeviceFound: (DeviceInfo) -> Unit
     ) {
-        val gShockFilters = listOf(
-            BleScanFilter(
-                serviceUuid = FilteredServiceUuid(
-                    ParcelUuid.fromString(CASIO_SERVICE_UUID)
-                )
-            )
+        if (loopJob?.isActive == true) {
+            Timber.d("GShockScanner: already running, ignoring startScan()")
+            return
+        }
+
+        val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        val bleScanner = bluetoothAdapter.bluetoothLeScanner
+
+        val scanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
+        val scanFilters = listOf(
+            ScanFilter.Builder()
+                .setDeviceName(null)
+                .build()
         )
 
-        val settings = BleScannerSettings(
-            matchMode = BleScannerMatchMode.MATCH_MODE_STICKY,
-            scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
-            reportDelay = 0 // Immediate reporting to avoid "could not find callback wrapper"
-        )
+        loopJob = loopScope.launch {
+            Timber.i("GShockScanner: scan loop started")
 
-        // Main.immediate ensures we don't wait for the next event loop to process hits
-        val scope = CoroutineScope(Dispatchers.Main.immediate)
-        val seenAddresses = mutableSetOf<String>()
-        var hasFoundDevice = false // Logical guard to prevent double-triggering in one session
+            while (isActive) {
+                if (!isBluetoothOn()) {
+                    Timber.w("GShockScanner: Bluetooth not enabled, waiting...")
+                    delay(BLUETOOTH_RETRY_DELAY_MS)
+                    continue
+                }
 
-        cancelFlow()
+                var lastFoundAddress: String? = null
 
-        scannerFlow = scope.launch {
-            try {
-                BleScanner(context).scan(filters = gShockFilters, settings = settings)
-                    .onStart {
-                        ProgressEvents.onNext("BLE Scanning Started")
-                    }
-                    .onEach { scanResult ->
+                val scanCallback = object : ScanCallback() {
+                    override fun onScanResult(callbackType: Int, result: ScanResult) {
+                        val address = result.device.address ?: return
+                        val name = result.device.name ?: return
 
-                        val device = scanResult.device
-                        val address = device.address
+                        if (address == lastFoundAddress) return
+                        lastFoundAddress = address
 
-                        // Only process if we haven't found a device in this specific scan session
-                        if (!hasFoundDevice && address !in seenAddresses) {
-                            val name = device.name ?: return@onEach
-                            val info = DeviceInfo(name, address)
-
-                            if (filter(info)) {
-                                hasFoundDevice = true // Block further hits immediately
-                                seenAddresses += address
-
-                                // Order matters: execute callback before cancelling the flow
-                                onDeviceFound(info)
-                                cancelFlow()
-                            }
+                        val info = DeviceInfo(name, address)
+                        if (filter(info)) {
+                            Timber.i("GShockScanner: matched $address ($name)")
+                            onDeviceFound(info)
                         }
                     }
-                    .catch { e ->
-                        ProgressEvents.onNext("ApiError", "BLE Scanning Error $e")
+
+                    override fun onScanFailed(errorCode: Int) {
+                        Timber.e("GShockScanner: scan failed with error $errorCode")
                     }
-                    .collect()
-            } catch (e: Exception) {
-                ProgressEvents.onNext(
-                    "ApiError",
-                    "Failed to start BLE Scanner: ${e.message}"
-                )
+                }
+
+                Timber.d("GShockScanner: scan window opening")
+                try {
+                    bleScanner?.startScan(scanFilters, scanSettings, scanCallback)
+                } catch (e: SecurityException) {
+                    Timber.e(e, "GShockScanner: missing BLE scan permission")
+                }
+
+                delay(SCAN_DURATION_MS)
+
+                try {
+                    bleScanner?.stopScan(scanCallback)
+                } catch (e: SecurityException) {
+                    Timber.e(e, "GShockScanner: missing BLE scan permission")
+                }
+                Timber.d("GShockScanner: scan window closed, pausing ${SCAN_INTERVAL_MS}ms")
+
+                delay(SCAN_INTERVAL_MS)
             }
+
+            Timber.i("GShockScanner: scan loop ended")
         }
     }
 
-    fun cancelFlow() {
-        if (::scannerFlow.isInitialized && scannerFlow.isActive) {
-            scannerFlow.cancel()
-        }
+    /** Stop all scanning immediately. Safe to call multiple times. */
+    fun stopScan() {
+        loopJob?.cancel()
+        loopJob = null
+        Timber.i("GShockScanner: stopped")
     }
+
+    // ── timing constants — single source of truth ─────────────────────────────
+    private const val SCAN_DURATION_MS         = 5_000L
+    private const val SCAN_INTERVAL_MS         = 3_000L
+    private const val BLUETOOTH_RETRY_DELAY_MS = 10_000L
 }
