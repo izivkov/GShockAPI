@@ -27,15 +27,21 @@ object WaitForConnectionIO {
         context: Context,
         deviceId: String?,
     ): String {
-        if (Connection.isConnected() || Connection.isConnecting()) {
-            return "Connecting"
+        if (Connection.isConnected()) {
+            return "OK"
         }
 
+        //state.deferredResult?.cancel()
         state = state.copy(deferredResult = CompletableDeferred())
-        WatchDataListener.init()
-        Connection.startConnection(context, deviceId)
 
-        setupConnectionListener()
+        setupConnectionListener()  // MUST be before startConnection to avoid race
+
+        if (!Connection.isConnecting()) {
+            WatchDataListener.init()
+            Connection.startConnection(context, deviceId)
+        }
+        // If already connecting, just fall through and wait for the event
+
         return state.deferredResult?.await() ?: ""
     }
 

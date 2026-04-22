@@ -25,7 +25,6 @@ object GShockScanner {
     val CASIO_SERVICE_UUID = "00001804-0000-1000-8000-00805f9b34fb"
 
     private lateinit var scannerFlow: Job
-    private var scannedName = ""
 
     @SuppressLint("MissingPermission")
     fun scan(
@@ -42,12 +41,15 @@ object GShockScanner {
         )
 
         val settings = BleScannerSettings(
-            matchMode = BleScannerMatchMode.MATCH_MODE_AGGRESSIVE,
+            matchMode = BleScannerMatchMode.MATCH_MODE_STICKY,
             scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
+            reportDelay = 0 // Immediate reporting to avoid "could not find callback wrapper"
         )
 
-        val scope = CoroutineScope(Dispatchers.IO)
+        // Main.immediate ensures we don't wait for the next event loop to process hits
+        val scope = CoroutineScope(Dispatchers.Main.immediate)
         val seenAddresses = mutableSetOf<String>()
+        var hasFoundDevice = false // Logical guard to prevent double-triggering in one session
 
         cancelFlow()
 
@@ -58,18 +60,22 @@ object GShockScanner {
                         ProgressEvents.onNext("BLE Scanning Started")
                     }
                     .onEach { scanResult ->
+
                         val device = scanResult.device
                         val address = device.address
 
-                        if (address !in seenAddresses) {
-                            seenAddresses += address
-
+                        // Only process if we haven't found a device in this specific scan session
+                        if (!hasFoundDevice && address !in seenAddresses) {
                             val name = device.name ?: return@onEach
                             val info = DeviceInfo(name, address)
 
                             if (filter(info)) {
-                                cancelFlow()
+                                hasFoundDevice = true // Block further hits immediately
+                                seenAddresses += address
+
+                                // Order matters: execute callback before cancelling the flow
                                 onDeviceFound(info)
+                                cancelFlow()
                             }
                         }
                     }
@@ -87,7 +93,7 @@ object GShockScanner {
     }
 
     fun cancelFlow() {
-        if (::scannerFlow.isInitialized) {
+        if (::scannerFlow.isInitialized && scannerFlow.isActive) {
             scannerFlow.cancel()
         }
     }

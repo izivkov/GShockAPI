@@ -21,6 +21,7 @@ import timber.log.Timber
 object Connection {
     private lateinit var bleManager: IGShockManager
     private val scope = CoroutineScope(Dispatchers.IO)
+    fun isInitialized(): Boolean = ::bleManager.isInitialized
 
     fun init(context: Context) {
 
