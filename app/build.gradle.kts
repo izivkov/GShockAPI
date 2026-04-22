@@ -20,6 +20,12 @@ android {
         }
     }
 
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,22 +35,26 @@ android {
             )
         }
         debug {
-            isMinifyEnabled = false  // Ensure you are not using isMinifyEnabled
+            isMinifyEnabled = false
         }
     }
+
+    // FIX: Set Java to VERSION_17 to match Kotlin
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+
     buildFeatures {
         compose = true
     }
+
+    // Note: composeOptions is often unnecessary with the new Compose Compiler plugin,
+    // but keeping it here for safety if your libs.plugins.compose.compiler requires it.
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -53,12 +63,8 @@ android {
 }
 
 dependencies {
-
-    // implementation(libs.gshockapi)
     implementation(project(":api"))
-
-    implementation (libs.androidx.lifecycle.viewmodel.compose)
-
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

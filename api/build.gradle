@@ -40,7 +40,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Nordicsemi ble
-    implementation(libs.scanner)
     implementation(libs.client)
     implementation(libs.ble)
 
