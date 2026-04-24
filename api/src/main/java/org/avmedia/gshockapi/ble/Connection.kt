@@ -121,6 +121,27 @@ object Connection {
             Timber.e("Connection not initialized. Call Connection.init() before calling this function. ${error.message}")
         }
     }
+
+    fun scan(
+        context: Context,
+        isBluetoothOn: () -> Boolean,
+        filter: (DeviceInfo) -> Boolean,
+        onDeviceFound: (DeviceInfo) -> Unit
+    ) {
+        GShockScanner.startScan(context, isBluetoothOn, filter, onDeviceFound)
+    }
+
+    fun stopScan() {
+        GShockScanner.stopScan()
+    }
+
+    fun startFallbackScan(
+        context: Context,
+        addresses: List<String>,
+        pendingIntent: android.app.PendingIntent
+    ) {
+        GShockScanner.startFallbackScan(context, addresses, pendingIntent)
+    }
 }
 
 sealed class ConnectionResult {

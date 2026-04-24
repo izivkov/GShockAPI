@@ -20,7 +20,7 @@ enum class ConnectionState {
     CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING
 }
 
-typealias onConnectedType = (String, String) -> Unit
+typealias OnConnectedType = (String, String) -> Unit
 
 enum class GetSetMode {
     GET,
@@ -28,7 +28,7 @@ enum class GetSetMode {
     NOTIFY
 }
 
-interface GSHock {
+interface GShock {
     suspend fun connect(device: BluetoothDevice, onConnected: (String, String) -> Unit)
     fun release()
     fun close()
@@ -41,11 +41,11 @@ interface GSHock {
 
 class IGShockManager(
     context: Context,
-) : GSHock by GShockManagerImpl(context)
+) : GShock by GShockManagerImpl(context)
 
 private class GShockManagerImpl(
     context: Context,
-) : BleManager(context), GSHock {
+) : BleManager(context), GShock {
 
     private var readCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolder: BluetoothGattCharacteristic? = null
@@ -54,7 +54,7 @@ private class GShockManagerImpl(
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
     override var connectionState = ConnectionState.DISCONNECTED
-    private lateinit var onConnected: onConnectedType
+    private lateinit var onConnected: OnConnectedType
 
     init {
         connectionObserver = ConnectionEventHandler()
@@ -104,7 +104,7 @@ private class GShockManagerImpl(
     @SuppressLint("MissingPermission")
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    override suspend fun connect(device: BluetoothDevice, onConnected: onConnectedType) {
+    override suspend fun connect(device: BluetoothDevice, onConnected: OnConnectedType) {
         this.onConnected = onConnected
 
         connect(device)
@@ -220,6 +220,7 @@ private class GShockManagerImpl(
                 ConnectionObserver.REASON_CANCELLED,
                 ConnectionObserver.REASON_SUCCESS,
                 ConnectionObserver.REASON_TIMEOUT,
+                ConnectionObserver.REASON_LINK_LOSS,
                 ConnectionObserver.REASON_UNKNOWN -> {
                     Timber.d("Standard disconnection: $reason")
                 }

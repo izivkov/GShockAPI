@@ -1,24 +1,34 @@
 # Module casio-g-shock-smart-sync-app
 
 # Package org.avmedia.gshockapi
-Casio G-Shock B5000/B5600/B2100 API
+Casio G-Shock B5000/B5600/B2100/GA-B2100 API
 
 ## Description
-This library provides an API to communicate and issue commands to the Casio G-Shock B5000, B5600 and B2100
-series of watches via the Bluetooth interface. It can perform the following tasks:
+This library provides a comprehensive API to communicate and issue commands to the Casio G-Shock series of watches via Bluetooth. It is designed to work with various models, including B5000, B5600, B2100, GA-B2100, and more.
 
+### Key Features:
+- **Time Synchronization**: Set the watch's time and timezone based on the phone's current state.
+- **Connection Discovery**: Support for both manual BLE scanning and background device discovery (Companion Device Manager fallback).
+- **Watch Features**:
+    - Manage up to 5 **Alarms**.
+    - Configure up to 5 **Reminders/Events**.
+    - Control **Settings** (Date format, Language, Button tones, etc.).
+    - Access **World Cities** and DST configurations.
+- **Sensor Data**: Read **Battery Level** and **Temperature** from the watch.
+- **Notifications**: Send rich notifications to the watch display (supported models).
 
-- Set watch's time
-- Set Home Time (Home City)
-- Set Alarms
-- Set Reminders
-- Set watch's settings.
-- Get watch's name
-- Get watch's battery level
-- Set watch's Timer
+### Quick Start
+All the core API functions are located in the **[GShockAPI]** class. 
 
+```kotlin
+val api = GShockAPI(context)
 
-*All the API functions are located in the **[GShockAPI]** class.*
+// Wait for a connection
+api.waitForConnection()
 
-For a quick start, you can take a look at the `/app` directory of this project for an example app.
+// Perform actions
+val battery = api.getBatteryLevel()
+api.setTime()
+```
 
+For detailed implementation examples, see the `/app` directory of this project.

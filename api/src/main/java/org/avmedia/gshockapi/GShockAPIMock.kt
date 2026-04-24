@@ -348,4 +348,14 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     ) {
     }
 
+    override fun stopScan() {
+    }
+
+    override fun startFallbackScan(
+        context: Context,
+        addresses: List<String>,
+        pendingIntent: android.app.PendingIntent
+    ) {
+    }
+
 }

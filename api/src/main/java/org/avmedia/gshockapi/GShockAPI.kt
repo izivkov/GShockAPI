@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
@@ -117,8 +118,36 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         filter: (DeviceInfo) -> Boolean,
         onDeviceFound: (DeviceInfo) -> Unit
     ) {
-        // No longer needed since the connection is initiated from the watch, but we keep it here for backward compatibility and for users who want to implement their own connection logic.
+        Connection.scan(
+            context,
+            { isBluetoothEnabled(context) },
+            filter,
+            onDeviceFound
+        )
     }
+
+    /**
+     * Stops an active foreground scan.
+     */
+    override fun stopScan() {
+        Connection.stopScan()
+    }
+
+    /**
+     * Starts a fallback scan using PendingIntent for background discovery of specific addresses.
+     *
+     * @param context Android context.
+     * @param addresses List of MAC addresses to scan for.
+     * @param pendingIntent Intent to trigger when a matching device is found.
+     */
+    override fun startFallbackScan(
+        context: Context,
+        addresses: List<String>,
+        pendingIntent: android.app.PendingIntent
+    ) {
+        Connection.startFallbackScan(context, addresses, pendingIntent)
+    }
+
 
     /**
      * Returns a Boolean value indicating if the watch is currently commenced to the phone
@@ -242,6 +271,11 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return WatchNameIO.request()
     }
 
+    /**
+     * Retrieves the last error reported by the watch or the BLE layer.
+     *
+     * @return Error message string.
+     */
     override suspend fun getError(): String {
         return ErrorIO.request()
     }
@@ -335,15 +369,33 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return AppInfoIO.request()
     }
 
+    /**
+     * Writes data to the watch's scratchpad/user data area.
+     *
+     * @param data The byte array to write.
+     * @param startIndex The starting index in the scratchpad.
+     */
     override suspend fun setScratchpadData(data: ByteArray, startIndex: Int) {
         AppInfoIO.setUserData(data, startIndex)
     }
 
+    /**
+     * Reads data from the watch's scratchpad/user data area.
+     *
+     * @param index The starting index to read from.
+     * @param length The number of bytes to read.
+     * @return The retrieved byte array.
+     */
     override suspend fun getScratchpadData(index: Int, length: Int): ByteArray {
         AppInfoIO.request()
         return AppInfoIO.getUserData(index, length)
     }
 
+    /**
+     * Checks if the scratchpad data was reset since the last read.
+     *
+     * @return true if scratchpad was reset.
+     */
     override fun isScratchpadReset(): Boolean {
         return AppInfoIO.wasScratchpadReset
     }
@@ -460,10 +512,20 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return settings
     }
 
+    /**
+     * Retrieves the basic settings (date format, language, button tones, etc.) from the watch.
+     *
+     * @return A [Settings] object containing basic configuration.
+     */
     override suspend fun getBasicSettings(): Settings {
         return SettingsIO.request()
     }
 
+    /**
+     * Retrieves time adjustment (Auto-Time) configuration from the watch.
+     *
+     * @return A [TimeAdjustmentInfo] object.
+     */
     override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
         return TimeAdjustmentIO.request()
     }
@@ -501,6 +563,11 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
     }
 
+    /**
+     * Checks if the connected watch supports receiving app notifications.
+     *
+     * @return true if the notification service is supported.
+     */
     override fun supportsAppNotifications(): Boolean =
         Connection.isServiceSupported(GetSetMode.NOTIFY)
 
@@ -635,10 +702,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param context [Context]
      * @param address The Bluetooth address of the device to observe.
      */
+    @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun startObservingDevicePresence(context: Context, address: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            GShockPairingManager.startObservingDevicePresence(context, address)
-        }
+        GShockPairingManager.startObservingDevicePresence(context, address)
     }
 
     /**
@@ -647,9 +714,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param context [Context]
      * @param address The Bluetooth address of the device to stop observing.
      */
+    @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun stopObservingDevicePresence(context: Context, address: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            GShockPairingManager.stopObservingDevicePresence(context, address)
-        }
+        GShockPairingManager.stopObservingDevicePresence(context, address)
     }
 }

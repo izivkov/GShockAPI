@@ -55,11 +55,20 @@ import timber.log.Timber
  *
  */
 
+/**
+ * Interface representing an action associated with a specific progress event.
+ */
 interface IEventAction {
     val label: String
     val action: () -> Unit
 }
 
+/**
+ * Concrete implementation of [IEventAction].
+ *
+ * @property label The name of the event this action responds to.
+ * @property action The lambda function to execute when the event occurs.
+ */
 data class EventAction(
     override val label: String,
     override val action: () -> Unit
@@ -95,6 +104,12 @@ object ProgressEvents {
     val subscriber = Subscriber()
     private val eventsFlow = MutableSharedFlow<Events>(replay = 10)
 
+    /**
+     * Convenience method to run actions for specific events.
+     *
+     * @param name Unique name for this subscription.
+     * @param eventActions Array of [EventAction] mappings.
+     */
     fun runEventActions(name: String, eventActions: Array<EventAction>) {
         subscriber.runEventActions(name, eventActions)
     }
@@ -115,7 +130,6 @@ object ProgressEvents {
 
             CoroutineScope(Dispatchers.Main).launch {
                 eventsFlow
-                    .filter { true }
                     .catch { throwable ->
                         Timber.d("Error on subscribe: $throwable")
                         throwable.printStackTrace()
@@ -176,6 +190,12 @@ object ProgressEvents {
         }
     }
 
+    /**
+     * Retrieves an event object by its name.
+     *
+     * @param eventName Name of the event.
+     * @return The [Events] object, or null if not found.
+     */
     operator fun get(eventName: String): Events? = state.eventMap[eventName]
 
     private fun addEvent(eventName: String) {
@@ -188,8 +208,20 @@ object ProgressEvents {
         )
     }
 
+    /**
+     * Retrieves the payload for a specific event.
+     *
+     * @param eventName Name of the event.
+     * @return The payload object, or null.
+     */
     fun getPayload(eventName: String): Any? = state.eventMap[eventName]?.payload
 
+    /**
+     * Sets a payload for a specific event without broadcasting it.
+     *
+     * @param eventName Name of the event.
+     * @param payload The payload data.
+     */
     fun addPayload(eventName: String, payload: Any?) {
         state.eventMap[eventName]?.payload = payload
     }

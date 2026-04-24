@@ -1,7 +1,13 @@
 package org.avmedia.gshockapi.ble
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -9,24 +15,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.kotlin.ble.core.scanner.BleScanMode
-import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerMatchMode
-import no.nordicsemi.android.kotlin.ble.core.scanner.BleScannerSettings
 import org.avmedia.gshockapi.DeviceInfo
+import org.avmedia.gshockapi.ble.GShockScanner.BLUETOOTH_RETRY_DELAY_MS
+import org.avmedia.gshockapi.ble.GShockScanner.SCAN_DURATION_MS
+import org.avmedia.gshockapi.ble.GShockScanner.SCAN_INTERVAL_MS
 import timber.log.Timber
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
-import android.bluetooth.BluetoothManager
 
 object GShockScanner {
-
-    private val scanSettings = BleScannerSettings(
-        matchMode = BleScannerMatchMode.MATCH_MODE_STICKY,
-        scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
-        reportDelay = 0
-    )
 
     private var loopJob: Job? = null
     private val loopScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -52,7 +47,8 @@ object GShockScanner {
             return
         }
 
-        val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        val bluetoothAdapter =
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
         val bleScanner = bluetoothAdapter.bluetoothLeScanner
 
         val scanSettings = ScanSettings.Builder()
@@ -120,6 +116,51 @@ object GShockScanner {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    fun startFallbackScan(
+        context: Context,
+        addresses: List<String>,
+        pendingIntent: android.app.PendingIntent
+    ) {
+        val bluetoothManager =
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val scanner = bluetoothManager.adapter?.bluetoothLeScanner ?: return
+
+        // Stop any previously active scan (handles both current session and previous app runs)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                scanner.stopScan(pendingIntent)
+                Timber.i("GShockScanner: Stopped previous fallback scan")
+            }
+        } catch (e: Exception) {
+            // This is expected if no scan was running
+        }
+
+        if (addresses.isEmpty()) {
+            return
+        }
+
+        val filters = addresses.map { address ->
+            ScanFilter.Builder()
+                .setDeviceAddress(address.uppercase())
+                .build()
+        }
+
+        val settings =
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .build()
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                scanner.startScan(filters, settings, pendingIntent)
+                Timber.i("GShockScanner: Started fallback PendingIntent scan for ${addresses.size} device(s): $addresses")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "GShockScanner: Failed to start fallback scan")
+        }
+    }
+
     /** Stop all scanning immediately. Safe to call multiple times. */
     fun stopScan() {
         loopJob?.cancel()
@@ -128,7 +169,7 @@ object GShockScanner {
     }
 
     // ── timing constants — single source of truth ─────────────────────────────
-    private const val SCAN_DURATION_MS         = 5_000L
-    private const val SCAN_INTERVAL_MS         = 3_000L
+    private const val SCAN_DURATION_MS = 5_000L
+    private const val SCAN_INTERVAL_MS = 3_000L
     private const val BLUETOOTH_RETRY_DELAY_MS = 10_000L
 }
