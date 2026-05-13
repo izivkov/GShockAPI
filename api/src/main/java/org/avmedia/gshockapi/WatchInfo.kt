@@ -105,7 +105,7 @@ data object WatchInfo {
                 model = WatchModel.DW_B5600,
                 worldCitiesCount = 6,
                 dstCount = 3,
-                hasAutoLight = true,
+                hasAutoLight = false,
                 hasReminders = true,
                 shortLightDuration = "2s",
                 longLightDuration = "4s",
