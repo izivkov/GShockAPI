@@ -102,7 +102,7 @@ data object WatchInfo {
                 hasMultipleFonts = false,
             ),
             ModelInfo(
-                model = WatchModel.DW_H5600,
+                model = WatchModel.DW_B5600,
                 worldCitiesCount = 6,
                 dstCount = 3,
                 hasAutoLight = true,
