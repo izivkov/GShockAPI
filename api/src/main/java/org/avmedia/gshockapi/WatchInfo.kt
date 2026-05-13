@@ -39,6 +39,7 @@ data object WatchInfo {
     enum class WatchModel {
         GA,
         GW,
+        DW_B5600,
         DW,
         GMW,
         GPR,
@@ -90,6 +91,18 @@ data object WatchInfo {
         listOf(
             ModelInfo(
                 model = WatchModel.GW,
+                worldCitiesCount = 6,
+                dstCount = 3,
+                hasAutoLight = true,
+                hasReminders = true,
+                shortLightDuration = "2s",
+                longLightDuration = "4s",
+                batteryLevelLowerLimit = 9,
+                batteryLevelUpperLimit = 19,
+                hasMultipleFonts = false,
+            ),
+            ModelInfo(
+                model = WatchModel.DW_H5600,
                 worldCitiesCount = 6,
                 dstCount = 3,
                 hasAutoLight = true,
@@ -262,6 +275,7 @@ data object WatchInfo {
                 shortName.startsWith("GB") -> WatchModel.GA
                 shortName.startsWith("GW") -> WatchModel.GW
                 shortName.startsWith("DW-H5600") -> WatchModel.DW_H5600
+                shortName.startsWith("DW-B5600") -> WatchModel.DW_B5600
                 shortName.startsWith("DW") -> WatchModel.DW
                 else -> WatchModel.GENERIC
             }
