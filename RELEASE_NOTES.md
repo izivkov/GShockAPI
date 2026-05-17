@@ -4,7 +4,7 @@
 This update focuses on architectural refinement, improved BLE connectivity, and expanded feature support for G-Shock watches. We've significantly improved reliability on both legacy and cutting-edge Android versions.
 
 ## 🚀 New Features
-- **DW-B5600 Reminders Support**: Added support for setting and retrieving reminders for the DW-B5600 watch model.
+- **DW-B5600 Support**: Added support for setting and retrieving reminders for the DW-B5600 watch model, and corrected its configuration (e.g., removing unsupported autolight).
 - **Alarm Names Support**: Added the ability to set and retrieve custom names for watch alarms.
 - **MIP Watch Enhancements**: Introduced support for classic fonts on MIP (Memory In Pixel) display watches.
 - **Watch Scratchpad**: Implemented a new "Scratchpad" memory feature, allowing apps to store persistent state directly on the watch.
