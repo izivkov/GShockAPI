@@ -78,7 +78,7 @@ object MessageDispatcher {
 
         val key = intArray[0]
         if (dataReceivedMessages[key] == null) {
-            Timber.e("GShockAPI", "Unknown key: $key")
+            Timber.e("Unknown key: $key")
         }
         dataReceivedMessages[key]?.invoke(data)
     }
