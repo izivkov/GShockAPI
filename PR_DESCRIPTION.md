@@ -32,7 +32,7 @@ byte. Casio's current-time payload uses Fractions256, so millisecond values abov
 
 ## Evidence
 
-Reverse engineering of the Casio apps showed a legacy New Alert command with class
+Protocol observations from Casio app compatibility flows showed a legacy New Alert command with class
 `0x07`, category/count payload, and an 18-byte text field. Local EQB-501 BLE
 probing confirmed that this watch exposes `26eb002d` but not `26eb0030`.
 
