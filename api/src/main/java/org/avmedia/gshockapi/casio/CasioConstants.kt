@@ -34,6 +34,7 @@ object CasioConstants {
         CASIO_WATCH_NAME(0x23),
         CASIO_APP_INFORMATION(0x22),
         CASIO_BLE_FEATURES(0x10),
+        CASIO_NEW_ALERT(0x07),
         CASIO_SETTING_FOR_BLE(0x11),
         CASIO_WATCH_CONDITION(0x28), // battery %
         CASIO_DST_WATCH_STATE(0x1d),

@@ -229,7 +229,7 @@ object TimeIO {
             arr[5] = date.minute.toByte()
             arr[6] = date.second.toByte()
             arr[7] = date.dayOfWeek.value.toByte()
-            arr[8] = (date.nano / 1000000).toByte()
+            arr[8] = ((date.nano.toLong() * 256) / 1_000_000_000).toByte()
             arr[9] = 1 // or 0?
             return arr
         }

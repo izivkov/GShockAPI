@@ -13,6 +13,7 @@ import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO
 import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.ButtonPressedIO
+import org.avmedia.gshockapi.io.CasioAlertNotificationIO
 import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
@@ -558,9 +559,19 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @see AppNotification for notification object structure
      * @see NotificationType for supported notification types */
     override fun sendAppNotification(notification: AppNotification) {
-        val encodedBuffer = AppNotificationIO.encodeNotificationPacket(notification)
-        val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
-        writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
+        if (Connection.isServiceSupported(GetSetMode.NOTIFY)) {
+            val encodedBuffer = AppNotificationIO.encodeNotificationPacket(notification)
+            val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
+            writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
+            return
+        }
+
+        if (Connection.isServiceSupported(GetSetMode.SET)) {
+            CasioAlertNotificationIO.send(notification)
+            return
+        }
+
+        Timber.e("sendAppNotification: notification feature not supported")
     }
 
     /**
@@ -569,7 +580,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return true if the notification service is supported.
      */
     override fun supportsAppNotifications(): Boolean =
-        Connection.isServiceSupported(GetSetMode.NOTIFY)
+        Connection.isServiceSupported(GetSetMode.NOTIFY) ||
+                Connection.isServiceSupported(GetSetMode.SET)
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:
