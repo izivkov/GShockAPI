@@ -1,7 +1,13 @@
-# GShockAPI Release Notes - v1.4.71
+# GShockAPI Release Notes - v1.4.74
 
 ## Overview
-This update focuses on architectural refinement, improved BLE connectivity, and expanded feature support for G-Shock watches. We've significantly improved reliability on both legacy and cutting-edge Android versions.
+This update introduces significant functional programming improvements to the event handling and IO layers, along with enhanced watch model support and refined BLE connectivity. We continue to improve reliability across Android versions.
+
+## ✨ Functional Programming Refactoring
+- **Event System Redesign**: Refactored `ProgressEvent` and `MessageDispatcher` for cleaner, more composable event handling patterns using Kotlin coroutines and flows.
+- **IO Layer Optimization**: Modernized IO classes (`EventsIO`, `SettingsIO`, `TimeIO`, `TimerIO`, etc.) with improved functional composition and reduced code complexity while maintaining backward compatibility.
+- **Streamlined API**: Simplified event subscription API for more intuitive application integration, reducing boilerplate in host applications.
+- **Code Quality**: Significant reduction in code duplication and improved maintainability across the IO module (2500+ lines refactored for better clarity and functional patterns).
 
 ## 🚀 New Features
 - **DW-B5600 Support**: Added support for setting and retrieving reminders for the DW-B5600 watch model, and corrected its configuration (e.g., removing unsupported autolight).
