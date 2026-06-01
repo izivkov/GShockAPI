@@ -61,6 +61,105 @@ Here again, are are only concerned with the main clock, so we need to update the
 If the timezone has DST, we set this flag to ON | AUTO, or 3
 If the timezone has no DST, we set the flag to 0
  */
+
+// ============================================================================
+// Pure Functional Core: Time Operations & DST Management
+// ============================================================================
+
+/**
+ * Pure functional core for time and DST operations.
+ * 
+ * All methods are pure: no mutable state, no side effects.
+ * Handles DST calculations, timezone conversions, and time encoding.
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+object TimeIOFunctional {
+
+    enum class DtsMask(val mask: Int) {
+        OFF(0b00),
+        ON(0b01),
+        AUTO(0b10),
+    }
+
+    /**
+     * Pure calculator: Computes DST value based on timezone information.
+     * 
+     * Returns an OR combination of DST flags:
+     * - ON flag if timezone is currently in DST
+     * - AUTO flag if timezone has DST rules
+     * 
+     * No side effects - pure calculation from timezone data.
+     */
+    fun calculateDSTValue(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Int =
+        (if (casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or
+                (if (casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
+
+    /**
+     * Pure calculator: Computes DST duration in milliseconds for timezone.
+     * 
+     * Returns the DST offset converted to milliseconds, or 0 if not in DST.
+     * Formula: dstOffset (in 15-minute units) * 60 * 15 (milliseconds conversion)
+     * 
+     * No side effects - pure calculation.
+     */
+    fun calculateDSTDurationMs(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Long =
+        if (casioTimezone.isInDST()) casioTimezone.dstOffset * 60 * 15L else 0L
+
+    /**
+     * Pure transformer: Adjusts time for DST and converts to LocalDateTime.
+     * 
+     * Takes milliseconds since epoch and adjusts for DST if applicable,
+     * then converts to LocalDateTime in the given timezone.
+     * 
+     * No side effects - pure transformation.
+     */
+    fun adjustTimeForDSTAndConvert(
+        timeMs: Long,
+        casioTimezone: CasioTimeZoneHelper.CasioTimeZone
+    ): LocalDateTime {
+        val dstDurationToAdd = calculateDSTDurationMs(casioTimezone)
+        val msAdjustedForDST = timeMs + dstDurationToAdd
+        val instant = Instant.ofEpochMilli(msAdjustedForDST)
+        return LocalDateTime.ofInstant(instant, casioTimezone.zoneId)
+    }
+
+    /**
+     * Pure encoder: Converts LocalDateTime to Casio time byte format.
+     * 
+     * Returns 10-byte array matching Casio CASIO_CURRENT_TIME characteristic:
+     * [0-1] Year (little-endian), [2] Month, [3] Day, [4] Hour, [5] Minute,
+     * [6] Second, [7] Day of week, [8] Nano-second fraction, [9] Reserved
+     * 
+     * No side effects - pure encoding.
+     */
+    fun prepareCurrentTime(date: LocalDateTime): ByteArray {
+        val arr = ByteArray(10)
+        val year = date.year
+        arr[0] = (year ushr 0 and 0xff).toByte()
+        arr[1] = (year ushr 8 and 0xff).toByte()
+        arr[2] = date.month.value.toByte()
+        arr[3] = date.dayOfMonth.toByte()
+        arr[4] = date.hour.toByte()
+        arr[5] = date.minute.toByte()
+        arr[6] = date.second.toByte()
+        arr[7] = date.dayOfWeek.value.toByte()
+        arr[8] = ((date.nano.toLong() * 256) / 1_000_000_000).toByte()
+        arr[9] = 1 // or 0?
+        return arr
+    }
+
+    /**
+     * Pure builder: Creates watch time command from adjusted datetime.
+     * 
+     * Combines Casio time characteristic code with encoded time data.
+     * No side effects - pure command building.
+     */
+    fun buildTimeCommand(adjustedDateTime: LocalDateTime): ByteArray {
+        val timeData = prepareCurrentTime(adjustedDateTime)
+        return Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeIO {
 
@@ -88,20 +187,12 @@ object TimeIO {
         )
     }
 
-    enum class DtsMask(val mask: Int) {
-        OFF(0b00),
-        ON(0b01),
-        AUTO(0b10),
-    }
+    private suspend fun getDSTWatchState(dstState: IO.DstState): String =
+        DstWatchStateIO.request(dstState)
 
-    private suspend fun getDSTWatchState(state: IO.DstState): String =
-        DstWatchStateIO.request(state)
-
-    private suspend fun getDSTWatchStateWithTZ(state: IO.DstState): String {
-        val origDTS = getDSTWatchState(state)
-        val dstValue =
-            (if (this.state.casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or
-                    (if (this.state.casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
+    private suspend fun getDSTWatchStateWithTZ(dstState: IO.DstState): String {
+        val origDTS = getDSTWatchState(dstState)
+        val dstValue = TimeIOFunctional.calculateDSTValue(state.casioTimezone)
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
@@ -124,7 +215,7 @@ object TimeIO {
     }
 
     /**
-     * This function is internally called by [setTime] to initialize some values.
+     * This function is internally called by [set] to initialize some values.
      */
     private suspend fun initializeForSettingTime() {
         writeDST()
@@ -146,13 +237,13 @@ object TimeIO {
     private suspend fun writeDST() {
         data class Dts(
             val param: IO.DstState,
-            val function: suspend (IO.DstState) -> String, // Lambda type
+            val function: suspend (IO.DstState) -> String,
         )
 
         val dtsStates = arrayOf(
-            Dts(IO.DstState.ZERO) { state -> getDSTWatchStateWithTZ(state) },
-            Dts(IO.DstState.TWO) { state -> getDSTWatchState(state) },
-            Dts(IO.DstState.FOUR) { state -> getDSTWatchState(state) }
+            Dts(IO.DstState.ZERO) { dstState -> getDSTWatchStateWithTZ(dstState) },
+            Dts(IO.DstState.TWO) { dstState -> getDSTWatchState(dstState) },
+            Dts(IO.DstState.FOUR) { dstState -> getDSTWatchState(dstState) }
         )
 
         for (i in 0 until WatchInfo.dstCount) {
@@ -163,7 +254,7 @@ object TimeIO {
     private suspend fun writeDSTForWorldCities() {
         data class DstForWorldCities(
             val param: Int,
-            val function: suspend (Int) -> String, // Lambda type
+            val function: suspend (Int) -> String,
         )
 
         val dstForWorldCities = arrayOf(
@@ -184,7 +275,7 @@ object TimeIO {
     private suspend fun writeWorldCities() {
         data class WorldCities(
             val param: Int,
-            val function: suspend (Int) -> String, // Lambda type
+            val function: suspend (Int) -> String,
         )
 
         val worldCities = arrayOf(
@@ -204,34 +295,8 @@ object TimeIO {
 
     fun sendToWatchSet(message: String) {
         val dateTimeMs: Long = JSONObject(message).get("value") as Long
-        val dstDurationToAdd =
-            if (state.casioTimezone.isInDST()) state.casioTimezone.dstOffset * 60 * 15 else 0
-        val msAdjustedForDST = dateTimeMs + dstDurationToAdd
-
-        val instant = Instant.ofEpochMilli(msAdjustedForDST)
-        val adjustedDateTime = LocalDateTime.ofInstant(instant, state.casioTimezone.zoneId)
-
-        val timeData = TimeEncoder.prepareCurrentTime(adjustedDateTime)
-        val timeCommand =
-            Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_CURRENT_TIME.code) + timeData
+        val adjustedDateTime = TimeIOFunctional.adjustTimeForDSTAndConvert(dateTimeMs, state.casioTimezone)
+        val timeCommand = TimeIOFunctional.buildTimeCommand(adjustedDateTime)
         IO.writeCmd(GetSetMode.SET, timeCommand)
-    }
-
-    object TimeEncoder {
-        fun prepareCurrentTime(date: LocalDateTime): ByteArray {
-            val arr = ByteArray(10)
-            val year = date.year
-            arr[0] = (year ushr 0 and 0xff).toByte()
-            arr[1] = (year ushr 8 and 0xff).toByte()
-            arr[2] = date.month.value.toByte()
-            arr[3] = date.dayOfMonth.toByte()
-            arr[4] = date.hour.toByte()
-            arr[5] = date.minute.toByte()
-            arr[6] = date.second.toByte()
-            arr[7] = date.dayOfWeek.value.toByte()
-            arr[8] = ((date.nano.toLong() * 256) / 1_000_000_000).toByte()
-            arr[9] = 1 // or 0?
-            return arr
-        }
     }
 }

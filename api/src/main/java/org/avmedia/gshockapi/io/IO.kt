@@ -13,6 +13,34 @@ import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import java.util.UUID
 
+// ============================================================================
+// Pure Functional Core: Command Conversion
+// ============================================================================
+
+/**
+ * Pure functional core for IO command processing.
+ * 
+ * All methods are pure: no mutable state, no side effects.
+ * Handles protocol-level command conversion and formatting.
+ */
+object IOFunctional {
+    /**
+     * Pure converter: Converts hex string to Casio command byte array.
+     * 
+     * Takes a hex string (e.g., "1e05"), splits into pairs, converts each pair
+     * to a byte. Uses getOrDefault to handle invalid hex gracefully.
+     * No side effects - pure transformation.
+     */
+    fun toCasioCmd(bytesStr: String): ByteArray =
+        bytesStr
+            .chunked(2)
+            .map { str ->
+                runCatching { str.toInt(16).toByte() }
+                    .getOrDefault(str.toInt(16).toByte())
+            }
+            .toByteArray()
+}
+
 object IO {
     private data class State(
         val availableCharacteristics: Map<UUID, BluetoothGattCharacteristic>? = null,
@@ -46,17 +74,8 @@ object IO {
     }
 
     private fun writeCmdFromString(handle: GetSetMode, bytesStr: String) {
-        Connection.write(handle, toCasioCmd(bytesStr))
+        Connection.write(handle, IOFunctional.toCasioCmd(bytesStr))
     }
-
-    private fun toCasioCmd(bytesStr: String): ByteArray =
-        bytesStr
-            .chunked(2)
-            .map { str ->
-                runCatching { str.toInt(16).toByte() }
-                    .getOrDefault(str.toInt(16).toByte())
-            }
-            .toByteArray()
 
     fun removeFromCache(newValue: String) {
         CachedIO.createKey(newValue).let { key ->

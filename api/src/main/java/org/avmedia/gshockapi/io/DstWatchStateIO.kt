@@ -4,6 +4,36 @@ import CachedIO
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.utils.Utils
 
+// ============================================================================
+// Pure Functional Core: DST Watch State Operations
+// ============================================================================
+
+/**
+ * Pure functional core for DST watch state processing.
+ * 
+ * All methods are pure: no mutable state, no side effects.
+ * Handles DST value extraction and manipulation.
+ */
+object DstWatchStateIOFunctional {
+    /**
+     * Pure transformer: Sets DST value in watch state.
+     * 
+     * Takes DST state string and DST value, updates byte at index 3.
+     * No side effects - pure data transformation.
+     * 
+     * Protocol format (14 bytes):
+     * 0x1d 0x00 0x01 DST0 DST1 TZ0A TZ0B TZ1A TZ1B ff ff ff ff ff
+     * We modify DST0 (index 3) with the provided DST value.
+     */
+    fun setDST(dstState: String, dst: Int): String {
+        val intArray = Utils.toIntArray(dstState)
+        intArray[3] = dst
+
+        val newValue = Utils.byteArrayOfIntArray(intArray.toIntArray())
+        return Utils.fromByteArrayToHexStrWithSpaces(newValue)
+    }
+}
+
 object DstWatchStateIO {
     private data class State(
         val deferredResult: CompletableDeferred<String>? = null
@@ -33,13 +63,8 @@ object DstWatchStateIO {
     DST: bitwise flags; bit0: DST on, bit1: DST auto
     */
 
-    suspend fun setDST(dstState: String, dst: Int): String {
-        val intArray = Utils.toIntArray(dstState)
-        intArray[3] = dst
-
-        val newValue = Utils.byteArrayOfIntArray(intArray.toIntArray())
-        return Utils.fromByteArrayToHexStrWithSpaces(newValue)
-    }
+    suspend fun setDST(dstState: String, dst: Int): String =
+        DstWatchStateIOFunctional.setDST(dstState, dst)
 
     fun onReceived(data: String) {
         state.deferredResult?.complete(data)

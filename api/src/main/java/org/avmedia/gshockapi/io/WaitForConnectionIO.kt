@@ -10,6 +10,43 @@ import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.utils.WatchDataListener
 
+// ============================================================================
+// Pure Functional Core: Connection State Utilities
+// ============================================================================
+
+/**
+ * Pure functional core for connection state evaluation.
+ * 
+ * All methods are pure: no mutable state, no side effects.
+ * Handles connection status checks and response generation.
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+object WaitForConnectionIOFunctional {
+    /**
+     * Pure validator: Determines if connection is already established.
+     * 
+     * Returns success response if connected, otherwise indicates waiting state.
+     * No side effects - pure evaluation using Connection state.
+     */
+    fun checkConnectionAlreadyEstablished(): String? =
+        if (Connection.isConnected()) "OK" else null
+
+    /**
+     * Pure validator: Determines if connection attempt is already in progress.
+     * 
+     * Returns true if Connection is already connecting to avoid duplicate attempts.
+     * No side effects - pure state check.
+     */
+    fun isConnectionAlreadyInProgress(): Boolean = Connection.isConnecting()
+
+    /**
+     * Pure builder: Creates success response.
+     * 
+     * No side effects - returns constant value.
+     */
+    fun getSuccessResponse(): String = "OK"
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 object WaitForConnectionIO {
     private data class State(
@@ -27,16 +64,14 @@ object WaitForConnectionIO {
         context: Context,
         deviceId: String?,
     ): String {
-        if (Connection.isConnected()) {
-            return "OK"
-        }
+        WaitForConnectionIOFunctional.checkConnectionAlreadyEstablished()?.let { return it }
 
         //state.deferredResult?.cancel()
         state = state.copy(deferredResult = CompletableDeferred())
 
         setupConnectionListener()  // MUST be before startConnection to avoid race
 
-        if (!Connection.isConnecting()) {
+        if (!WaitForConnectionIOFunctional.isConnectionAlreadyInProgress()) {
             WatchDataListener.init()
             Connection.startConnection(context, deviceId)
         }
@@ -49,7 +84,7 @@ object WaitForConnectionIO {
         val eventActions = arrayOf(
             EventAction("ConnectionSetupComplete") {
                 CachedIO.clearCache()
-                state.deferredResult?.complete("OK")
+                state.deferredResult?.complete(WaitForConnectionIOFunctional.getSuccessResponse())
                 state = State()
             }
         )
