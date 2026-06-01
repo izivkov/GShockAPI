@@ -9,7 +9,6 @@ package org.avmedia.gshockapi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.ProgressEvents.Events
@@ -129,16 +128,16 @@ object ProgressEvents {
             val actionMap = eventActions.associateBy { it.label }
 
             CoroutineScope(Dispatchers.Main).launch {
-                eventsFlow
-                    .catch { throwable ->
-                        Timber.d("Error on subscribe: $throwable")
-                        throwable.printStackTrace()
-                    }
-                    .collect { event ->
+                eventsFlow.collect { event ->
+                    try {
                         state.reverseEventMap[event]?.let { eventName ->
                             actionMap[eventName]?.action?.invoke()
                         }
+                    } catch (throwable: Throwable) {
+                        Timber.d("Error on subscribe: $throwable")
+                        throwable.printStackTrace()
                     }
+                }
             }
         }
 

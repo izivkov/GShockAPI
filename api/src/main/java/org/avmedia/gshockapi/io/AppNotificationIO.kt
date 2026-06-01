@@ -64,7 +64,7 @@ object AppNotificationIOFunctional {
         val end = start + length
         require(end <= buf.size) { "String length exceeds buffer" }
 
-        val string = buf.sliceArray(start until end).toString(Charsets.UTF_8)
+        val string = buf.copyOfRange(start, end).toString(Charsets.UTF_8)
         return string to end
     }
 
@@ -85,7 +85,7 @@ object AppNotificationIOFunctional {
         val notifyType = NotificationType.entries.getOrNull(typeByte)
             ?: throw IllegalArgumentException("Invalid NotificationType: $typeByte")
 
-        val timestamp = buf.sliceArray(offset until offset + 15).toString(Charsets.US_ASCII)
+        val timestamp = buf.copyOfRange(offset, offset + 15).toString(Charsets.US_ASCII)
         offset += 15
 
         val (app, offset1) = readLengthPrefixedString(buf, offset)

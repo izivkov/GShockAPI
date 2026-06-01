@@ -26,7 +26,7 @@ import timber.log.Timber
 
 /**
  * Pure functional core for event/reminder processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles complex event encoding/decoding with dates, times, and repeat periods.
  */
@@ -34,14 +34,14 @@ import timber.log.Timber
 object EventsIOFunctional {
     /**
      * Pure decoder: Extracts reminder time data into JSON format.
-     * 
+     *
      * Protocol format for reminder time (command 0x31):
      * [0] - Time period byte (enable + repeat type flags)
      * [1-3] - Start date (year, month, day in hex-decimal format)
      * [4-6] - End date (year, month, day in hex-decimal format)
      * [7] - Days of week bitmask (for weekly reminders)
      * [8-9] - Padding (usually 0x00)
-     * 
+     *
      * Example: "31 05 01 01 01 01 01 01 01 02 00"
      * - 31 = command code
      * - 05 = enabled + weekly repeat
@@ -49,18 +49,18 @@ object EventsIOFunctional {
      * - 01 01 01 = end date (01/01/2001)
      * - 01 = days of week
      * - 02 00 = padding
-     * 
+     *
      * 0xFF in position [3] indicates end of reminders.
      */
     fun reminderTimeToJson(reminderStr: String): Result<JSONObject> = runCatching {
-        val intArr = Utils.toIntArray(reminderStr)
-        
+        val intArr = Utils.toIntArray(reminderStr).toIntArray()
+
         if (intArr.getOrNull(3) == 0xFF) {
             // 0xFF indicates end of reminders
             return@runCatching JSONObject("{\"end\": \"\"}")
         }
 
-        val reminder = intArr.sliceArray(IntRange(2, intArr.lastIndex))
+        val reminder = intArr.drop(2).toIntArray()
         val reminderJson = JSONObject()
 
         // Decode the time period byte (enable + repeat type)
@@ -84,33 +84,33 @@ object EventsIOFunctional {
 
     /**
      * Pure decoder: Extracts reminder title data into JSON format.
-     * 
+     *
      * Protocol format for reminder title (command 0x30):
      * [0] = 0x30 (command code)
      * [1] = reminder number
      * [2:20] = ASCII title string (padded with 0x00)
-     * 
+     *
      * 0xFF in position [2] indicates end of reminders.
-     * 
+     *
      * Example: "30 01 4A 61 6E 75 61 72 79..." decodes to "January"
      */
     fun reminderTitleToJson(titleByte: String): Result<JSONObject> = runCatching {
         val intArr = Utils.toIntArray(titleByte)
-        
+
         if (intArr.getOrNull(2) == 0xFF) {
             // 0xFF indicates end of reminders
             return@runCatching JSONObject("{\"end\": \"\"}")
         }
-        
+
         val reminderJson = JSONObject()
         reminderJson.put("title", Utils.toAsciiString(titleByte, 2))
-        
+
         JSONObject().put("title", reminderJson.getString("title"))
     }
 
     /**
      * Pure encoder: Converts JSON reminder time data to protocol bytes.
-     * 
+     *
      * Constructs the 10-byte time command from enabled/repeat period and date information.
      * Handles all repeat types: NEVER, WEEKLY, MONTHLY, YEARLY.
      * Encodes dates in hex-decimal format (e.g., year 22 = 0x22 = 2022).
@@ -132,7 +132,7 @@ object EventsIOFunctional {
 
     /**
      * Pure encoder: Converts JSON reminder title to protocol bytes.
-     * 
+     *
      * Pads title string to 18 bytes (standard title field size in watch protocol).
      * Shorter titles are null-padded; longer titles are truncated.
      */
@@ -163,7 +163,7 @@ object EventsIOFunctional {
 
     /**
      * Decodes time detail array into start date, end date, and days of week.
-     * 
+     *
      * Input array structure (after removing command code):
      * [0] - time period byte
      * [1-3] - start date (year, month, day)
@@ -175,16 +175,15 @@ object EventsIOFunctional {
         val result = HashMap<String, Any>()
 
         // Extract start date (skip time period byte at [0], dates are at [1-3])
-        result["startDate"] =
-            decodeDate(timeDetail.sliceArray(IntRange(1, timeDetail.lastIndex)))
+        result["startDate"] = decodeDate(timeDetail.drop(1).toIntArray())
 
         // Extract end date (skip to position [4])
-        result["endDate"] = decodeDate(timeDetail.sliceArray(IntRange(4, timeDetail.lastIndex)))
+        result["endDate"] = decodeDate(timeDetail.drop(4).toIntArray())
 
         // Extract days of week from position [7] using bitmask
         val dayOfWeek = timeDetail.getOrNull(7) ?: 0
         val daysOfWeek = ArrayList<String>()
-        
+
         if (dayOfWeek and ReminderMasks.SUNDAY_MASK == ReminderMasks.SUNDAY_MASK) {
             daysOfWeek.add("SUNDAY")
         }
@@ -206,7 +205,7 @@ object EventsIOFunctional {
         if (dayOfWeek and ReminderMasks.SATURDAY_MASK == ReminderMasks.SATURDAY_MASK) {
             daysOfWeek.add("SATURDAY")
         }
-        
+
         result["daysOfWeek"] = daysOfWeek
         return result
     }
@@ -238,10 +237,18 @@ object EventsIOFunctional {
 
     /**
      * Converts BCD (binary-coded decimal) byte to decimal.
-     * Example: 0x22 as decimal becomes 22, then toInt(16) = 22 -> "2022"
+     * Example: 0x22 as decimal integer 34 → toString(16) = "22" → toInt() = 22
      */
     private fun decToHex(dec: Int): Int {
         return dec.toString(16).toInt()
+    }
+
+    /**
+     * Converts a decimal integer to BCD (binary-coded decimal) byte.
+     * Inverse of decToHex: e.g. 22 → "22" → toInt(16) = 0x22 = 34
+     */
+    private fun hexToDec(hex: Int): Int {
+        return hex.toString().toInt(16)
     }
 
     /**
@@ -297,14 +304,14 @@ object EventsIOFunctional {
 
     /**
      * Encodes time detail array from repeat period and date information.
-     * 
+     *
      * Output array structure:
      * [0] - time period byte (already set by caller)
      * [1-3] - start date (year, month, day)
      * [4-6] - end date (year, month, day)
      * [7] - days of week bitmask (for weekly only)
      * [8-9] - padding (0x00)
-     * 
+     *
      * Handles all repeat types with appropriate date and day-of-week encoding.
      */
     private fun createTimeDetail(
@@ -337,27 +344,27 @@ object EventsIOFunctional {
             }
             timeDetail[6] = dayOfWeek
         }
-        
+
         return timeDetail
     }
 
     /**
      * Encodes dates into BCD format for watch protocol.
      * Watch stores dates as "hex-decimals": year 2022 becomes 0x22, month 5 becomes 0x05.
-     * This requires converting decimal to hex representation as a decimal integer.
-     * 
-     * Example: year 2022 -> 22 (mod 2000) -> convert to hex -> 0x16 -> "22" as decimal
+     * Uses hexToDec() which is the inverse of decToHex() used during decode.
+     *
+     * Example: year 2022 -> rem(2000) = 22 -> hexToDec(22) -> "22".toInt(16) = 0x22 = 34
      */
     private fun encodeDate(timeDetail: IntArray, startDate: JSONObject?, endDate: JSONObject?) {
         // Encode start date (positions 0-2)
-        timeDetail[0] = decToHex(startDate?.getInt("year")?.rem(2000) ?: 0)
-        timeDetail[1] = decToHex(monthStrToInt(startDate?.getString("month") ?: "JANUARY"))
-        timeDetail[2] = decToHex(startDate?.getInt("day") ?: 1)
+        timeDetail[0] = hexToDec(startDate?.getInt("year")?.rem(2000) ?: 0)
+        timeDetail[1] = hexToDec(monthStrToInt(startDate?.getString("month") ?: "JANUARY"))
+        timeDetail[2] = hexToDec(startDate?.getInt("day") ?: 1)
 
         // Encode end date (positions 3-5)
-        timeDetail[3] = decToHex(endDate?.getInt("year")?.rem(2000) ?: 0)
-        timeDetail[4] = decToHex(monthStrToInt(endDate?.getString("month") ?: "JANUARY"))
-        timeDetail[5] = decToHex(endDate?.getInt("day") ?: 1)
+        timeDetail[3] = hexToDec(endDate?.getInt("year")?.rem(2000) ?: 0)
+        timeDetail[4] = hexToDec(monthStrToInt(endDate?.getString("month") ?: "JANUARY"))
+        timeDetail[5] = hexToDec(endDate?.getInt("day") ?: 1)
 
         // Padding
         timeDetail[6] = 0
@@ -392,12 +399,12 @@ object EventsIOFunctional {
 
 /**
  * Events/Reminders IO handler with state management.
- * 
+ *
  * Manages reading and writing reminder/event data to the watch.
  * Reminders consist of two separate parts:
  * 1. Title data (command 0x30) - ASCII title string
  * 2. Time data (command 0x31) - date, repeat period, days of week
- * 
+ *
  * These are fetched separately and combined into a single Event object.
  * Uses pure functional core for encoding and decoding operations.
  */
@@ -523,7 +530,7 @@ object EventsIO {
 
     fun onReceived(data: String) {
         // Use pure function to decode time data
-        EventsIOFunctional.reminderTimeToJson(data + 2)
+        EventsIOFunctional.reminderTimeToJson(data)
             .fold(
                 onSuccess = { timeJson ->
                     state.deferredResultTime?.complete(timeJson)

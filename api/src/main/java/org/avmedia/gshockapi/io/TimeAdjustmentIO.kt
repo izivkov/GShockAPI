@@ -24,7 +24,7 @@ class TimeAdjustmentInfo(
 
 /**
  * Pure functional core for time adjustment processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles parsing and encoding of time adjustment settings.
  */
@@ -32,7 +32,7 @@ class TimeAdjustmentInfo(
 object TimeAdjustmentIOFunctional {
     /**
      * Pure parser: Checks if time adjustment is enabled.
-     * 
+     *
      * Protocol format:
      * [12] - Time adjustment flag:
      *     0x00 = syncing on  (time adjustment enabled)
@@ -43,7 +43,7 @@ object TimeAdjustmentIOFunctional {
 
     /**
      * Pure parser: Extracts the time adjustment minutes.
-     * 
+     *
      * Protocol format:
      * [13] - Adjustment time in minutes (0-59)
      * Returns 30 if value is out of valid range.
@@ -55,7 +55,7 @@ object TimeAdjustmentIOFunctional {
 
     /**
      * Pure parser: Parses complete time adjustment info.
-     * 
+     *
      * No side effects - pure extraction.
      */
     fun decode(data: String): Result<TimeAdjustmentInfo> = runCatching {
@@ -67,7 +67,7 @@ object TimeAdjustmentIOFunctional {
 
     /**
      * Pure encoder: Encodes time adjustment settings to byte array.
-     * 
+     *
      * Takes original data and applies new settings without side effects.
      * Protocol format:
      * [12] - Time adjustment flag (0x00 = on, 0x80 = off)
@@ -78,16 +78,16 @@ object TimeAdjustmentIOFunctional {
             throw IllegalArgumentException("Original data is empty")
         }
 
-        Utils.toIntArray(originalData)
-            .apply {
-                // syncing off: 110f0f0f0600500004000100->80<-37d2
-                // syncing on:  110f0f0f0600500004000100->00<-37d2
-                this[12] = if (settings.get("timeAdjustment") == true) 0x00 else 0x80
-                this[13] = settings.getInt("adjustmentTimeMinutes")
-            }
-            .foldIndexed(ByteArray(this.size)) { i, array, value ->
-                array.apply { set(i, value.toByte()) }
-            }
+        val intArr = Utils.toIntArray(originalData).apply {
+            // syncing off: 110f0f0f0600500004000100->80<-37d2
+            // syncing on:  110f0f0f0600500004000100->00<-37d2
+            this[12] = if (settings.get("timeAdjustment") == true) 0x00 else 0x80
+            this[13] = settings.getInt("adjustmentTimeMinutes")
+        }
+        val size = intArr.size
+        intArr.foldIndexed(ByteArray(size)) { i, array, value ->
+            array.apply { set(i, value.toByte()) }
+        }
     }
 
     /**
@@ -103,7 +103,7 @@ object TimeAdjustmentIOFunctional {
 
 /**
  * Time Adjustment IO handler with state management.
- * 
+ *
  * Manages time adjustment/synchronization settings.
  * Stores original data to preserve unchanged fields when encoding.
  * Uses pure functional core for all parsing and encoding operations.
