@@ -28,58 +28,91 @@ import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import timber.log.Timber
 
+@RequiresApi(Build.VERSION_CODES.O)
 object MessageDispatcher {
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val watchSenders = mapOf<String, (String) -> Unit>(
-        "GET_ALARMS" to AlarmsIO::sendToWatch,
-        "SET_ALARMS" to AlarmsIO::sendToWatchSet,
-        "SET_REMINDERS" to EventsIO::sendToWatchSet,
-        "GET_SETTINGS" to SettingsIO::sendToWatch,
-        "SET_SETTINGS" to SettingsIO::sendToWatchSet,
+    // =========================================================================
+    // Pure Functional Core: dispatch tables
+    // =========================================================================
+
+    /**
+     * Maps outbound action strings to their handler functions.
+     * Pure data — no side effects, no mutable state.
+     */
+    private val watchSenders: Map<String, (String) -> Unit> = mapOf(
+        "GET_ALARMS"          to AlarmsIO::sendToWatch,
+        "SET_ALARMS"          to AlarmsIO::sendToWatchSet,
+        "SET_REMINDERS"       to EventsIO::sendToWatchSet,
+        "GET_SETTINGS"        to SettingsIO::sendToWatch,
+        "SET_SETTINGS"        to SettingsIO::sendToWatchSet,
         "GET_TIME_ADJUSTMENT" to TimeAdjustmentIO::sendToWatch,
         "SET_TIME_ADJUSTMENT" to TimeAdjustmentIO::sendToWatchSet,
-        "GET_TIMER" to TimerIO::sendToWatch,
-        "SET_TIMER" to TimerIO::sendToWatchSet,
-        "SET_TIME" to TimeIO::sendToWatchSet,
+        "GET_TIMER"           to TimerIO::sendToWatch,
+        "SET_TIMER"           to TimerIO::sendToWatchSet,
+        "SET_TIME"            to TimeIO::sendToWatchSet,
     )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    /**
+     * Maps inbound characteristic codes to their handler functions.
+     * Pure data — no side effects, no mutable state.
+     */
+    private val dataReceivedHandlers: Map<Int, (String) -> Unit> = mapOf(
+        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code   to AlarmsIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code  to AlarmsIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_DST_SETTING.code       to DstForWorldCitiesIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code     to EventsIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code    to EventsIO::onReceivedTitle,
+        CasioConstants.CHARACTERISTICS.CASIO_TIMER.code             to TimerIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_WORLD_CITIES.code      to WorldCitiesIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_DST_WATCH_STATE.code   to DstWatchStateIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_WATCH_NAME.code        to WatchNameIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code   to WatchConditionIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_APP_INFORMATION.code   to AppInfoIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_BLE_FEATURES.code      to ButtonPressedIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code to SettingsIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code   to TimeAdjustmentIO::onReceived,
+        CasioConstants.CHARACTERISTICS.ERROR.code                   to ErrorIO::onReceived,
+        CasioConstants.CHARACTERISTICS.FIND_PHONE.code              to RunActionsIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code        to UnknownIO::onReceived,
+    )
+
+    // =========================================================================
+    // Pure helpers
+    // =========================================================================
+
+    /** Pure: extract the action string from an outbound message. */
+    private fun extractAction(message: String): String? =
+        runCatching { JSONObject(message).getString("action") }
+            .onFailure { Timber.e("Failed to parse action from message: $message") }
+            .getOrNull()
+
+    /** Pure: extract the characteristic key from inbound data. */
+    private fun extractKey(data: String): Int? =
+        runCatching { Utils.toIntArray(data)[0] }
+            .onFailure { Timber.e("Failed to extract key from data: $data") }
+            .getOrNull()
+
+    // =========================================================================
+    // Imperative Shell: dispatch with logging
+    // =========================================================================
+
     fun sendToWatch(message: String) {
-        val action = JSONObject(message).get("action")
-        watchSenders[action]!!.invoke(message)
+        val action = extractAction(message) ?: return
+        val handler = watchSenders[action]
+        if (handler == null) {
+            Timber.e("No sender registered for action: $action")
+            return
+        }
+        handler(message)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val dataReceivedMessages = mapOf<Int, (String) -> Unit>(
-        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code to AlarmsIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code to AlarmsIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_DST_SETTING.code to DstForWorldCitiesIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code to EventsIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code to EventsIO::onReceivedTitle,
-        CasioConstants.CHARACTERISTICS.CASIO_TIMER.code to TimerIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_WORLD_CITIES.code to WorldCitiesIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_DST_WATCH_STATE.code to DstWatchStateIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_WATCH_NAME.code to WatchNameIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code to WatchConditionIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_APP_INFORMATION.code to AppInfoIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_BLE_FEATURES.code to ButtonPressedIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code to SettingsIO::onReceived,
-        CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code to TimeAdjustmentIO::onReceived,
-
-        CasioConstants.CHARACTERISTICS.ERROR.code to ErrorIO::onReceived,
-        CasioConstants.CHARACTERISTICS.FIND_PHONE.code to RunActionsIO::onReceived, // always-connected watches, use PHONE FINDER to invoke actions...
-        CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code to UnknownIO::onReceived,
-    )
-
-    @RequiresApi(Build.VERSION_CODES.O)
     fun onReceived(data: String) {
-        val intArray = Utils.toIntArray(data)
-
-        val key = intArray[0]
-        if (dataReceivedMessages[key] == null) {
-            Timber.e("Unknown key: $key")
+        val key = extractKey(data) ?: return
+        val handler = dataReceivedHandlers[key]
+        if (handler == null) {
+            Timber.e("No handler registered for key: $key")
+            return
         }
-        dataReceivedMessages[key]?.invoke(data)
+        handler(data)
     }
 }

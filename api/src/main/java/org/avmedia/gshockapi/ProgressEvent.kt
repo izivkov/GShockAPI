@@ -9,247 +9,204 @@ package org.avmedia.gshockapi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import org.avmedia.gshockapi.ProgressEvents.Events
-import org.avmedia.gshockapi.ProgressEvents.Subscriber
 import timber.log.Timber
 
 /**
- * This class is used to send RX events to the rest of the library and to the application to inform
- * them of some internal events. For example, when a connection is established, a `"ConnectionSetupComplete"`
- * event is broadcast. If the application is listening on this event, it can change its UI to reflect this.
- * The app can call [Subscriber.start] method to start listening to events.
- * Here is an example which can reside in the `MainActivity`:
+ * Broadcasts internal library events to subscribers (e.g. the host application).
  *
+ * Usage example in MainActivity:
  * ```
- * private fun listenToProgressEvents() {
- *   ProgressEvents.subscriber.start(this.javaClass.canonicalName,
- *       {
- *           when (it) {
- *              ProgressEvents["ConnectionSetupComplete"] -> {
- *                  println("Got \"ConnectionSetupComplete\" event")
- *              }
- *              ProgressEvents[] -> {
- *                  println("Got \"Disconnect\" event")
- *              }
- *              ProgressEvents["ConnectionFailed"] -> {
- *                  println("Got \"ConnectionFailed\" event")
- *              }
- *              ProgressEvents["WatchInitializationCompleted"] -> {
- *                  println("Got \"WatchInitializationCompleted\" event")
- *              }
- *              ProgressEvents["CustomEvent"] -> {
- *                  println("Got \"CustomEvent\" event")
- *              }
- *           }, { throwable ->
- *              println("Got error on subscribe: $throwable")
- *              throwable.printStackTrace()
- *           })
- *       }
- *   }
- * }
+ * ProgressEvents.runEventActions(this.javaClass.canonicalName, arrayOf(
+ *     EventAction("ConnectionSetupComplete") { println("Connected!") },
+ *     EventAction("Disconnect")              { println("Disconnected!") },
+ *     EventAction("CustomEvent")             { println("Custom!") },
+ * ))
  * ```
  * @see Events
- *
  */
 
-/**
- * Interface representing an action associated with a specific progress event.
- */
+// =============================================================================
+// Public API types
+// =============================================================================
+
 interface IEventAction {
     val label: String
     val action: () -> Unit
 }
 
-/**
- * Concrete implementation of [IEventAction].
- *
- * @property label The name of the event this action responds to.
- * @property action The lambda function to execute when the event occurs.
- */
 data class EventAction(
     override val label: String,
     override val action: () -> Unit
 ) : IEventAction
 
 object ProgressEvents {
-    private data class State(
-        val subscribers: Set<String> = emptySet(),
-        val eventMap: Map<String, Events> = mapOf(
-            "Init" to Events(),
-            "ConnectionStarted" to Events(),
-            "ConnectionSetupComplete" to Events(),
-            "Disconnect" to Events(),
-            "AlarmDataLoaded" to Events(),
-            "NotificationsEnabled" to Events(),
-            "NotificationsDisabled" to Events(),
-            "WatchInitializationCompleted" to Events(),
-            "AllPermissionsAccepted" to Events(),
-            "ButtonPressedInfoReceived" to Events(),
-            "ConnectionFailed" to Events(),
-            "SettingsLoaded" to Events(),
-            "NeedToUpdateUI" to Events(),
-            "CalendarUpdated" to Events(),
-            "HomeTimeUpdated" to Events(),
-            "ApiError" to Events()
-        ),
-        val reverseEventMap: Map<Events, String> = eventMap.entries.associateBy(
-            { it.value },
-            { it.key })
-    )
 
-    private var state = State()
-    val subscriber = Subscriber()
-    private val eventsFlow = MutableSharedFlow<Events>(replay = 10)
+    // =========================================================================
+    // Immutable domain type
+    // =========================================================================
 
     /**
-     * Convenience method to run actions for specific events.
-     *
-     * @param name Unique name for this subscription.
-     * @param eventActions Array of [EventAction] mappings.
+     * An event token. Immutable — payload is carried separately in the State,
+     * not mutated on the object itself. Identity is by reference (default equals),
+     * which is intentional: each registered event is a unique token used as a
+     * map key in reverseEventMap.
      */
-    fun runEventActions(name: String, eventActions: Array<EventAction>) {
-        subscriber.runEventActions(name, eventActions)
+    class Events
+
+    // =========================================================================
+    // Immutable State
+    // =========================================================================
+
+    private val builtInEventNames = listOf(
+        "Init",
+        "ConnectionStarted",
+        "ConnectionSetupComplete",
+        "Disconnect",
+        "AlarmDataLoaded",
+        "NotificationsEnabled",
+        "NotificationsDisabled",
+        "WatchInitializationCompleted",
+        "AllPermissionsAccepted",
+        "ButtonPressedInfoReceived",
+        "ConnectionFailed",
+        "SettingsLoaded",
+        "NeedToUpdateUI",
+        "CalendarUpdated",
+        "HomeTimeUpdated",
+        "ApiError",
+    )
+
+    private data class State(
+        val subscribers: Set<String> = emptySet(),
+        val eventMap: Map<String, Events> = emptyMap(),
+        val reverseEventMap: Map<Events, String> = emptyMap(),
+        val payloadMap: Map<String, Any?> = emptyMap(),
+    )
+
+    private var state: State = buildInitialState()
+
+    // =========================================================================
+    // Pure Functional Core
+    // =========================================================================
+
+    /** Pure: build the initial state from the built-in event name list. */
+    private fun buildInitialState(): State {
+        val eventMap = builtInEventNames.associateWith { Events() }
+        return State(
+            eventMap = eventMap,
+            reverseEventMap = eventMap.entries.associate { (k, v) -> v to k },
+        )
     }
+
+    /** Pure: derive a new State with one additional event registered. */
+    private fun stateWithEvent(current: State, eventName: String): State {
+        if (current.eventMap.containsKey(eventName)) return current
+        val newEvent = Events()
+        return current.copy(
+            eventMap = current.eventMap + (eventName to newEvent),
+            reverseEventMap = current.reverseEventMap + (newEvent to eventName),
+        )
+    }
+
+    /** Pure: derive a new State with a subscriber added. */
+    private fun stateWithSubscriber(current: State, name: String): State =
+        current.copy(subscribers = current.subscribers + name)
+
+    /** Pure: derive a new State with a subscriber removed. */
+    private fun stateWithoutSubscriber(current: State, name: String): State =
+        current.copy(subscribers = current.subscribers - name)
+
+    /** Pure: derive a new State with a payload set for a given event name. */
+    private fun stateWithPayload(current: State, eventName: String, payload: Any?): State =
+        current.copy(payloadMap = current.payloadMap + (eventName to payload))
+
+    // =========================================================================
+    // Subscriber
+    // =========================================================================
+
+    val subscriber = Subscriber()
 
     class Subscriber {
         /**
-         * Call this from anywhere to start listening to [ProgressEvents].
+         * Start listening to [ProgressEvents]. Only one subscription per [name] is allowed.
          *
-         * @param name This should be a unique name to prevent multiple subscriptions. Only one
-         * subscription per name is allowed.
+         * @param name    Unique identifier for this subscription.
+         * @param eventActions Actions to invoke per event name.
          */
         fun runEventActions(name: String, eventActions: Array<EventAction>) {
             if (state.subscribers.contains(name)) return
-
-            state = state.copy(subscribers = state.subscribers + name)
+            state = stateWithSubscriber(state, name)
 
             val actionMap = eventActions.associateBy { it.label }
 
             CoroutineScope(Dispatchers.Main).launch {
-                eventsFlow.collect { event ->
+                eventsFlow.collect { (event, payload) ->
                     try {
                         state.reverseEventMap[event]?.let { eventName ->
                             actionMap[eventName]?.action?.invoke()
                         }
                     } catch (throwable: Throwable) {
-                        Timber.d("Error on subscribe: $throwable")
+                        Timber.d("Error in subscriber '$name': $throwable")
                         throwable.printStackTrace()
                     }
                 }
             }
         }
 
-        /**
-         * Stop listening on [ProgressEvents]
-         *
-         * @param name Name of the subscriber
-         */
+        /** Stop listening. */
         fun stop(name: String) {
-            state = state.copy(subscribers = state.subscribers - name)
+            state = stateWithoutSubscriber(state, name)
         }
     }
 
+    // =========================================================================
+    // Flow — carries (event token, payload) pairs so payload is never mutated
+    // =========================================================================
+
+    private val eventsFlow = MutableSharedFlow<Pair<Events, Any?>>(replay = 10)
+
+    // =========================================================================
+    // Imperative Shell
+    // =========================================================================
+
     /**
-     * The application can broadcast built-in events by calling this function.
-     * ```
-     *  ProgressEvents.onNext("AllPermissionsAccepted", [payload])
-     * ```
-     * Also, the app can add its own events by passing an arbitrary string to "onNext":
-     *
-     * ```
-     *  ProgressEvents.onNext("CustomEvent")
-     * ```
-     * and then listen on this event using the `start()` function, just like it was a built-in event:
-     * ```
-     * ProgressEvents.subscriber.start(this.javaClass.canonicalName, {
-     *  when (it) {
-     *      ProgressEvents["CustomEvent"] -> {
-     *      // ...
-     *    }
-    ```
-     *
-     * @param eventName: Name of event to broadcast
-     * @param payload: An optional parameter containing a payload of type `Any?`
+     * Convenience wrapper — delegates to [Subscriber.runEventActions].
+     */
+    fun runEventActions(name: String, eventActions: Array<EventAction>) {
+        subscriber.runEventActions(name, eventActions)
+    }
+
+    /**
+     * Broadcast an event, optionally with a payload.
+     * Custom event names are registered automatically on first use.
      */
     fun onNext(eventName: String, payload: Any? = null) {
         if (!state.eventMap.containsKey(eventName)) {
-            addEvent(eventName)
+            state = stateWithEvent(state, eventName)
         }
+        state = stateWithPayload(state, eventName, payload)
 
-        state.eventMap[eventName]?.apply {
-            this.payload = payload
-        }?.let { event ->
-            if (state.subscribers.isNotEmpty()) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    eventsFlow.emit(event)
-                }
+        val event = state.eventMap[eventName] ?: return
+
+        if (state.subscribers.isNotEmpty()) {
+            CoroutineScope(Dispatchers.Main).launch {
+                eventsFlow.emit(event to payload)
             }
         }
     }
 
-    /**
-     * Retrieves an event object by its name.
-     *
-     * @param eventName Name of the event.
-     * @return The [Events] object, or null if not found.
-     */
+    /** Retrieve the [Events] token for a given name, or null if not registered. */
     operator fun get(eventName: String): Events? = state.eventMap[eventName]
 
-    private fun addEvent(eventName: String) {
-        if (state.eventMap.containsKey(eventName)) return
-
-        val newEvent = Events()
-        state = state.copy(
-            eventMap = state.eventMap + (eventName to newEvent),
-            reverseEventMap = state.reverseEventMap + (newEvent to eventName)
-        )
-    }
+    /** Retrieve the last payload broadcast for a given event name. */
+    fun getPayload(eventName: String): Any? = state.payloadMap[eventName]
 
     /**
-     * Retrieves the payload for a specific event.
-     *
-     * @param eventName Name of the event.
-     * @return The payload object, or null.
-     */
-    fun getPayload(eventName: String): Any? = state.eventMap[eventName]?.payload
-
-    /**
-     * Sets a payload for a specific event without broadcasting it.
-     *
-     * @param eventName Name of the event.
-     * @param payload The payload data.
+     * Store a payload for an event without broadcasting it.
+     * Useful for pre-seeding payload before the event fires.
      */
     fun addPayload(eventName: String, payload: Any?) {
-        state.eventMap[eventName]?.payload = payload
+        state = stateWithPayload(state, eventName, payload)
     }
-
-    /**
-     * This class contains built-in and custom events which the library can broadcast to the application.
-     * Here is a list of the built-in events:
-     * ```
-     * "Init"
-     * "ConnectionStarted"
-     * "ConnectionSetupComplete"
-     * "Disconnect"
-     * "AlarmDataLoaded"
-     * "NotificationsEnabled"
-     * "NotificationsDisabled"
-     * "WatchInitializationCompleted"
-     * "AllPermissionsAccepted"
-     * "ButtonPressedInfoReceived"
-     * "ConnectionFailed"
-     * "SettingsLoaded"
-     * "NeedToUpdateUI"
-     * "CalendarUpdated"
-     * "HomeTimeUpdated"
-     * "ApiError"
-     * ```
-     * The App can add their own arbitrary events like this:
-     * ```
-     * ProgressEvents.addEvent("MyCustomEvent")
-     * ```
-     */
-    open class Events(var payload: Any? = null)
 }
