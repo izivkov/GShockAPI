@@ -15,6 +15,8 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.GwBx5600TimeIO
+import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.RunActionsIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
@@ -64,6 +66,7 @@ object MessageDispatcher {
         CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code    to EventsIO::onReceivedTitle,
         CasioConstants.CHARACTERISTICS.CASIO_TIMER.code             to TimerIO::onReceived,
         CasioConstants.CHARACTERISTICS.CASIO_WORLD_CITIES.code      to WorldCitiesIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_HOME_TIME.code         to HomeTimeIO::onReceived,
         CasioConstants.CHARACTERISTICS.CASIO_DST_WATCH_STATE.code   to DstWatchStateIO::onReceived,
         CasioConstants.CHARACTERISTICS.CASIO_WATCH_NAME.code        to WatchNameIO::onReceived,
         CasioConstants.CHARACTERISTICS.CASIO_WATCH_CONDITION.code   to WatchConditionIO::onReceived,
@@ -74,6 +77,9 @@ object MessageDispatcher {
         CasioConstants.CHARACTERISTICS.ERROR.code                   to ErrorIO::onReceived,
         CasioConstants.CHARACTERISTICS.FIND_PHONE.code              to RunActionsIO::onReceived,
         CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code        to UnknownIO::onReceived,
+        CasioConstants.GW_BX5600_SP_DATA_HEADER_03.toInt()          to GwBx5600TimeIO::onReceived,
+        CasioConstants.GW_BX5600_SP_DATA_HEADER_05.toInt()          to GwBx5600TimeIO::onReceived,
+        CasioConstants.GW_BX5600_SP_DATA_HEADER_06.toInt()          to GwBx5600TimeIO::onReceived,
     )
 
     // =========================================================================
