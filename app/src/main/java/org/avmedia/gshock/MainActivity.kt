@@ -244,9 +244,10 @@ class MainActivity : ComponentActivity() {
 
                     if (showLogs) {
                         val listState = rememberLazyListState()
-                        LaunchedEffect(viewModel.logMessages.size) {
-                            if (viewModel.logMessages.isNotEmpty()) {
-                                listState.animateScrollToItem(viewModel.logMessages.size - 1)
+                        val listSize = viewModel.logMessages.size
+                        LaunchedEffect(listSize) {
+                            if (listSize > 0) {
+                                listState.animateScrollToItem(listSize - 1)
                             }
                         }
                         LazyColumn(
@@ -254,7 +255,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            items(viewModel.logMessages) { log ->
+                            items(viewModel.logMessages.toList()) { log ->
                                 Text(
                                     text = log,
                                     style = MaterialTheme.typography.bodySmall.copy(
