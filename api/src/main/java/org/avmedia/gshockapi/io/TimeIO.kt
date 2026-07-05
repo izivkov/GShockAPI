@@ -180,23 +180,11 @@ object TimeIO {
     }
 
     suspend fun set(timeMs: Long? = null) {
-        val timeToSet = timeMs ?: Clock.systemDefaultZone().millis()
-
-        if (WatchInfo.hasNewTimeProtocol) {
-            val adjustedDateTime = TimeIOFunctional.adjustTimeForDSTAndConvert(timeToSet, state.casioTimezone)
-            GwBx5600TimeIO.setTime(adjustedDateTime)
-            return
-        }
-
         initializeForSettingTime()
+        val timeToSet = timeMs ?: Clock.systemDefaultZone().millis()
         Connection.sendMessage(
             "{action: \"SET_TIME\", value: ${timeToSet}}"
         )
-
-        if (WatchInfo.hasSecondDial) {
-            SecondDialIO.writeResetSequence(0)
-            SecondDialIO.writeResetSequence(1)
-        }
     }
 
     private suspend fun getDSTWatchState(dstState: IO.DstState): String =

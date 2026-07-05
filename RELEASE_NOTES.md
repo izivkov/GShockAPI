@@ -1,20 +1,3 @@
-# GShockAPI Release Notes - v1.4.76
-
-## Overview
-This update introduces support for new watch models, significant refactoring for dynamic BLE characteristics discovery, and critical bug fixes for Jetpack Compose UI stability.
-
-## 🚀 New Features
-- **New Watch Models**: Added comprehensive support for MTG-B1000 and GW-BX5600 watches, including their specific time synchronization protocols.
-- **Dynamic Characteristics**: Refactored the initialization sequence to dynamically discover and register supported BLE characteristics from the watch directly via GATT services, eliminating the need for manual, hard-coded characteristic injections.
-
-## 🛠 Architectural Improvements
-- **HomeTimeIO Refactoring**: Resolved technical debt within the `HomeTimeIO` and related IO modules by enforcing the Functional/IO design pattern. Standardized method signatures, corrected async handling, and centralized constants.
-
-## 🔧 Reliability & Bug Fixes
-- **LazyColumn Crash Fix**: Resolved a critical `java.lang.IndexOutOfBoundsException` occurring during Jetpack Compose `LazyColumn` scroll or update operations by stabilizing the underlying data collection and state management.
-
----
-
 # GShockAPI Release Notes - v1.4.74
 
 ## Overview

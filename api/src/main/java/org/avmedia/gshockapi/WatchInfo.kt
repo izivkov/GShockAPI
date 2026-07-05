@@ -51,8 +51,6 @@ data object WatchInfo {
     val hasWorldCities:         Boolean get() = state.info.hasWorldCities
     val hasHomeTime:            Boolean get() = state.info.hasHomeTime
     val hasMultipleFonts:       Boolean get() = state.info.hasMultipleFonts
-    val hasSecondDial:          Boolean get() = state.info.hasSecondDial
-    val hasNewTimeProtocol:     Boolean get() = state.info.hasNewTimeProtocol
 
     // =========================================================================
     // Domain Types
@@ -61,7 +59,7 @@ data object WatchInfo {
     enum class WatchModel {
         GA, GW, DW_B5600, DW, GMW, GPR, GST, MSG, GB001, GBD, GBD_800,
         MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, GMW_BZ5000,
-        GW_BX5600, MTG, GENERIC,
+        GW_BX5600, GENERIC,
     }
 
     data class ModelInfo(
@@ -90,8 +88,6 @@ data object WatchInfo {
         val hasWorldCities: Boolean = true,
         val hasHomeTime: Boolean = true,
         val hasMultipleFonts: Boolean = false,
-        val hasSecondDial: Boolean = false,
-        val hasNewTimeProtocol: Boolean = false,
     )
 
     // =========================================================================
@@ -128,7 +124,6 @@ data object WatchInfo {
             shortLightDuration = "1.5s", longLightDuration = "3s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasMultipleFonts = true,
-            hasNewTimeProtocol = true,
         ),
         ModelInfo(
             model = WatchModel.MRG_B5000,
@@ -150,11 +145,6 @@ data object WatchInfo {
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
-        ),
-        ModelInfo(
-            model = WatchModel.MTG,
-            hasSecondDial = true,
-            hasWorldCities = false,
         ),
         ModelInfo(model = WatchModel.GST,    hasAutoLight = false, hasReminders = true),
         ModelInfo(
@@ -216,7 +206,6 @@ data object WatchInfo {
         shortName.startsWith("GCW-B5000")  -> WatchModel.GCW_B5000
         shortName.startsWith("GMW-BZ5000") -> WatchModel.GMW_BZ5000
         shortName.startsWith("GW-BX5600")  -> WatchModel.GW_BX5600
-        shortName.startsWith("MTG")        -> WatchModel.MTG
         shortName.startsWith("GM-B2100")   -> WatchModel.GA
         shortName.startsWith("ABL-100")    -> WatchModel.ABL_100
         shortName.startsWith("G-B001")     -> WatchModel.GB001

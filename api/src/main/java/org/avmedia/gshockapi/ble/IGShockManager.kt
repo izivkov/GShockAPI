@@ -87,6 +87,7 @@ private class GShockManagerImpl(
     private fun initCharacteristicsMap(gatt: BluetoothGatt) {
         gatt.services.forEach { service ->
             service.characteristics.forEach { char ->
+                println("===> Service: ${service.uuid}")
                 characteristicUUIDs[char.uuid.toString()] = CharacteristicInfo(
                     uuid = char.uuid,
                     properties = char.properties
@@ -94,7 +95,7 @@ private class GShockManagerImpl(
             }
         }
 
-        Timber.i("Found ${characteristicUUIDs.size} characteristics:")
+        Timber.d("Found ${characteristicUUIDs.size} characteristics:")
         characteristicUUIDs.forEach { (key, info) ->
             Timber.i("UUID: $key, Properties: ${propsToString(info.properties)}")
         }

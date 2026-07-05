@@ -12,10 +12,6 @@ object CasioConstants {
     val WATCH_FEATURES_SERVICE_UUID: UUID =
         UUID.fromString("26eb000d-b012-49a8-b1f8-394fb2032b0f")
 
-    const val GW_BX5600_SP_DATA_HEADER_03: Byte = 0x03
-    const val GW_BX5600_SP_DATA_HEADER_05: Byte = 0x05
-    const val GW_BX5600_SP_DATA_HEADER_06: Byte = 0x06
-
     // Modern Watches - All Features
     val CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb002c-b012-49a8-b1f8-394fb2032b0f")
@@ -48,7 +44,6 @@ object CasioConstants {
         CASIO_SETTING_FOR_BASIC(0x13),
         CASIO_CURRENT_TIME_MANAGER(0x39),
         CASIO_WORLD_CITIES(0x1f),
-        CASIO_HOME_TIME(0x24),
         CASIO_REMINDER_TITLE(0x30),
         CASIO_REMINDER_TIME(0x31),
         CASIO_TIMER(0x18),
