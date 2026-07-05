@@ -15,6 +15,7 @@ This update introduces significant functional programming improvements to the ev
 - **MIP Watch Enhancements**: Introduced support for classic fonts on MIP (Memory In Pixel) display watches.
 - **Watch Scratchpad**: Implemented a new "Scratchpad" memory feature, allowing apps to store persistent state directly on the watch.
 - **Companion Device Pairing**: Full integration with Android's Companion Device Manager for more reliable background connectivity and simplified pairing workflows.
+- **Step Counter Support**: Added step counter functionality for ABL-100 watch models, enabling apps to read daily step counts via the life-log activity record characteristic.
 
 ## 🛠 Architectural Improvements
 - **BLE Layer Refactoring**: Decoupled BLE scanning logic from the application layer, encapsulating it within the new `GShockScanner` class for better library modularity.

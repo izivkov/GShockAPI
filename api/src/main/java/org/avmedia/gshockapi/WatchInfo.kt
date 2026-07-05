@@ -51,6 +51,7 @@ data object WatchInfo {
     val hasWorldCities:         Boolean get() = state.info.hasWorldCities
     val hasHomeTime:            Boolean get() = state.info.hasHomeTime
     val hasMultipleFonts:       Boolean get() = state.info.hasMultipleFonts
+    val hasStepCounter:         Boolean get() = state.info.hasStepCounter
 
     // =========================================================================
     // Domain Types
@@ -88,6 +89,7 @@ data object WatchInfo {
         val hasWorldCities: Boolean = true,
         val hasHomeTime: Boolean = true,
         val hasMultipleFonts: Boolean = false,
+        val hasStepCounter: Boolean = false,
     )
 
     // =========================================================================
@@ -151,6 +153,7 @@ data object WatchInfo {
             model = WatchModel.ABL_100,
             hasAutoLight = false, hasReminders = false,
             hasTemperature = false, hasBatteryLevel = false, hasWorldCities = false,
+            hasStepCounter = true,
         ),
         ModelInfo(model = WatchModel.GA,     hasAutoLight = false, hasReminders = true),
         ModelInfo(model = WatchModel.GB001,  hasAutoLight = true,  hasReminders = false),

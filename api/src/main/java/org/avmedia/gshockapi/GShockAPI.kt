@@ -21,6 +21,7 @@ import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
 import org.avmedia.gshockapi.io.SettingsIO
+import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
@@ -338,6 +339,15 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
     override suspend fun getWatchTemperature(): Int {
         return WatchConditionIO.request().temperature
+    }
+
+    /**
+     * Get daily step count from the watch (if supported).
+     *
+     * @return the daily step count, or 0 if not supported
+     */
+    override suspend fun getStepCount(): Int {
+        return StepCounterIO.request()
     }
 
     /**

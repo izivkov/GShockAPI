@@ -47,6 +47,7 @@ object CasioConstants {
         CASIO_REMINDER_TITLE(0x30),
         CASIO_REMINDER_TIME(0x31),
         CASIO_TIMER(0x18),
+        CASIO_ACTIVITY_RECORD(0x26), // step counter / activity record
         ERROR(0xFF),
 
         // ECB-30

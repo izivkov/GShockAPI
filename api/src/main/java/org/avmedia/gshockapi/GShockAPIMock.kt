@@ -133,6 +133,10 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return 37
     }
 
+    override suspend fun getStepCount(): Int {
+        return 0
+    }
+
     override suspend fun getTimer(): Int {
         return 4 * 60
     }
