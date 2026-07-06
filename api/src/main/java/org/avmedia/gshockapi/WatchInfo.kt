@@ -52,6 +52,7 @@ data object WatchInfo {
     val hasHomeTime:            Boolean get() = state.info.hasHomeTime
     val hasMultipleFonts:       Boolean get() = state.info.hasMultipleFonts
     val hasStepCounter:         Boolean get() = state.info.hasStepCounter
+    val hasNewTimeFormat:       Boolean get() = state.info.hasNewTimeFormat
 
     // =========================================================================
     // Domain Types
@@ -90,6 +91,7 @@ data object WatchInfo {
         val hasHomeTime: Boolean = true,
         val hasMultipleFonts: Boolean = false,
         val hasStepCounter: Boolean = false,
+        val hasNewTimeFormat: Boolean = false,
     )
 
     // =========================================================================
@@ -126,6 +128,7 @@ data object WatchInfo {
             shortLightDuration = "1.5s", longLightDuration = "3s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasMultipleFonts = true,
+            hasNewTimeFormat = true,
         ),
         ModelInfo(
             model = WatchModel.MRG_B5000,

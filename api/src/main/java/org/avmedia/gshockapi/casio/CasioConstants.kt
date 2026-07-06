@@ -22,6 +22,13 @@ object CasioConstants {
     val CASIO_NOTIFICATION_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb0030-b012-49a8-b1f8-394fb2032b0f")
 
+    val CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID: UUID =
+        UUID.fromString("26eb002e-b012-49a8-b1f8-394fb2032b0f")
+
+    val CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID: UUID =
+        UUID.fromString("26eb002f-b012-49a8-b1f8-394fb2032b0f")
+
+
     /* Others:
     CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID = UUID.fromString("26eb002c-b012-49a8-b1f8-394fb2032b0f");
     CASIO_ALL_FEATURES_CHARACTERISTIC_UUID = UUID.fromString("26eb002d-b012-49a8-b1f8-394fb2032b0f");
@@ -48,6 +55,9 @@ object CasioConstants {
         CASIO_REMINDER_TIME(0x31),
         CASIO_TIMER(0x18),
         CASIO_ACTIVITY_RECORD(0x26), // step counter / activity record
+        GW_BX5600_SP_DATA_HEADER_03(0x03),
+        GW_BX5600_SP_DATA_HEADER_05(0x05),
+        GW_BX5600_SP_DATA_HEADER_06(0x06),
         ERROR(0xFF),
 
         // ECB-30

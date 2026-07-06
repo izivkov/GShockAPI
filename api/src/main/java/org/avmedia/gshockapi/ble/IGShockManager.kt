@@ -25,7 +25,9 @@ typealias OnConnectedType = (String, String) -> Unit
 enum class GetSetMode {
     GET,
     SET,
-    NOTIFY
+    NOTIFY,
+    SP_REQUEST,
+    SP_DATA
 }
 
 interface GShock {
@@ -50,6 +52,8 @@ private class GShockManagerImpl(
     private var readCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderNotifications: BluetoothGattCharacteristic? = null
+    private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
+    private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
 
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
@@ -136,6 +140,8 @@ private class GShockManagerImpl(
         readCharacteristicHolder = null
         writeCharacteristicHolder = null
         writeCharacteristicHolderNotifications = null
+        writeCharacteristicHolderSPRequest = null
+        writeCharacteristicHolderSPData = null
         characteristicUUIDs.clear()
 
         if (isReady) {
@@ -232,6 +238,8 @@ private class GShockManagerImpl(
             readCharacteristicHolder = null
             writeCharacteristicHolder = null
             writeCharacteristicHolderNotifications = null
+            writeCharacteristicHolderSPRequest = null
+            writeCharacteristicHolderSPData = null
             characteristicUUIDs.clear()
 
             // Force garbage collection of BLE resources
@@ -253,6 +261,16 @@ private class GShockManagerImpl(
             if (findCharacteristic(gatt, CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID)) {
                 writeCharacteristicHolderNotifications = getCharacteristic(
                     CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID,
+                )
+            }
+            if (findCharacteristic(gatt, CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID)) {
+                writeCharacteristicHolderSPRequest = getCharacteristic(
+                    CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID,
+                )
+            }
+            if (findCharacteristic(gatt, CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID)) {
+                writeCharacteristicHolderSPData = getCharacteristic(
+                    CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID,
                 )
             }
             return true
@@ -330,6 +348,8 @@ private class GShockManagerImpl(
             GetSetMode.GET -> CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID
             GetSetMode.SET -> CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID
             GetSetMode.NOTIFY -> CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID
+            GetSetMode.SP_REQUEST -> CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID
+            GetSetMode.SP_DATA -> CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID
         }
 
         val isSupported = characteristicUUIDs.containsKey(uuid.toString())
@@ -351,9 +371,11 @@ private class GShockManagerImpl(
             GetSetMode.GET -> readCharacteristicHolder
             GetSetMode.SET -> writeCharacteristicHolder
             GetSetMode.NOTIFY -> writeCharacteristicHolderNotifications
+            GetSetMode.SP_REQUEST -> writeCharacteristicHolderSPRequest
+            GetSetMode.SP_DATA -> writeCharacteristicHolderSPData
         }
         val writeType =
-            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY)
+            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST)
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 

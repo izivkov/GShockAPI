@@ -425,6 +425,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *  ```
      */
     override suspend fun setTime(timeZone: String, timeMs: Long?) {
+        if (org.avmedia.gshockapi.WatchInfo.hasNewTimeFormat) {
+            org.avmedia.gshockapi.io.GwBx5600TimeIO.set(timeMs)
+            return
+        }
 
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("setTime: Invalid timezone $timeZone passed")
