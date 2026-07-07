@@ -66,20 +66,10 @@ private class GShockManagerImpl(
 
     override fun initialize() {
         super.initialize()
-        writeCharacteristicHolder?.let { characteristic ->
-            setNotificationCallback(characteristic).with { _, data ->
-                val hexData = data.value?.joinToString(separator = " ", prefix = "0x") {
-                    String.format("%02X", it)
-                }
-                dataReceivedCallback?.dataReceived(hexData)
-            }
-            enableNotifications(characteristic).enqueue()
-        }
         ProgressEvents.onNext("BleManagerInitialized")
     }
 
-    // Characteristic map
-    // Store all characteristic UUIDs
+    // Characteristic map — stores all discovered characteristic UUIDs and properties
     private data class CharacteristicInfo(
         val uuid: UUID,
         val properties: Int
@@ -87,11 +77,9 @@ private class GShockManagerImpl(
 
     private val characteristicUUIDs = mutableMapOf<String, CharacteristicInfo>()
 
-    // Initialize characteristics when service is discovered
     private fun initCharacteristicsMap(gatt: BluetoothGatt) {
         gatt.services.forEach { service ->
             service.characteristics.forEach { char ->
-                println("===> Service: ${service.uuid}")
                 characteristicUUIDs[char.uuid.toString()] = CharacteristicInfo(
                     uuid = char.uuid,
                     properties = char.properties
@@ -103,8 +91,33 @@ private class GShockManagerImpl(
         characteristicUUIDs.forEach { (key, info) ->
             Timber.i("UUID: $key, Properties: ${propsToString(info.properties)}")
         }
+
+        // Subscribe to notifications on every characteristic that supports them.
+        // Mirrors the Python subscribe-all approach — no per-model whitelists needed.
+        gatt.services.forEach { service ->
+            service.characteristics.forEach { char ->
+                val hasNotify = char.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
+                val hasIndicate = char.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
+                if (hasNotify || hasIndicate) {
+                    setNotificationCallback(char).with { _, data ->
+                        val hexData = data.value?.joinToString(separator = " ", prefix = "0x") {
+                            String.format("%02X", it)
+                        }
+                        Timber.d("Notification from ${char.uuid}: $hexData")
+                        dataReceivedCallback?.dataReceived(hexData)
+                    }
+                    enableNotifications(char)
+                        .fail { _, status ->
+                            Timber.d("Failed to enable notifications for ${char.uuid}: $status")
+                        }
+                        .done {
+                            Timber.d("Subscribed to notifications: ${char.uuid}")
+                        }
+                        .enqueue()
+                }
+            }
+        }
     }
-    // End Characteristic map
 
     @SuppressLint("MissingPermission")
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -133,10 +146,8 @@ private class GShockManagerImpl(
         scope.cancel()
         cancelQueue()
 
-        // Close GATT resources
         close()
 
-        // Clear all characteristics
         readCharacteristicHolder = null
         writeCharacteristicHolder = null
         writeCharacteristicHolderNotifications = null
@@ -154,23 +165,14 @@ private class GShockManagerImpl(
     }
 
     override fun enableNotifications() {
-        enableNotifications(writeCharacteristicHolder)
-            .fail { _, status ->
-                // Handle failure to enable notifications
-                Timber.i("Failed to enable notifications. Status: $status")
-                ProgressEvents.onNext("ApiError")
-            }
-            .done { device ->
-                // Notifications enabled successfully
-                ProgressEvents.onNext("NotificationsEnabled", device)
-            }
-            .enqueue()
+        // No-op: notifications are now enabled for all notifiable characteristics
+        // in initialize(). Kept for interface compatibility.
     }
 
     // Connection events
     inner class ConnectionEventHandler : ConnectionObserver {
         override fun onDeviceConnecting(device: BluetoothDevice) {
-            Timber.i("$device onDeviceConnecting!!!!!!")
+            Timber.i("$device onDeviceConnecting")
             connectionState = ConnectionState.CONNECTING
         }
 
@@ -187,9 +189,11 @@ private class GShockManagerImpl(
 
         @SuppressLint("MissingPermission")
         override fun onDeviceReady(device: BluetoothDevice) {
-            Timber.i("$device DeviceReady!!!!!!")
+            Timber.i("$device DeviceReady")
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && device.bondState != BluetoothDevice.BOND_BONDED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                device.bondState != BluetoothDevice.BOND_BONDED
+            ) {
                 device.createBond()
             }
 
@@ -201,16 +205,15 @@ private class GShockManagerImpl(
             val name = device.name ?: "CASIO"
             onConnected(name, device.address)
 
-            // inform the caller that we have connected
             ProgressEvents.onNext("DeviceName", name)
             ProgressEvents.onNext("DeviceAddress", device.address)
             ProgressEvents.onNext("ConnectionSetupComplete", device)
 
-            Timber.i("onDeviceReady: Sent all messages.")
+            Timber.i("onDeviceReady: complete")
         }
 
         override fun onDeviceDisconnecting(device: BluetoothDevice) {
-            Timber.i("$device onDeviceDisconnecting!!!!!!")
+            Timber.i("$device onDeviceDisconnecting")
             connectionState = ConnectionState.DISCONNECTING
         }
 
@@ -222,8 +225,6 @@ private class GShockManagerImpl(
                 ConnectionObserver.REASON_NOT_SUPPORTED -> Timber.e("Device not supported")
                 ConnectionObserver.REASON_TERMINATE_LOCAL_HOST -> Timber.d("Terminated by local host")
                 ConnectionObserver.REASON_TERMINATE_PEER_USER -> Timber.d("Terminated by peer device")
-
-                // Grouping the rest to satisfy the linter
                 ConnectionObserver.REASON_CANCELLED,
                 ConnectionObserver.REASON_SUCCESS,
                 ConnectionObserver.REASON_TIMEOUT,
@@ -234,7 +235,6 @@ private class GShockManagerImpl(
             }
             connectionState = ConnectionState.DISCONNECTED
 
-            // Add cleanup
             readCharacteristicHolder = null
             writeCharacteristicHolder = null
             writeCharacteristicHolderNotifications = null
@@ -242,7 +242,6 @@ private class GShockManagerImpl(
             writeCharacteristicHolderSPData = null
             characteristicUUIDs.clear()
 
-            // Force garbage collection of BLE resources
             System.gc()
         }
     }
@@ -281,14 +280,12 @@ private class GShockManagerImpl(
     private fun findCharacteristic(gatt: BluetoothGatt, uuid: UUID): Boolean {
         gatt.services.forEach { service ->
             service.characteristics.forEach { char ->
-                val properties = propsToString(char.properties)
                 if (char.uuid == uuid) {
-                    Timber.i("Found characteristic: ${char.uuid} ($properties)")
+                    Timber.i("Found characteristic: ${char.uuid} (${propsToString(char.properties)})")
                     return true
                 }
             }
         }
-
         return false
     }
 
@@ -343,6 +340,16 @@ private class GShockManagerImpl(
     └─ Characteristic: 26eb0030-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE) // unique to DW-H5600
      */
 
+    /* GW-BX5600
+  Service: 26eb000d-b012-49a8-b1f8-394fb2032b0f
+    └─ Characteristic: 26eb002c-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE)         handle 0x000c
+    └─ Characteristic: 26eb002d-b012-49a8-b1f8-394fb2032b0f (WRITE | NOTIFY)            handle 0x000e
+    └─ Characteristic: 26eb0023-b012-49a8-b1f8-394fb2032b0f (WRITE | NOTIFY)            handle 0x0011
+    └─ Characteristic: 26eb0024-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE | NOTIFY) handle 0x0014
+    └─ Characteristic: 26eb002e-b012-49a8-b1f8-394fb2032b0f (WRITE_NO_RESPONSE)         handle 0x0017  SP_REQUEST
+    └─ Characteristic: 26eb002f-b012-49a8-b1f8-394fb2032b0f (WRITE | NOTIFY)            handle 0x0019  SP_DATA
+     */
+
     override fun isServiceSupported(handle: GetSetMode): Boolean {
         val uuid = when (handle) {
             GetSetMode.GET -> CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID
@@ -351,9 +358,7 @@ private class GShockManagerImpl(
             GetSetMode.SP_REQUEST -> CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID
             GetSetMode.SP_DATA -> CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID
         }
-
-        val isSupported = characteristicUUIDs.containsKey(uuid.toString())
-        return isSupported
+        return characteristicUUIDs.containsKey(uuid.toString())
     }
 
     override suspend fun write(handle: GetSetMode, data: ByteArray) {
@@ -367,6 +372,7 @@ private class GShockManagerImpl(
             Timber.e("${handle.name.lowercase()} feature not supported")
             return
         }
+
         val characteristic = when (handle) {
             GetSetMode.GET -> readCharacteristicHolder
             GetSetMode.SET -> writeCharacteristicHolder
@@ -374,17 +380,14 @@ private class GShockManagerImpl(
             GetSetMode.SP_REQUEST -> writeCharacteristicHolderSPRequest
             GetSetMode.SP_DATA -> writeCharacteristicHolderSPData
         }
+
         val writeType =
             if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST)
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         try {
-            writeCharacteristic(
-                characteristic,
-                data,
-                writeType
-            ).enqueue()
+            writeCharacteristic(characteristic, data, writeType).enqueue()
         } catch (e: Exception) {
             Timber.e(e, "Error writing to characteristic ${characteristic?.uuid}")
             ProgressEvents.onNext("ApiError", "Failed to write data: ${e.message}")
@@ -392,6 +395,3 @@ private class GShockManagerImpl(
         }
     }
 }
-
-
-
