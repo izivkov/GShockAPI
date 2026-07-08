@@ -20,6 +20,7 @@ import org.avmedia.gshockapi.io.EventsIO
 import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
+import org.avmedia.gshockapi.io.MtgB1000TimeIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
@@ -438,6 +439,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
         TimeIO.setTimezone(timeZone)
         TimeIO.set(timeMs)
+
+        if (org.avmedia.gshockapi.WatchInfo.hasSecondDial) {
+            MtgB1000TimeIO.setSecondDial()
+        }
     }
 
     /**
