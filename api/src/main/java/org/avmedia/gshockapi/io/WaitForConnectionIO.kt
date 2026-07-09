@@ -5,6 +5,9 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.Connection
@@ -28,6 +31,7 @@ object WaitForConnectionIOFunctional {
      * Returns success response if connected, otherwise indicates waiting state.
      * No side effects - pure evaluation using Connection state.
      */
+
     fun checkConnectionAlreadyEstablished(): String? =
         if (Connection.isConnected()) "OK" else null
 
@@ -49,6 +53,9 @@ object WaitForConnectionIOFunctional {
 
 @RequiresApi(Build.VERSION_CODES.O)
 object WaitForConnectionIO {
+
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private data class State(
         val deferredResult: CompletableDeferred<String>? = null
     )
@@ -88,7 +95,6 @@ object WaitForConnectionIO {
                 state = State()
             }
         )
-
-        ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions)
+        ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions, ioScope)
     }
 }

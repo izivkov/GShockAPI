@@ -128,19 +128,17 @@ object ProgressEvents {
     val subscriber = Subscriber()
 
     class Subscriber {
-        /**
-         * Start listening to [ProgressEvents]. Only one subscription per [name] is allowed.
-         *
-         * @param name    Unique identifier for this subscription.
-         * @param eventActions Actions to invoke per event name.
-         */
-        fun runEventActions(name: String, eventActions: Array<EventAction>) {
+        // Keep track of active jobs
+        private val activeJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
+
+        fun runEventActions(name: String, eventActions: Array<EventAction>, scope: CoroutineScope) {
             if (state.subscribers.contains(name)) return
             state = stateWithSubscriber(state, name)
 
             val actionMap = eventActions.associateBy { it.label }
 
-            CoroutineScope(Dispatchers.Main).launch {
+            // Use the provided scope instead of creating a new one
+            val job = scope.launch {
                 eventsFlow.collect { (event, payload) ->
                     try {
                         state.reverseEventMap[event]?.let { eventName ->
@@ -148,15 +146,17 @@ object ProgressEvents {
                         }
                     } catch (throwable: Throwable) {
                         Timber.d("Error in subscriber '$name': $throwable")
-                        throwable.printStackTrace()
                     }
                 }
             }
+            activeJobs[name] = job
         }
 
-        /** Stop listening. */
         fun stop(name: String) {
             state = stateWithoutSubscriber(state, name)
+            // Explicitly cancel the job
+            activeJobs[name]?.cancel()
+            activeJobs.remove(name)
         }
     }
 
@@ -173,8 +173,8 @@ object ProgressEvents {
     /**
      * Convenience wrapper — delegates to [Subscriber.runEventActions].
      */
-    fun runEventActions(name: String, eventActions: Array<EventAction>) {
-        subscriber.runEventActions(name, eventActions)
+    fun runEventActions(name: String, eventActions: Array<EventAction>, scope: CoroutineScope) {
+        subscriber.runEventActions(name, eventActions, scope)
     }
 
     /**
