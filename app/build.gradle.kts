@@ -21,8 +21,9 @@ android {
     }
 
     kotlin {
+        jvmToolchain(21)
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
     }
 
@@ -39,10 +40,10 @@ android {
         }
     }
 
-    // FIX: Set Java to VERSION_17 to match Kotlin
+    // FIX: Set Java to VERSION_21 to match Kotlin
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     buildFeatures {
