@@ -13,7 +13,7 @@ This library provides an API to communicate to the Casio G-Shock watches via the
 
 **Supported Watches:**
 
-G(M)W-5600, G(M)W-5000, GA-B2100, GST-B500, MSG-B100, G-B001, GBD-800 (Partial support), MRG-B5000, GCW-B5000
+G(M)W-5600, G(M)W-5000, GA-B2100, GST-B500, MSG-B100, G-B001, GBD-800 (Partial support), MRG-B5000, GCW-B5000, MTG-B1000, GW-BX5600, ABL-100, DW-H5600, GMW-BZ5000
 
 
 ## Documentation

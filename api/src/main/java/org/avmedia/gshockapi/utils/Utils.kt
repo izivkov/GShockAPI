@@ -6,6 +6,10 @@
 
 package org.avmedia.gshockapi.utils
 
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -75,4 +79,22 @@ object Utils {
 
     fun trimNonAsciiCharacters(string: String): String =
         Regex("[^\\x00-\\x7F]").replace(string, "")
+
+    enum class ToneType(val value: Int) {
+        LOW(ToneGenerator.TONE_CDMA_LOW_L),
+        MEDIUM(ToneGenerator.TONE_CDMA_MED_L),
+        HIGH(ToneGenerator.TONE_CDMA_HIGH_L)
+    }
+
+    fun beep(toneType: ToneType, duration: Int = 200, delay: Int = 0) {
+        Handler(Looper.getMainLooper()).postDelayed({
+            val toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, ToneGenerator.MAX_VOLUME)
+            toneGenerator.startTone(toneType.value, duration)
+
+            // startTone is async, so release after the tone finishes (duration + small buffer)
+            Handler(Looper.getMainLooper()).postDelayed({
+                toneGenerator.release()
+            }, duration.toLong() + 50)
+        }, delay.toLong())
+    }
 }

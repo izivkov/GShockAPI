@@ -178,11 +178,13 @@ private class GShockManagerImpl(
 
         @SuppressLint("MissingPermission")
         override fun onDeviceConnected(device: BluetoothDevice) {
+            Timber.i("$device onDeviceConnected — waiting for service discovery")
             ProgressEvents.onNext("ConnectionStarted")
             connectionState = ConnectionState.CONNECTED
         }
 
         override fun onDeviceFailedToConnect(device: BluetoothDevice, reason: Int) {
+            Timber.w("$device onDeviceFailedToConnect, reason=$reason")
             ProgressEvents.onNext("ConnectionFailed")
             connectionState = ConnectionState.DISCONNECTED
         }
@@ -248,6 +250,7 @@ private class GShockManagerImpl(
 
     @SuppressLint("NewApi", "MissingPermission")
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
+        Timber.i("isRequiredServiceSupported called, services found: ${gatt.services.size}")
         initCharacteristicsMap(gatt)
 
         gatt.getService(CasioConstants.WATCH_FEATURES_SERVICE_UUID)?.apply {
@@ -272,8 +275,10 @@ private class GShockManagerImpl(
                     CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID,
                 )
             }
+            Timber.i("isRequiredServiceSupported returning true")
             return true
         }
+        Timber.w("isRequiredServiceSupported returning false — WATCH_FEATURES_SERVICE_UUID not found")
         return false
     }
 

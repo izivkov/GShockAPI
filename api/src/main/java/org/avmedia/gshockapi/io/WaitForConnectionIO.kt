@@ -95,6 +95,6 @@ object WaitForConnectionIO {
                 state = State()
             }
         )
-        ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions, ioScope)
+        ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions)
     }
 }

@@ -1,4 +1,21 @@
+# GShockAPI Release Notes - v1.5.0
+
+## Overview
+This major update expands watch model support, introduces a new notification API, and improves overall connection reliability.
+
+## 🚀 New Features
+- **App Notifications**: Added support for sending notifications directly to the watch display. This includes support for Calendar, Email, and SMS notifications with secure XOR encryption.
+- **MTG-B1000 Support**: Full support for the MTG-B1000 series, including Second Dial configuration.
+- **GW-BX5600 Support**: Added support for the GW-BX5600 model, including its new time format and multiple font support.
+- **Enhanced Timekeeping**: Implementation of the new time format used by the latest Casio modules.
+
+## 🔧 Reliability & Improvements
+- **Connection Stability**: Further refinements to the BLE layer to improve connection success rates.
+- **Code Optimization**: Continued refactoring of the IO layer for better performance and maintainability.
+- **Android Compatibility**: Verified and improved support for the latest Android features.
+
 # GShockAPI Release Notes - v1.4.74
+
 
 ## Overview
 This update introduces significant functional programming improvements to the event handling and IO layers, along with enhanced watch model support and refined BLE connectivity. We continue to improve reliability across Android versions.

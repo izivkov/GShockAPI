@@ -397,7 +397,7 @@ class MainActivity : ComponentActivity() {
         )
 
         LaunchedEffect(Unit) {
-            ProgressEvents.runEventActions("Run", eventActions, lifecycleScope)
+            ProgressEvents.runEventActions("Run", eventActions)
         }
     }
 

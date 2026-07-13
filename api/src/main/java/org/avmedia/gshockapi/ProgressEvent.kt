@@ -128,17 +128,19 @@ object ProgressEvents {
     val subscriber = Subscriber()
 
     class Subscriber {
-        // Keep track of active jobs
-        private val activeJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
-
-        fun runEventActions(name: String, eventActions: Array<EventAction>, scope: CoroutineScope) {
+        /**
+         * Start listening to [ProgressEvents]. Only one subscription per [name] is allowed.
+         *
+         * @param name    Unique identifier for this subscription.
+         * @param eventActions Actions to invoke per event name.
+         */
+        fun runEventActions(name: String, eventActions: Array<EventAction>) {
             if (state.subscribers.contains(name)) return
             state = stateWithSubscriber(state, name)
 
             val actionMap = eventActions.associateBy { it.label }
 
-            // Use the provided scope instead of creating a new one
-            val job = scope.launch {
+            CoroutineScope(Dispatchers.Main).launch {
                 eventsFlow.collect { (event, payload) ->
                     try {
                         state.reverseEventMap[event]?.let { eventName ->
@@ -146,17 +148,15 @@ object ProgressEvents {
                         }
                     } catch (throwable: Throwable) {
                         Timber.d("Error in subscriber '$name': $throwable")
+                        throwable.printStackTrace()
                     }
                 }
             }
-            activeJobs[name] = job
         }
 
+        /** Stop listening. */
         fun stop(name: String) {
             state = stateWithoutSubscriber(state, name)
-            // Explicitly cancel the job
-            activeJobs[name]?.cancel()
-            activeJobs.remove(name)
         }
     }
 
@@ -173,8 +173,8 @@ object ProgressEvents {
     /**
      * Convenience wrapper — delegates to [Subscriber.runEventActions].
      */
-    fun runEventActions(name: String, eventActions: Array<EventAction>, scope: CoroutineScope) {
-        subscriber.runEventActions(name, eventActions, scope)
+    fun runEventActions(name: String, eventActions: Array<EventAction>) {
+        subscriber.runEventActions(name, eventActions)
     }
 
     /**
@@ -189,10 +189,8 @@ object ProgressEvents {
 
         val event = state.eventMap[eventName] ?: return
 
-        if (state.subscribers.isNotEmpty()) {
-            CoroutineScope(Dispatchers.Main).launch {
-                eventsFlow.emit(event to payload)
-            }
+        CoroutineScope(Dispatchers.Main).launch {
+            eventsFlow.emit(event to payload)
         }
     }
 
