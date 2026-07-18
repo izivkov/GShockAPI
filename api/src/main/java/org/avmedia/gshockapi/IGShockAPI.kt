@@ -289,9 +289,8 @@ interface IGShockAPI {
      * Writes data to the watch's scratchpad/user data area.
      *
      * @param data The byte array to write.
-     * @param startIndex The starting index in the scratchpad.
      */
-    suspend fun setScratchpadData(data: ByteArray, startIndex: Int)
+    suspend fun setScratchpadData(data: ByteArray)
 
     /**
      * Sends a raw JSON message to the watch. Use for custom actions not exposed by the API.
@@ -324,11 +323,9 @@ interface IGShockAPI {
     /**
      * Reads data from the watch's scratchpad/user data area.
      *
-     * @param index The starting index to read from.
-     * @param length The number of bytes to read.
      * @return The retrieved byte array.
      */
-    suspend fun getScratchpadData(index: Int, length: Int): ByteArray
+    suspend fun getScratchpadData(): ByteArray
 
     /**
      * Checks if the scratchpad data was reset since the last read.

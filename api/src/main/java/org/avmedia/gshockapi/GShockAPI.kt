@@ -386,20 +386,18 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param data The byte array to write.
      * @param startIndex The starting index in the scratchpad.
      */
-    override suspend fun setScratchpadData(data: ByteArray, startIndex: Int) {
-        AppInfoIO.setUserData(data, startIndex)
+    override suspend fun setScratchpadData(data: ByteArray) {
+        AppInfoIO.setUserData(data)
     }
 
     /**
      * Reads data from the watch's scratchpad/user data area.
      *
-     * @param index The starting index to read from.
-     * @param length The number of bytes to read.
      * @return The retrieved byte array.
      */
-    override suspend fun getScratchpadData(index: Int, length: Int): ByteArray {
+    override suspend fun getScratchpadData(): ByteArray {
         AppInfoIO.request()
-        return AppInfoIO.getUserData(index, length)
+        return AppInfoIO.getUserData()
     }
 
     /**

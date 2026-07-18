@@ -26,7 +26,7 @@ object AppInfoIOFunctional {
     const val CMD_BYTE_INDEX = 0
     const val MAGIC_NUMBER_INDEX = 1
     const val USER_DATA_START_INDEX = 2 // User data starts after magic number
-    const val MAGIC_NUMBER = 0x93
+    const val MAGIC_NUMBER = 0x94
 
     /**
      * Pure validator: Checks if scratchpad has been initialized.
@@ -180,23 +180,23 @@ object AppInfoIO {
 
     /**
      * Stores an array of bytes in the user data area of the scratchpad.
-     * 
-     * Uses pure function to validate and transform data.
+     *
+     * Uses pure function to validate and transform data. The full user data
+     * area is always overwritten starting at index 0.
      * Then executes the side effect (sending to watch).
      *
-     * @param data The byte array to write.
-     * @param startIndex The zero-based index within the user data area where writing should begin.
+     * @param data The byte array to write, covering the full user data area.
      * @throws IllegalStateException if the scratchpad is not initialized.
      * @throws IllegalArgumentException if data exceeds buffer size.
      */
-    fun setUserData(data: ByteArray, startIndex: Int) {
+    fun setUserData(data: ByteArray) {
         // Check if scratchpad is initialized
         if (!AppInfoIOFunctional.isScratchpadInitialized(lastReceivedData)) {
             throw IllegalStateException("Scratchpad not initialized. Magic number missing.")
         }
 
-        // Use pure function to write and validate
-        AppInfoIOFunctional.writeUserData(lastReceivedData, data, startIndex)
+        // Use pure function to write and validate — always the full user data region, from index 0
+        AppInfoIOFunctional.writeUserData(lastReceivedData, data, 0)
             .fold(
                 onSuccess = { newBuffer ->
                     // Execute side effect: update local copy and send to watch
@@ -220,14 +220,23 @@ object AppInfoIO {
      * @throws IllegalStateException if the scratchpad is not initialized.
      * @throws IllegalArgumentException if the requested index or length is out of bounds.
      */
-    fun getUserData(index: Int, len: Int): ByteArray {
+    /**
+     * Retrieves all data from the user data area of the scratchpad.
+     *
+     * Uses pure function to validate and extract data.
+     *
+     * @return A [ByteArray] containing the full user data area.
+     * @throws IllegalStateException if the scratchpad is not initialized.
+     */
+    fun getUserData(): ByteArray {
         // Check if scratchpad is initialized
         if (!AppInfoIOFunctional.isScratchpadInitialized(lastReceivedData)) {
             throw IllegalStateException("Scratchpad not initialized. Magic number missing.")
         }
 
-        // Use pure function to read and validate
-        return AppInfoIOFunctional.readUserData(lastReceivedData, index, len)
+        // Use pure function to read and validate — always the full user data region
+        val userDataSize = AppInfoIOFunctional.BUFFER_SIZE - AppInfoIOFunctional.USER_DATA_START_INDEX
+        return AppInfoIOFunctional.readUserData(lastReceivedData, 0, userDataSize)
             .fold(
                 onSuccess = { data -> data },
                 onFailure = { error -> throw error }

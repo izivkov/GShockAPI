@@ -1,21 +1,30 @@
 # GShockAPI Release Notes - v1.5.0
 
 ## Overview
-This major update expands watch model support, introduces a new notification API, and improves overall connection reliability.
+This major update expands watch model support, introduces a new notification API, and modernizes the build infrastructure to the latest Android and Kotlin standards.
 
 ## 🚀 New Features
 - **App Notifications**: Added support for sending notifications directly to the watch display. This includes support for Calendar, Email, and SMS notifications with secure XOR encryption.
 - **MTG-B1000 Support**: Full support for the MTG-B1000 series, including Second Dial configuration.
 - **GW-BX5600 Support**: Added support for the GW-BX5600 model, including its new time format and multiple font support.
 - **Enhanced Timekeeping**: Implementation of the new time format used by the latest Casio modules.
+- **Step Counter Support**: Added step counter functionality for ABL-100 series watches.
 
-## 🔧 Reliability & Improvements
-- **Connection Stability**: Further refinements to the BLE layer to improve connection success rates.
-- **Code Optimization**: Continued refactoring of the IO layer for better performance and maintainability.
-- **Android Compatibility**: Verified and improved support for the latest Android features.
+## 🛠 Architectural & Build Improvements
+- **JDK 21 Migration**: The library and app now target JDK 21, leveraging modern JVM features and better compatibility with the latest Android tools.
+- **Gradle 9 & AGP 9**: Updated the project to use Gradle 9.4.1 and Android Gradle Plugin 9.2.1.
+- **JitPack Build Fix**: Resolved toolchain compatibility issues on JitPack by streamlining JDK resolution and providing a dedicated `jitpack.yml` configuration.
+- **BLE Manager Overhaul**: `IGShockManager` has been refactored to use a more robust "subscribe-all" approach for notifications, improving compatibility with various watch models without requiring per-model whitelists.
+- **IO Layer Refinement**: Continued migration of the IO layer to functional programming principles, enhancing reliability and reducing boilerplate.
+
+## 🔧 Reliability & Bug Fixes
+- **Connection Stability**: Refined the BLE connection process to handle service discovery and characteristic mapping more reliably.
+- **Android 16 Compatibility**: Preliminary support and testing for Android 16 (Baklava).
+- **Service Discovery**: Improved detection of optional characteristics for varied watch models (SP_REQUEST, SP_DATA, NOTIFICATIONS).
+
+---
 
 # GShockAPI Release Notes - v1.4.74
-
 
 ## Overview
 This update introduces significant functional programming improvements to the event handling and IO layers, along with enhanced watch model support and refined BLE connectivity. We continue to improve reliability across Android versions.
