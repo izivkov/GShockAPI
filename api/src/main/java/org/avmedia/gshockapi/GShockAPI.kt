@@ -380,6 +380,35 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return AppInfoIO.request()
     }
 
+    /**
+     * Writes data to the watch's scratchpad/user data area.
+     *
+     * @param data The byte array to write.
+     * @param startIndex The starting index in the scratchpad.
+     */
+    override suspend fun setScratchpadData(data: ByteArray) {
+        AppInfoIO.setUserData(data)
+    }
+
+    /**
+     * Reads data from the watch's scratchpad/user data area.
+     *
+     * @return The retrieved byte array.
+     */
+    override suspend fun getScratchpadData(): ByteArray {
+        AppInfoIO.request()
+        return AppInfoIO.getUserData()
+    }
+
+    /**
+     * Checks if the scratchpad data was reset since the last read.
+     *
+     * @return true if scratchpad was reset.
+     */
+    override fun isScratchpadReset(): Boolean {
+        return AppInfoIO.wasScratchpadReset
+    }
+
 
     /**
      * Sets the current time on the watch from the time on the phone. In addition, it can optionally set the Home Time
