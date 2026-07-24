@@ -286,13 +286,6 @@ interface IGShockAPI {
     fun supportsAppNotifications(): Boolean
 
     /**
-     * Writes data to the watch's scratchpad/user data area.
-     *
-     * @param data The byte array to write.
-     */
-    suspend fun setScratchpadData(data: ByteArray)
-
-    /**
      * Sends a raw JSON message to the watch. Use for custom actions not exposed by the API.
      *
      * @param message The JSON message string.
@@ -319,20 +312,6 @@ interface IGShockAPI {
      * @return true if reconnection should be prevented.
      */
     fun preventReconnection(): Boolean
-
-    /**
-     * Reads data from the watch's scratchpad/user data area.
-     *
-     * @return The retrieved byte array.
-     */
-    suspend fun getScratchpadData(): ByteArray
-
-    /**
-     * Checks if the scratchpad data was reset since the last read.
-     *
-     * @return true if scratchpad was reset.
-     */
-    fun isScratchpadReset(): Boolean
 
     /**
      * Initiates the Companion Device Manager association process for pairing a new watch.
