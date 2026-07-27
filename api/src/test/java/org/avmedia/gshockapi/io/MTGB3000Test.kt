@@ -43,4 +43,17 @@ class MTGB3000Test {
         // arr[2] should have light duration bit set (1 for 3s/4s)
         assertEquals(1.toByte(), encoded[2])
     }
+
+    @Test
+    fun testWatchConditionDecoding() {
+        // Log confirms: 28 3B 04 -> Battery 59%, Temp 4C
+        val result = WatchConditionIOFunctional.decode("283B04").getOrThrow()
+        assertEquals(59, result.batteryLevel)
+        assertEquals(4, result.temperature)
+
+        // Log confirms: 28 11 21 -> Battery 17%, Temp 33C
+        val result2 = WatchConditionIOFunctional.decode("281121").getOrThrow()
+        assertEquals(17, result2.batteryLevel)
+        assertEquals(33, result2.temperature)
+    }
 }

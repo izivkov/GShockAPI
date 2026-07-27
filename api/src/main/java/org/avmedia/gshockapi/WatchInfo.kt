@@ -54,6 +54,7 @@ data object WatchInfo {
     val hasStepCounter:         Boolean get() = state.info.hasStepCounter
     val hasNewTimeFormat:       Boolean get() = state.info.hasNewTimeFormat
     val hasSecondDial:          Boolean get() = state.info.hasSecondDial
+    val hasFineWatchCondition:  Boolean get() = state.info.hasFineWatchCondition
     val hasTimeFormat:          Boolean get() = state.info.hasTimeFormat
     val settingsSize:           Int     get() = state.info.settingsSize
     val timerSize:              Int     get() = state.info.timerSize
@@ -97,6 +98,7 @@ data object WatchInfo {
         val hasStepCounter: Boolean = false,
         val hasNewTimeFormat: Boolean = false,
         val hasSecondDial: Boolean = false,
+        val hasFineWatchCondition: Boolean = false,
         val hasTimeFormat: Boolean = true,
         val settingsSize: Int = 17,
         val timerSize: Int = 7,
@@ -142,9 +144,10 @@ data object WatchInfo {
             model = WatchModel.MTG_B1000,
             worldCitiesCount = 6, dstCount = 3,
             hasAutoLight = true, hasReminders = true,
-            shortLightDuration = "2s", longLightDuration = "4s",
+            shortLightDuration = "1.5s", longLightDuration = "3s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
+            hasFineWatchCondition = true,
         ),
         ModelInfo(
             model = WatchModel.MTG_B3000,
@@ -154,6 +157,9 @@ data object WatchInfo {
             hasWorldCities = false, hasHomeTime = true,
             hasDateFormat = false, weekLanguageSupported = false,
             hasTimeFormat = false, settingsSize = 12, timerSize = 15,
+            batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 100,
+            hasSecondDial = true,
+            hasFineWatchCondition = true,
         ),
         ModelInfo(
             model = WatchModel.MRG_B5000,
