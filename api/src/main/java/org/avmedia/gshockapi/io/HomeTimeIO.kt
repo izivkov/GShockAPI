@@ -2,6 +2,7 @@ package org.avmedia.gshockapi.io
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.utils.Utils
 
 // ============================================================================
@@ -44,13 +45,34 @@ object HomeTimeIO {
 
     private var state = State()
 
-    suspend fun request(): String {
-        // Use pure function to parse
-        val homeCity = HomeTimeIOFunctional.parseHomeCity(
-            WorldCitiesIO.request(0)
-        )
-        state = state.copy(homeCity = homeCity)
-        return state.homeCity
+    suspend fun request(slot: Int = 0): String {
+        return if (WatchInfo.hasHomeTime && !WatchInfo.hasWorldCities) {
+            CachedIO.request("240$slot") { key ->
+                IO.request(key)
+                // We don't have a specific onReceived for HomeTime, but register 0x24
+                // data is structurally same as world cities.
+                // For now, returning the raw data or empty and letting onReceived handle it.
+                ""
+            }
+        } else {
+            // Use pure function to parse
+            val homeCity = HomeTimeIOFunctional.parseHomeCity(
+                WorldCitiesIO.request(0)
+            )
+            state = state.copy(homeCity = homeCity)
+            state.homeCity
+        }
+    }
+
+    suspend fun requestRaw(slot: Int = 0): String {
+        return if (WatchInfo.hasHomeTime && !WatchInfo.hasWorldCities) {
+            CachedIO.request("240$slot") { key ->
+                IO.request(key)
+                ""
+            }
+        } else {
+            WorldCitiesIO.request(slot)
+        }
     }
 
     fun onReceived(data: String) {

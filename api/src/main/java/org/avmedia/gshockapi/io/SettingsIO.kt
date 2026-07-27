@@ -74,10 +74,16 @@ object SettingsIOFunctional {
         val settingType = if (settingArray.size == 17) SettingType.EXTENDED else SettingType.SHORT
 
         // Time format (bit 0 of byte 1)
-        settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
+        if (WatchInfo.hasTimeFormat) {
+            settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
+        } else {
+            settings.timeFormat = "24h" // Default
+        }
 
         // Button tone and vibration
-        if (settingType == SettingType.SHORT) {
+        if (!WatchInfo.vibrate) {
+            settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
+        } else if (settingType == SettingType.SHORT) {
             settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
         } else {
             settings.buttonTone = settingArray[12] and SOUND_ONLY != 0
@@ -86,22 +92,30 @@ object SettingsIOFunctional {
         }
 
         // Flags from byte 1
-        settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
+        if (WatchInfo.hasAutoLight) {
+            settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
+        }
         settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
-        settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
+        if (WatchInfo.findButtonUserDefined) { // DnD is usually on watches with user defined buttons
+            settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
+        }
 
         // Date format (byte 4)
-        settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
+        if (WatchInfo.hasDateFormat) {
+            settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
+        }
 
         // Language (byte 5)
-        settings.language = when (settingArray[5]) {
-            0 -> "English"
-            1 -> "Spanish"
-            2 -> "French"
-            3 -> "German"
-            4 -> "Italian"
-            5 -> "Russian"
-            else -> "English"
+        if (WatchInfo.weekLanguageSupported) {
+            settings.language = when (settingArray[5]) {
+                0 -> "English"
+                1 -> "Spanish"
+                2 -> "French"
+                3 -> "German"
+                4 -> "Italian"
+                5 -> "Russian"
+                else -> "English"
+            }
         }
 
         // Light duration (bit 0 of byte 2)
@@ -125,72 +139,91 @@ object SettingsIOFunctional {
      * Returns 17-byte array containing all settings encoded per protocol.
      */
     fun encode(settings: JSONObject): ByteArray {
-        val arr = ByteArray(17)
+        val size = WatchInfo.settingsSize
+        val arr = ByteArray(size)
 
         // Command code
         arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
 
         // Byte 1 - Multiple flags
-        if (settings.get("timeFormat") == "24h") {
+        if (!WatchInfo.hasTimeFormat) {
+            arr[1] = (arr[1] or MASK_24_HOURS.toByte()) // Always 24h if no format setting
+        } else if (settings.get("timeFormat") == "24h") {
             arr[1] = (arr[1] or MASK_24_HOURS.toByte())
         }
 
         // Button tone and vibration settings
         if (settings.get("buttonTone") == false) {
             arr[1] = (arr[1] or MASK_BUTTON_TONE_OFF.toByte())
-            arr[12] = (arr[12] and SOUND_ONLY.inv().toByte())
+            if (size == 17) {
+                arr[12] = (arr[12] and SOUND_ONLY.inv().toByte())
+            }
         } else {
-            arr[12] = (arr[12] or SOUND_ONLY.toByte())
+            if (size == 17) {
+                arr[12] = (arr[12] or SOUND_ONLY.toByte())
+            }
         }
 
-        if (settings.get("keyVibration") == true) {
-            arr[12] = (arr[12] or VIBRATION_ONLY.toByte())
-        }
+        if (size == 17) {
+            if (settings.get("keyVibration") == true) {
+                arr[12] = (arr[12] or VIBRATION_ONLY.toByte())
+            }
 
-        if (settings.get("hourlyChime") == true) {
-            arr[12] = (arr[12] or CHIME.toByte())
+            if (settings.get("hourlyChime") == true) {
+                arr[12] = (arr[12] or CHIME.toByte())
+            }
         }
 
         // Additional byte 1 flags
-        if (settings.get("autoLight") == false) {
-            arr[1] = (arr[1] or MASK_AUTO_LIGHT_OFF.toByte())
+        if (WatchInfo.hasAutoLight) {
+            if (settings.get("autoLight") == false) {
+                arr[1] = (arr[1] or MASK_AUTO_LIGHT_OFF.toByte())
+            }
         }
 
         if (settings.get("powerSavingMode") == false) {
             arr[1] = (arr[1] or POWER_SAVING_MODE.toByte())
         }
 
-        if (settings.get("DnD") == false) {
-            arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
+        if (WatchInfo.findButtonUserDefined) {
+            if (settings.get("DnD") == false) {
+                arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
+            }
         }
 
         // Byte 2 - Light duration flags
         var flags = RESET_VALUE
-        if (settings["lightDuration"] == "4s") {
+        if (settings["lightDuration"] == "4s" || settings["lightDuration"] == "3s") {
             flags = flags or LIGHT_DURATION_LONG
         }
         arr[2] = flags.toByte()
 
         // Byte 8 - Font flags
-        var fontFlags = RESET_VALUE
-        if (WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
-            fontFlags = fontFlags or FONT_CLASSIC_MASK
+        if (size == 17) {
+            var fontFlags = RESET_VALUE
+            if (WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
+                fontFlags = fontFlags or FONT_CLASSIC_MASK
+            }
+            arr[8] = fontFlags.toByte()
         }
-        arr[8] = fontFlags.toByte()
 
         // Byte 4 - Date format
-        if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
+        if (WatchInfo.hasDateFormat) {
+            if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
+        }
 
         // Byte 5 - Language
-        arr[5] = when (settings.get("language")) {
-            "English" -> 0
-            "Spanish" -> 1
-            "French" -> 2
-            "German" -> 3
-            "Italian" -> 4
-            "Russian" -> 5
-            else -> 0
-        }.toByte()
+        if (WatchInfo.weekLanguageSupported) {
+            arr[5] = when (settings.get("language")) {
+                "English" -> 0
+                "Spanish" -> 1
+                "French" -> 2
+                "German" -> 3
+                "Italian" -> 4
+                "Russian" -> 5
+                else -> 0
+            }.toByte()
+        }
 
         return arr
     }

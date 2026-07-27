@@ -4,6 +4,7 @@ import CachedIO
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
@@ -76,20 +77,22 @@ object TimerIOFunctional {
      * Pure encoder: Encodes timer state to byte array.
      * 
      * No side effects - pure transformation.
-     * Returns 7-byte array:
+     * Returns 7-byte array (or 15-byte for MTG-B3000):
      * [0] = 0x18 (command)
      * [1] = hours
      * [2] = minutes
      * [3] = seconds
-     * [4..6] = padding
+     * [4..] = padding
      */
-    fun encode(timerState: TimerState): ByteArray =
-        ByteArray(7).apply {
+    fun encode(timerState: TimerState): ByteArray {
+        val size = WatchInfo.timerSize
+        return ByteArray(size).apply {
             this[0] = 0x18
             this[1] = timerState.hours.toByte()
             this[2] = timerState.minutes.toByte()
             this[3] = timerState.seconds.toByte()
         }
+    }
 
     /**
      * Pure command builder: Creates command to fetch timer from watch.
