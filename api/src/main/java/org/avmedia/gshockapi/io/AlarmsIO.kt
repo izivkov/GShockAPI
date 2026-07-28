@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Alarm
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.Alarms
@@ -73,18 +74,28 @@ object AlarmsIOFunctional {
      * to the first command before the second command is sent. Do not parallelize.
      * Order: CASIO_SETTING_FOR_ALM -> (wait for response) -> CASIO_SETTING_FOR_ALM2
      */
-    fun buildFetchCommands(): List<BLEAction> = listOf(
-        // Get alarm 1 (must complete before ALM2)
-        BLEAction.Write(
-            GetSetMode.GET,
-            Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
-        ),
-        // Get the rest of the alarms (only after ALM1 response received)
-        BLEAction.Write(
-            GetSetMode.GET,
-            Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code.toByte())
+    fun buildFetchCommands(): List<BLEAction> {
+        if (WatchInfo.alarmCount == 1) {
+            return listOf(
+                BLEAction.Write(
+                    GetSetMode.GET,
+                    Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
+                )
+            )
+        }
+        return listOf(
+            // Get alarm 1 (must complete before ALM2)
+            BLEAction.Write(
+                GetSetMode.GET,
+                Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code.toByte())
+            ),
+            // Get the rest of the alarms (only after ALM1 response received)
+            BLEAction.Write(
+                GetSetMode.GET,
+                Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code.toByte())
+            )
         )
-    )
+    }
 
     /**
      * Pure command builder: Creates the sequence of commands to set alarms.
@@ -93,12 +104,19 @@ object AlarmsIOFunctional {
      */
     fun buildSetCommands(message: String): Result<List<BLEAction>> = runCatching {
         JSONObject(message).get("value").let { it as JSONArray }.let { jsonArray ->
-            val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
-            val secondaryAlarms = Alarms.fromJsonAlarmSecondaryAlarms(jsonArray)
-            listOf(
-                BLEAction.Write(GetSetMode.SET, firstAlarm),
-                BLEAction.Write(GetSetMode.SET, secondaryAlarms)
-            )
+            if (WatchInfo.alarmCount == 1) {
+                val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
+                listOf(
+                    BLEAction.Write(GetSetMode.SET, firstAlarm)
+                )
+            } else {
+                val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
+                val secondaryAlarms = Alarms.fromJsonAlarmSecondaryAlarms(jsonArray)
+                listOf(
+                    BLEAction.Write(GetSetMode.SET, firstAlarm),
+                    BLEAction.Write(GetSetMode.SET, secondaryAlarms)
+                )
+            }
         }
     }
 
@@ -161,7 +179,11 @@ object AlarmsIO {
         // Use pure function to check completion
         // State accumulation: response 1 contains 1 alarm, response 2 contains 4 alarms = 5 total
         // This mechanism respects the sequential command requirement automatically
-        if (AlarmsIOFunctional.isAlarmCountComplete(Alarm.getAlarms().size)) {
+        if (AlarmsIOFunctional.isAlarmCountComplete(
+                Alarm.getAlarms().size,
+                WatchInfo.alarmCount
+            )
+        ) {
             updateState { currentState ->
                 currentState.copy(
                     alarms = Alarm.getAlarms(), isProcessing = false

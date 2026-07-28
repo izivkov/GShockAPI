@@ -54,6 +54,10 @@ data object WatchInfo {
     val hasStepCounter:         Boolean get() = state.info.hasStepCounter
     val hasNewTimeFormat:       Boolean get() = state.info.hasNewTimeFormat
     val hasSecondDial:          Boolean get() = state.info.hasSecondDial
+    val hasFineWatchCondition:  Boolean get() = state.info.hasFineWatchCondition
+    val hasTimeFormat:          Boolean get() = state.info.hasTimeFormat
+    val settingsSize:           Int     get() = state.info.settingsSize
+    val timerSize:              Int     get() = state.info.timerSize
 
     // =========================================================================
     // Domain Types
@@ -62,7 +66,7 @@ data object WatchInfo {
     enum class WatchModel {
         GA, GW, DW_B5600, DW, GMW, GPR, GST, MSG, GB001, GBD, GBD_800,
         MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, GMW_BZ5000,
-        GW_BX5600, MTG_B1000, GENERIC,
+        GW_BX5600, MTG_B1000, MTG_B3000, GENERIC,
     }
 
     data class ModelInfo(
@@ -94,6 +98,10 @@ data object WatchInfo {
         val hasStepCounter: Boolean = false,
         val hasNewTimeFormat: Boolean = false,
         val hasSecondDial: Boolean = false,
+        val hasFineWatchCondition: Boolean = false,
+        val hasTimeFormat: Boolean = true,
+        val settingsSize: Int = 17,
+        val timerSize: Int = 7,
     )
 
     // =========================================================================
@@ -136,9 +144,22 @@ data object WatchInfo {
             model = WatchModel.MTG_B1000,
             worldCitiesCount = 6, dstCount = 3,
             hasAutoLight = true, hasReminders = true,
-            shortLightDuration = "2s", longLightDuration = "4s",
+            shortLightDuration = "1.5s", longLightDuration = "3s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
+            hasFineWatchCondition = true,
+        ),
+        ModelInfo(
+            model = WatchModel.MTG_B3000,
+            worldCitiesCount = 2, dstCount = 1, alarmCount = 1,
+            hasAutoLight = false, hasReminders = false,
+            shortLightDuration = "1.5s", longLightDuration = "3s",
+            hasWorldCities = false, hasHomeTime = true,
+            hasDateFormat = false, weekLanguageSupported = false,
+            hasTimeFormat = false, settingsSize = 12, timerSize = 15,
+            batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 100,
+            hasSecondDial = true,
+            hasFineWatchCondition = true,
         ),
         ModelInfo(
             model = WatchModel.MRG_B5000,
@@ -218,6 +239,7 @@ data object WatchInfo {
 
     /** Pure: map short name prefix to WatchModel. */
     private fun resolveModel(shortName: String): WatchModel = when {
+        shortName.startsWith("MTG-B3000")  -> WatchModel.MTG_B3000
         shortName.startsWith("MTG-B1000")  -> WatchModel.MTG_B1000
         shortName.startsWith("MRG-B5000")  -> WatchModel.MRG_B5000
         shortName.startsWith("GCW-B5000")  -> WatchModel.GCW_B5000

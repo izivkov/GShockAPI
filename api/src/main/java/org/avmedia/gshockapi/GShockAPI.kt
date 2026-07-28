@@ -424,7 +424,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *  ```
      */
     override suspend fun setTime(timeZone: String, timeMs: Long?) {
-        if (org.avmedia.gshockapi.WatchInfo.hasNewTimeFormat) {
+        if (WatchInfo.hasNewTimeFormat) {
             org.avmedia.gshockapi.io.GwBx5600TimeIO.set(timeMs)
             return
         }
@@ -438,7 +438,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         TimeIO.setTimezone(timeZone)
         TimeIO.set(timeMs)
 
-        if (org.avmedia.gshockapi.WatchInfo.hasSecondDial) {
+        if (WatchInfo.hasSecondDial) {
             MtgB1000TimeIO.setSecondDial()
         }
     }
