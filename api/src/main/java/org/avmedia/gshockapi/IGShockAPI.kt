@@ -321,8 +321,6 @@ interface IGShockAPI {
     fun preventReconnection(): Boolean
 
     /**
-<<<<<<< HEAD
-=======
      * Reads data from the watch's scratchpad/user data area.
      *
      * @return The retrieved byte array.
@@ -337,7 +335,6 @@ interface IGShockAPI {
     fun isScratchpadReset(): Boolean
 
     /**
->>>>>>> 9f128fb (See release notes)
      * Initiates the Companion Device Manager association process for pairing a new watch.
      *
      * @param context Android context.
