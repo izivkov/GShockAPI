@@ -286,8 +286,6 @@ interface IGShockAPI {
     fun supportsAppNotifications(): Boolean
 
     /**
-<<<<<<< HEAD
-=======
      * Writes data to the watch's scratchpad/user data area.
      *
      * @param data The byte array to write.
@@ -295,7 +293,6 @@ interface IGShockAPI {
     suspend fun setScratchpadData(data: ByteArray)
 
     /**
->>>>>>> 9f128fb (See release notes)
      * Sends a raw JSON message to the watch. Use for custom actions not exposed by the API.
      *
      * @param message The JSON message string.

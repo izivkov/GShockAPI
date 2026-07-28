@@ -314,8 +314,6 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return true
     }
 
-<<<<<<< HEAD
-=======
     override suspend fun getScratchpadData(): ByteArray {
         return byteArrayOf()
     }
@@ -326,7 +324,6 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return false
     }
 
->>>>>>> 9f128fb (See release notes)
     override fun associate(context: Context, delegate: ICDPDelegate) {}
     override fun disassociate(context: Context, address: String) {}
     override fun getAssociationsWithNames(context: Context): List<IGShockAPI.Association> {
