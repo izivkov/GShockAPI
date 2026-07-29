@@ -41,7 +41,9 @@ object Utils {
 
     fun toIntArray(hexStr: String): ArrayList<Int> =
         (if (hexStr.contains(' ')) hexStr.split(' ') else hexStr.chunked(2))
-            .map { Integer.parseInt(it.removePrefix("0x"), 16) }
+            .map { it.removePrefix("0x") }
+            .filter { it.all { c -> c in '0'..'9' || c in 'a'..'f' || c in 'A'..'F' } }
+            .map { Integer.parseInt(it, 16) }
             .toCollection(ArrayList())
 
     fun toAsciiString(hexStr: String, commandLengthToSkip: Int): String =

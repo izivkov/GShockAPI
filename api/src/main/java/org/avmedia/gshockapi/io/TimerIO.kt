@@ -43,7 +43,7 @@ object TimerIOFunctional {
         val hours = totalSeconds / 3600
         val minutesAndSeconds = totalSeconds % 3600
         val minutes = minutesAndSeconds / 60
-        val seconds = minutesAndSeconds % 60
+        val seconds = minutesAndSeconds / 60
         return TimerState(hours, minutes, seconds, totalSeconds)
     }
 
@@ -65,6 +65,9 @@ object TimerIOFunctional {
      */
     fun decode(data: String): Result<TimerState> = runCatching {
         val timerIntArray = Utils.toIntArray(data)
+        if (timerIntArray.size < 4) {
+            throw IllegalArgumentException("Timer data too short: ${timerIntArray.size} bytes")
+        }
         val totalSeconds = componentsToSeconds(
             timerIntArray[1],
             timerIntArray[2],
@@ -134,9 +137,14 @@ object TimerIO {
         CachedIO.request("18") { key -> getTimer(key) }
 
     private suspend fun getTimer(key: String): Int {
-        state = state.copy(deferredResult = CompletableDeferred())
+        val deferred = CompletableDeferred<Int>()
+        synchronized(this) {
+            state = state.copy(deferredResult = deferred)
+        }
         IO.request(key)
-        return state.deferredResult?.await() ?: 0
+        val result = deferred.await()
+        Timber.d("TimerIO: getTimer returning $result")
+        return result
     }
 
     fun set(timerValue: Int) {
@@ -147,23 +155,28 @@ object TimerIO {
     }
 
     fun onReceived(data: String) {
+        Timber.d("TimerIO: onReceived raw data: $data")
         // Use pure function to decode
         TimerIOFunctional.decode(data)
             .map { timerState -> timerState.totalSeconds }
             .fold(
                 onSuccess = { seconds ->
-                    state.deferredResult?.complete(seconds)
-                    state = State()
+                    Timber.d("TimerIO: Decoded seconds: $seconds")
+                    synchronized(this) {
+                        state.deferredResult?.complete(seconds)
+                    }
                 },
                 onFailure = { error ->
-                    state.deferredResult?.completeExceptionally(error)
-                    state = State()
+                    Timber.e(error, "TimerIO: Failed to decode timer data")
+                    synchronized(this) {
+                        state.deferredResult?.completeExceptionally(error)
+                    }
                 }
             )
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun sendToWatch(message: String) {
+    suspend fun sendToWatch(message: String) {
         // Use pure function to build command, then execute
         IO.writeCmd(
             GetSetMode.GET,
@@ -171,7 +184,7 @@ object TimerIO {
         )
     }
 
-    fun sendToWatchSet(message: String) {
+    suspend fun sendToWatchSet(message: String) {
         // Use pure function to build command, then execute
         TimerIOFunctional.buildSetCommand(message)
             .fold(

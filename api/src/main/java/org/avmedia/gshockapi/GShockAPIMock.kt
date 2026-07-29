@@ -148,7 +148,10 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return "0x22 C7 67 B2 F0 78 86 71 6A 76 EC 02"
     }
 
-    override suspend fun setTime(timeZone: String, timeMs: Long?) {
+    override suspend fun setTime(
+        timeZone: String,
+        timeMs: Long?
+    ) {
         Timber.i("Time set to $timeZone")
     }
 

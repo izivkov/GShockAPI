@@ -102,7 +102,7 @@ object AlarmsIOFunctional {
      * 
      * Parses JSON and builds write commands without side effects.
      */
-    fun buildSetCommands(message: String): Result<List<BLEAction>> = runCatching {
+    fun buildSetCommand(message: String): Result<List<BLEAction>> = runCatching {
         JSONObject(message).get("value").let { it as JSONArray }.let { jsonArray ->
             if (WatchInfo.alarmCount == 1) {
                 val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
@@ -149,14 +149,15 @@ object AlarmsIO {
         }
 
     suspend fun request(): ArrayList<Alarm> = CachedIO.request("GET_ALARMS") { key ->
+        val deferred = CompletableDeferred<ArrayList<Alarm>>()
         updateState {
             it.copy(
-                deferredResult = CompletableDeferred(), isProcessing = true
+                deferredResult = deferred, isProcessing = true
             )
         }
         Alarm.clear()
         Connection.sendMessage("{ action: '$key'}")
-        state.deferredResult?.await() ?: ArrayList()
+        deferred.await()
     }
 
     fun set(alarms: ArrayList<Alarm>) {
@@ -184,17 +185,15 @@ object AlarmsIO {
                 WatchInfo.alarmCount
             )
         ) {
-            updateState { currentState ->
-                currentState.copy(
-                    alarms = Alarm.getAlarms(), isProcessing = false
-                )
+            synchronized(this) {
+                state.deferredResult?.complete(Alarm.getAlarms())
+                state = state.copy(alarms = Alarm.getAlarms(), isProcessing = false)
             }
-            state.deferredResult?.complete(state.alarms)
         }
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun sendToWatch(message: String) {
+    suspend fun sendToWatch(message: String) {
         // Use pure function to build commands, then execute them sequentially
         // The forEach ensures sequential dispatch to the watch (required by device protocol)
         AlarmsIOFunctional.buildFetchCommands().forEach { action ->
@@ -204,9 +203,9 @@ object AlarmsIO {
         }
     }
 
-    fun sendToWatchSet(message: String) {
+    suspend fun sendToWatchSet(message: String) {
         // Use pure function to build commands, then execute them
-        AlarmsIOFunctional.buildSetCommands(message)
+        AlarmsIOFunctional.buildSetCommand(message)
             .onSuccess { commands ->
                 commands.forEach { action ->
                     when (action) {

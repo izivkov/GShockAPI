@@ -2,6 +2,9 @@ package org.avmedia.gshockapi.io
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
@@ -97,13 +100,11 @@ object TimeIOFunctional {
     /**
      * Pure calculator: Computes DST duration in milliseconds for timezone.
      * 
-     * Returns the DST offset converted to milliseconds, or 0 if not in DST.
-     * Formula: dstOffset (in 15-minute units) * 60 * 15 (milliseconds conversion)
+     * Returns 0 always as LocalDateTime.ofInstant already handles DST.
      * 
      * No side effects - pure calculation.
      */
-    fun calculateDSTDurationMs(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Long =
-        if (casioTimezone.isInDST()) casioTimezone.dstOffset * 60 * 15L else 0L
+    fun calculateDSTDurationMs(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Long = 0L
 
     /**
      * Pure transformer: Adjusts time for DST and converts to LocalDateTime.
@@ -142,7 +143,7 @@ object TimeIOFunctional {
         arr[4] = date.hour.toByte()
         arr[5] = date.minute.toByte()
         arr[6] = date.second.toByte()
-        arr[7] = date.dayOfWeek.value.toByte()
+        arr[7] = (date.dayOfWeek.value - 1).toByte()
         arr[8] = ((date.nano.toLong() * 256) / 1_000_000_000).toByte()
         arr[9] = 1 // or 0?
         return arr
@@ -167,7 +168,7 @@ object TimeIO {
         val timeZone: String = TimeZone.getDefault().id,
         val casioTimezone: CasioTimeZoneHelper.CasioTimeZone = CasioTimeZoneHelper.findTimeZone(
             TimeZone.getDefault().id
-        ),
+        )
     )
 
     private var state = State()
@@ -182,9 +183,12 @@ object TimeIO {
     suspend fun set(timeMs: Long? = null) {
         initializeForSettingTime()
         val timeToSet = timeMs ?: Clock.systemDefaultZone().millis()
-        Connection.sendMessage(
-            "{action: \"SET_TIME\", value: ${timeToSet}}"
-        )
+
+        val adjustedDateTime =
+            TimeIOFunctional.adjustTimeForDSTAndConvert(timeToSet, state.casioTimezone)
+        val timeCommand = TimeIOFunctional.buildTimeCommand(adjustedDateTime)
+
+        IO.writeCmd(GetSetMode.SET, timeCommand)
     }
 
     private suspend fun getDSTWatchState(dstState: IO.DstState): String =
@@ -241,6 +245,7 @@ object TimeIO {
         val ret: String = function(param)
         val shortStr = Utils.toCompactString(ret)
         IO.writeCmd(GetSetMode.SET, shortStr)
+        CachedIO.put(CachedIO.createKey(shortStr), shortStr)
     }
 
     private suspend fun writeDST() {
@@ -268,7 +273,7 @@ object TimeIO {
 
         val dstForWorldCities = arrayOf(
             DstForWorldCities(0) { cityNumber: Int -> getDSTForWorldCitiesWithTZ(cityNumber) },
-            DstForWorldCities(1) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+            DstForWorldCities(1) { cityNumber: Int -> getDSTForWorldCitiesWithTZ(cityNumber) },
             DstForWorldCities(2) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
             DstForWorldCities(3) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
             DstForWorldCities(4) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
@@ -289,7 +294,7 @@ object TimeIO {
 
         val worldCities = arrayOf(
             WorldCities(0) { cityNumber: Int -> getWorldCitiesWithTZ(cityNumber) },
-            WorldCities(1) { cityNumber: Int -> getWorldCities(cityNumber) },
+            WorldCities(1) { cityNumber: Int -> getWorldCitiesWithTZ(cityNumber) },
             WorldCities(2) { cityNumber: Int -> getWorldCities(cityNumber) },
             WorldCities(3) { cityNumber: Int -> getWorldCities(cityNumber) },
             WorldCities(4) { cityNumber: Int -> getWorldCities(cityNumber) },
@@ -302,10 +307,14 @@ object TimeIO {
         }
     }
 
-    fun sendToWatchSet(message: String) {
-        val dateTimeMs: Long = JSONObject(message).get("value") as Long
-        val adjustedDateTime = TimeIOFunctional.adjustTimeForDSTAndConvert(dateTimeMs, state.casioTimezone)
+    suspend fun sendToWatchSet(message: String) {
+        val value = JSONObject(message).get("value")
+        val dateTimeMs: Long = if (value is Int) value.toLong() else value as Long
+
+        val adjustedDateTime =
+            TimeIOFunctional.adjustTimeForDSTAndConvert(dateTimeMs, state.casioTimezone)
         val timeCommand = TimeIOFunctional.buildTimeCommand(adjustedDateTime)
+
         IO.writeCmd(GetSetMode.SET, timeCommand)
     }
 }

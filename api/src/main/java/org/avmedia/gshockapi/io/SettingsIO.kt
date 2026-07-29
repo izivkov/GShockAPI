@@ -246,16 +246,16 @@ object SettingsIOFunctional {
  * 
  * Manages the asynchronous request/response cycle for settings data.
  * Uses pure functional core for all transformations.
- * 
+ *
  * Protocol reference (kept for documentation):
  * Time Format:
  *     24 h:   13 05 00 00 00 00 00 00 00 00 00 00
  *     12 h:   13 04 00 00 00 00 00 00 00 00 00 00
- * 
+ *
  * Date format:
  *     mm:dd   13 04 00 00 00 00 00 00 00 00 00 00
  *     dd:mm   13 04 00 00 01 00 00 00 00 00 00 00
- * 
+ *
  * Languages:
  *     english:13 04 00 00 00 00 00 00 00 00 00 00
  *     spanish:13 04 00 00 00 01 00 00 00 00 00 00
@@ -263,31 +263,31 @@ object SettingsIOFunctional {
  *     german: 13 04 00 00 00 03 00 00 00 00 00 00
  *     italian:13 04 00 00 00 04 00 00 00 00 00 00
  *     russian:13 04 00 00 00 05 00 00 00 00 00 00
- * 
+ *
  * Button Tone:
  *     on:     13 04 00 00 00 00 00 00 00 00 00 00
  *     off:    13 06 00 00 00 00 00 00 00 00 00 00
- * 
+ *
  * For GMW-BZ5000
  *     standard font:          13 05 01 00 01 00 00 00 00 00 00 00
  *     classic font:           13 05 00 00 01 00 00 00 20 00 00 00
  *     light duration 1.5s:    13 05 00 00 01 00 00 00 20 00 00 00
  *     light duration 3s:      13 05 01 00 01 00 00 00 20 00 00 00
- * 
+ *
  * For DW-H5600
  *     sound:          13 00 00 00 00 00 00 00 00 00 00 00 04 00 00 06 00
  *     vibrate:        13 00 00 00 00 00 00 00 00 00 00 00 08 00 00 06 00
  *     both:           13 00 00 00 00 00 00 00 00 00 00 00 0c 00 00 06 00
  *     silent:         13 04 00 00 00 00 00 00 00 00 00 00 00 00 00 06 2d
- * 
+ *
  * Auto Light:
  *     on:     13 00 00 00 00 00 00 00 00 00 00 00
  *     off:    13 04 00 00 00 00 00 00 00 00 00 00
- * 
+ *
  * Light Duration:
  *     2s      13 04 00 00 00 00 00 00 00 00 00 00
  *     4s      13 04 01 00 00 00 00 00 00 00 00 00
- * 
+ *
  * Power Saving:
  *     on      13 04 00 00 00 00 00 00 00 00 00 00
  *     off     13 14 00 00 00 00 00 00 00 00 00 00
@@ -304,9 +304,12 @@ object SettingsIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
-        state = state.copy(deferredResult = CompletableDeferred())
+        val deferred = CompletableDeferred<Settings>()
+        synchronized(this) {
+            state = state.copy(deferredResult = deferred)
+        }
         Connection.sendMessage("{ action: '$key'}")
-        return state.deferredResult?.await() ?: error("No deferred result available")
+        return deferred.await()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -323,19 +326,21 @@ object SettingsIO {
         SettingsIOFunctional.decode(data)
             .fold(
                 onSuccess = { model ->
-                    state.deferredResult?.complete(model)
-                    state = State() // Reset state after completion
+                    synchronized(this) {
+                        state.deferredResult?.complete(model)
+                    }
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode settings: ${error.message}")
-                    state.deferredResult?.completeExceptionally(error)
-                    state = State()
+                    synchronized(this) {
+                        state.deferredResult?.completeExceptionally(error)
+                    }
                 }
             )
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun sendToWatch(message: String) {
+    suspend fun sendToWatch(message: String) {
         // Use pure function to build command, then execute
         IO.writeCmd(
             GetSetMode.GET,
@@ -343,7 +348,7 @@ object SettingsIO {
         )
     }
 
-    fun sendToWatchSet(message: String) {
+    suspend fun sendToWatchSet(message: String) {
         // Use pure function to encode, then execute
         val settings = JSONObject(message).get("value") as JSONObject
         IO.writeCmd(GetSetMode.SET, SettingsIOFunctional.encode(settings))

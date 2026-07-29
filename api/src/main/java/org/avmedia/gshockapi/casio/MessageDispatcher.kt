@@ -8,6 +8,9 @@ package org.avmedia.gshockapi.casio
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO
 import org.avmedia.gshockapi.io.ButtonPressedIO
@@ -15,6 +18,7 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.RunActionsIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO
@@ -41,7 +45,7 @@ object MessageDispatcher {
      * Maps outbound action strings to their handler functions.
      * Pure data — no side effects, no mutable state.
      */
-    private val watchSenders: Map<String, (String) -> Unit> = mapOf(
+    private val watchSenders: Map<String, suspend (String) -> Unit> = mapOf(
         "GET_ALARMS"          to AlarmsIO::sendToWatch,
         "SET_ALARMS"          to AlarmsIO::sendToWatchSet,
         "SET_REMINDERS"       to EventsIO::sendToWatchSet,
@@ -77,6 +81,7 @@ object MessageDispatcher {
         CasioConstants.CHARACTERISTICS.ERROR.code                   to ErrorIO::onReceived,
         CasioConstants.CHARACTERISTICS.FIND_PHONE.code              to RunActionsIO::onReceived,
         CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code        to UnknownIO::onReceived,
+        CasioConstants.CHARACTERISTICS.CASIO_HOME_TIME.code         to HomeTimeIO::onReceived,
         CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_03.code to GwBx5600TimeIO::onReceived,
         CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_05.code to GwBx5600TimeIO::onReceived,
         CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_06.code to GwBx5600TimeIO::onReceived,
@@ -94,7 +99,23 @@ object MessageDispatcher {
 
     /** Pure: extract the characteristic key from inbound data. */
     private fun extractKey(data: String): Int? =
-        runCatching { Utils.toIntArray(data)[0] }
+        runCatching {
+            val ints = Utils.toIntArray(data)
+            val firstByte = ints[0]
+            if (firstByte == 0x28 && ints.size > 4) {
+                // Heuristic: check if this is a wrapped packet with a known key
+                if (ints[1] == 0x01 && dataReceivedHandlers.containsKey(ints[4])) {
+                    ints[4]
+                } else if (ints[1] == 0x00 && dataReceivedHandlers.containsKey(ints[3])) {
+                    // Standard envelope (non-bundle)
+                    ints[3]
+                } else {
+                    0x28 // Fall back to WatchCondition
+                }
+            } else {
+                firstByte
+            }
+        }
             .onFailure { Timber.e("Failed to extract key from data: $data") }
             .getOrNull()
 
@@ -109,16 +130,34 @@ object MessageDispatcher {
             Timber.e("No sender registered for action: $action")
             return
         }
-        handler(message)
+        CoroutineScope(Dispatchers.IO).launch {
+            handler(message)
+        }
     }
 
     fun onReceived(data: String) {
         val key = extractKey(data) ?: return
+        Timber.d("MessageDispatcher: onReceived key: $key, data: $data")
         val handler = dataReceivedHandlers[key]
         if (handler == null) {
             Timber.e("No handler registered for key: $key")
             return
         }
-        handler(data)
+
+        // Unwrap if it's an 0x28 envelope and the key was found inside.
+        // We do NOT unwrap if the inner key is 0x28, to let the specialized WatchConditionIO handle it.
+        val ints = Utils.toIntArray(data)
+        val dataToProcess = if (ints.isNotEmpty() && ints[0] == 0x28 && key != 0x28) {
+            val skip = if (ints.getOrNull(1) == 0x01) 4 else 3
+            Utils.fromByteArrayToHexStrWithSpaces(
+                Utils.byteArrayOfIntArray(
+                    ints.drop(skip).toIntArray()
+                )
+            )
+        } else {
+            data
+        }
+
+        handler(dataToProcess)
     }
 }
