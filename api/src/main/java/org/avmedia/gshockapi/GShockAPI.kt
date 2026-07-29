@@ -8,7 +8,6 @@ import androidx.annotation.RequiresPermission
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
-import org.avmedia.gshockapi.casio.CasioTimeZoneHelper
 import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO
@@ -424,11 +423,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *      setTime("Europe/Sofia")
      *  ```
      */
-    override suspend fun setTime(
-        timeZone: String,
-        timeMs: Long?
-    ) {
-        if (WatchInfo.hasNewTimeFormat) {
+    override suspend fun setTime(timeZone: String, timeMs: Long?) {
+        if (org.avmedia.gshockapi.WatchInfo.hasNewTimeFormat) {
             org.avmedia.gshockapi.io.GwBx5600TimeIO.set(timeMs)
             return
         }
@@ -441,6 +437,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
         TimeIO.setTimezone(timeZone)
         TimeIO.set(timeMs)
+
+        if (org.avmedia.gshockapi.WatchInfo.hasSecondDial) {
+            MtgB1000TimeIO.setSecondDial()
+        }
     }
 
     /**

@@ -2,7 +2,6 @@ package org.avmedia.gshockapi.io
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import timber.log.Timber
@@ -74,16 +73,14 @@ object MtgB1000TimeIO {
             IO.writeCmd(GetSetMode.SET, dstCity1Bytes)
             Timber.i("DST city data written back")
 
-            if (WatchInfo.hasWorldCities) {
-                // Read and write back world city coordinates (0x1f) for both cities
-                val wc0 = WorldCitiesIO.request(cityNumber = 0)
-                val wc1 = WorldCitiesIO.request(cityNumber = 1)
-                val wc0Bytes = IOFunctional.toCasioCmd(wc0)
-                val wc1Bytes = IOFunctional.toCasioCmd(wc1)
-                IO.writeCmd(GetSetMode.SET, wc0Bytes)
-                IO.writeCmd(GetSetMode.SET, wc1Bytes)
-                Timber.i("World city data written back")
-            }
+            // Read and write back world city coordinates (0x1f) for both cities
+            val wc0 = WorldCitiesIO.request(cityNumber = 0)
+            val wc1 = WorldCitiesIO.request(cityNumber = 1)
+            val wc0Bytes = IOFunctional.toCasioCmd(wc0)
+            val wc1Bytes = IOFunctional.toCasioCmd(wc1)
+            IO.writeCmd(GetSetMode.SET, wc0Bytes)
+            IO.writeCmd(GetSetMode.SET, wc1Bytes)
+            Timber.i("World city data written back")
 
             // ResetSequence end
             IO.writeCmd(GetSetMode.SET, RESET_SEQUENCE_END)

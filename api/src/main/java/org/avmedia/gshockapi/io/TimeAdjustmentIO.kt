@@ -129,12 +129,9 @@ object TimeAdjustmentIO {
         CachedIO.request("GET_TIME_ADJUSTMENT") { key -> getTimeAdjustment(key) }
 
     private suspend fun getTimeAdjustment(key: String): TimeAdjustmentInfo {
-        val deferred = CompletableDeferred<TimeAdjustmentInfo>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
-        }
+        state = state.copy(deferredResult = CompletableDeferred())
         Connection.sendMessage("{ action: '$key'}")
-        return deferred.await()
+        return state.deferredResult?.await() ?: error("Deferred result not initialized")
     }
 
     fun set(settings: Settings) {
@@ -155,21 +152,19 @@ object TimeAdjustmentIO {
         TimeAdjustmentIOFunctional.decode(data)
             .fold(
                 onSuccess = { info ->
-                    synchronized(this) {
-                        state.deferredResult?.complete(info)
-                    }
+                    state.deferredResult?.complete(info)
+                    state = State() // Reset state
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode time adjustment: ${error.message}")
-                    synchronized(this) {
-                        state.deferredResult?.completeExceptionally(error)
-                    }
+                    state.deferredResult?.completeExceptionally(error)
+                    state = State()
                 }
             )
     }
 
     @Suppress("UNUSED_PARAMETER")
-    suspend fun sendToWatch(message: String) {
+    fun sendToWatch(message: String) {
         // Use pure function to build command
         IO.writeCmd(
             GetSetMode.GET,
@@ -177,7 +172,7 @@ object TimeAdjustmentIO {
         )
     }
 
-    suspend fun sendToWatchSet(message: String) {
+    fun sendToWatchSet(message: String) {
         // Use pure function to encode settings
         JSONObject(message).get("value").let { it as JSONObject }
             .let { settings ->

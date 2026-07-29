@@ -443,24 +443,20 @@ object EventsIO {
 
     @SuppressLint("DefaultLocale")
     suspend fun request(eventNumber: Int): Event {
-        val deferredTitle = CompletableDeferred<JSONObject>()
-        val deferredTime = CompletableDeferred<JSONObject>()
-
-        synchronized(this) {
-            state = state.copy(
-                deferredResultTitle = deferredTitle,
-                deferredResultTime = deferredTime
-            )
-        }
+        state = state.copy(
+            deferredResult = CompletableDeferred(),
+            deferredResultTitle = CompletableDeferred(),
+            deferredResultTime = CompletableDeferred()
+        )
 
         suspend fun requestTitle(keyTitle: String): JSONObject {
             IO.request(keyTitle)
-            return deferredTitle.await()
+            return state.deferredResultTitle?.await() ?: JSONObject()
         }
 
         suspend fun requestTime(keyTime: String): JSONObject {
             IO.request(keyTime)
-            return deferredTime.await()
+            return state.deferredResultTime?.await() ?: JSONObject()
         }
 
         fun combineJSONObjects(obj1: JSONObject, obj2: JSONObject): JSONObject =
@@ -468,15 +464,20 @@ object EventsIO {
                 obj2.keys().forEach { key -> put(key, obj2.get(key)) }
             }
 
-        val titleVal = CachedIO.request("30$eventNumber") { key ->
-            requestTitle(key)
-        }
-        val timeVal = CachedIO.request("31$eventNumber") { key ->
-            requestTime(key)
+        suspend fun waitForEvent(eventNumber: Int) {
+            val titleVal = CachedIO.request("30$eventNumber") { key ->
+                requestTitle(key)
+            }
+            val timeVal = CachedIO.request("31$eventNumber") { key ->
+                requestTime(key)
+            }
+
+            val eventJson = combineJSONObjects(titleVal, timeVal)
+            state.deferredResult?.complete(Event(eventJson))
         }
 
-        val eventJson = combineJSONObjects(titleVal, timeVal)
-        return Event(eventJson)
+        waitForEvent(eventNumber)
+        return state.deferredResult?.await() ?: Event(JSONObject())
     }
 
     fun set(events: ArrayList<Event>) {
@@ -532,38 +533,30 @@ object EventsIO {
         EventsIOFunctional.reminderTimeToJson(data)
             .fold(
                 onSuccess = { timeJson ->
-                    synchronized(this) {
-                        state.deferredResultTime?.complete(timeJson)
-                    }
+                    state.deferredResultTime?.complete(timeJson)
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode reminder time: ${error.message}")
-                    synchronized(this) {
-                        state.deferredResultTime?.complete(JSONObject())
-                    }
+                    state.deferredResultTime?.complete(JSONObject())
                 }
             )
     }
 
     fun onReceivedTitle(data: String) {
-        // Use pure function to decode reminder title data
+        // Use pure function to decode title data
         EventsIOFunctional.reminderTitleToJson(data)
             .fold(
                 onSuccess = { titleJson ->
-                    synchronized(this) {
-                        state.deferredResultTitle?.complete(titleJson)
-                    }
+                    state.deferredResultTitle?.complete(titleJson)
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode reminder title: ${error.message}")
-                    synchronized(this) {
-                        state.deferredResultTitle?.complete(JSONObject())
-                    }
+                    state.deferredResultTitle?.complete(JSONObject())
                 }
             )
     }
 
-    suspend fun sendToWatchSet(message: String) {
+    fun sendToWatchSet(message: String) {
         (JSONObject(message).get("value") as JSONArray)
             .let { remindersJsonArr ->
                 (0 until remindersJsonArr.length()).forEach { index ->

@@ -4,7 +4,6 @@ import CachedIO
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
@@ -43,7 +42,7 @@ object TimerIOFunctional {
         val hours = totalSeconds / 3600
         val minutesAndSeconds = totalSeconds % 3600
         val minutes = minutesAndSeconds / 60
-        val seconds = minutesAndSeconds / 60
+        val seconds = minutesAndSeconds % 60
         return TimerState(hours, minutes, seconds, totalSeconds)
     }
 
@@ -65,9 +64,6 @@ object TimerIOFunctional {
      */
     fun decode(data: String): Result<TimerState> = runCatching {
         val timerIntArray = Utils.toIntArray(data)
-        if (timerIntArray.size < 4) {
-            throw IllegalArgumentException("Timer data too short: ${timerIntArray.size} bytes")
-        }
         val totalSeconds = componentsToSeconds(
             timerIntArray[1],
             timerIntArray[2],
@@ -80,22 +76,20 @@ object TimerIOFunctional {
      * Pure encoder: Encodes timer state to byte array.
      * 
      * No side effects - pure transformation.
-     * Returns 7-byte array (or 15-byte for MTG-B3000):
+     * Returns 7-byte array:
      * [0] = 0x18 (command)
      * [1] = hours
      * [2] = minutes
      * [3] = seconds
-     * [4..] = padding
+     * [4..6] = padding
      */
-    fun encode(timerState: TimerState): ByteArray {
-        val size = WatchInfo.timerSize
-        return ByteArray(size).apply {
+    fun encode(timerState: TimerState): ByteArray =
+        ByteArray(7).apply {
             this[0] = 0x18
             this[1] = timerState.hours.toByte()
             this[2] = timerState.minutes.toByte()
             this[3] = timerState.seconds.toByte()
         }
-    }
 
     /**
      * Pure command builder: Creates command to fetch timer from watch.
@@ -137,14 +131,9 @@ object TimerIO {
         CachedIO.request("18") { key -> getTimer(key) }
 
     private suspend fun getTimer(key: String): Int {
-        val deferred = CompletableDeferred<Int>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
-        }
+        state = state.copy(deferredResult = CompletableDeferred())
         IO.request(key)
-        val result = deferred.await()
-        Timber.d("TimerIO: getTimer returning $result")
-        return result
+        return state.deferredResult?.await() ?: 0
     }
 
     fun set(timerValue: Int) {
@@ -155,28 +144,23 @@ object TimerIO {
     }
 
     fun onReceived(data: String) {
-        Timber.d("TimerIO: onReceived raw data: $data")
         // Use pure function to decode
         TimerIOFunctional.decode(data)
             .map { timerState -> timerState.totalSeconds }
             .fold(
                 onSuccess = { seconds ->
-                    Timber.d("TimerIO: Decoded seconds: $seconds")
-                    synchronized(this) {
-                        state.deferredResult?.complete(seconds)
-                    }
+                    state.deferredResult?.complete(seconds)
+                    state = State()
                 },
                 onFailure = { error ->
-                    Timber.e(error, "TimerIO: Failed to decode timer data")
-                    synchronized(this) {
-                        state.deferredResult?.completeExceptionally(error)
-                    }
+                    state.deferredResult?.completeExceptionally(error)
+                    state = State()
                 }
             )
     }
 
     @Suppress("UNUSED_PARAMETER")
-    suspend fun sendToWatch(message: String) {
+    fun sendToWatch(message: String) {
         // Use pure function to build command, then execute
         IO.writeCmd(
             GetSetMode.GET,
@@ -184,7 +168,7 @@ object TimerIO {
         )
     }
 
-    suspend fun sendToWatchSet(message: String) {
+    fun sendToWatchSet(message: String) {
         // Use pure function to build command, then execute
         TimerIOFunctional.buildSetCommand(message)
             .fold(

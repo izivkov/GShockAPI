@@ -59,20 +59,32 @@ object DstForWorldCitiesIO {
         }
 
     private suspend fun getDSTForWorldCities(key: String): String {
-        val deferred = CompletableDeferred<String>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
-        }
+
+        state = state.copy(deferredResult = CompletableDeferred())
         IO.request(key)
-        return deferred.await()
+        return state.deferredResult?.await() ?: ""
     }
+
+    /*
+    0x1e 0-5 TZ_A TZ_B TZ_OFF TZ_DSTOFF TZ_DSTRULES
+    A/B seem to be ignored by the watch
+    OFF & DSTOFF in 15 minute intervals
+
+    Timezones selectable on the watch:
+                       A  B   OFF DSTOFF DSTRULES
+    BAKER ISLAND       39 01  D0  04     00
+    PAGO PAGO          D7 00  D4  04     00
+    HONOLULU           7B 00  D8  04     00
+    ...
+     */
 
     fun setDST(dst: String, casioTimeZone: CasioTimeZoneHelper.CasioTimeZone): String =
         DstForWorldCitiesIOFunctional.setDST(dst, casioTimeZone)
 
     fun onReceived(data: String) {
-        synchronized(this) {
-            state.deferredResult?.complete(data)
-        }
+        state.deferredResult?.complete(data)
+
+        // Do not reset state here, as it is used in the request function.
+        // state = State()
     }
 }

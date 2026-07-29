@@ -1,30 +1,3 @@
-# GShockAPI Release Notes - v1.5.1
-
-## Overview
-This update adds support for the Casio MTG-B3000 series and introduces a more robust, feature-based architectural approach for handling watch capabilities.
-
-## 🚀 New Features
-- **MTG-B3000 Support**: Full support for the MTG-B3000 series, including specialized city synchronization, single alarm restriction, and model-specific setting payloads.
-- **HomeTime Register Support**: Implementation of the dedicated Home Time register (`0x24`) used by premium models for city data, complementing the standard World Cities (`0x1F`) register.
-- **Fine Watch Condition**: Added support for high-precision battery and temperature reporting via the new `hasFineWatchCondition` capability flag, used by premium hardware modules.
-
-## 🛠 Architectural Refactoring
-- **Feature-Based Logic**: Refactored the entire library to drive protocol logic using generic feature flags (capabilities) instead of explicit watch model checks. This improves maintainability and makes supporting new models zero-config for the IO logic.
-- **New Capability Flags**: Introduced flags for `hasHomeTime`, `hasTimeFormat`, `hasFineWatchCondition`, `settingsSize`, and `timerSize` in `WatchInfo.kt`.
-- **Dynamic Payload Sizing**: IO handlers now automatically adjust byte array lengths for settings and timers based on the connected watch's capabilities.
-- **Clean Code Pass**: Removed redundant package qualifiers and standardized imports across all IO classes for cleaner, more idiomatic Kotlin.
-
-## 🔧 Reliability & Bug Fixes
-- **Battery & Temperature Reporting**: Fixed an issue where the MTG-B3000 would report 0% battery and 0°C. The library now supports direct percentage reporting and handles the extended 3-byte status request format.
-- **Watch Condition Robustness**: Implemented filtering to ignore "null" status responses from hardware modules during initialization.
-- **City Sync Logic**: Improved the time-setting sequence to correctly choose between World City and Home Time registers depending on the hardware feature set.
-- **Single Alarm Handling**: Standardized the alarm IO layer to respect watches with restricted alarm counts (e.g., MTG-B3000).
-
-## ✅ Verification
-- **Unit Testing**: Expanded the test suite to include MTG-B3000 specific logic, verifying correct binary encoding for timers, settings, and watch condition status.
-
----
-
 # GShockAPI Release Notes - v1.5.0
 
 ## Overview

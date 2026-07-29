@@ -84,10 +84,8 @@ object WatchConditionIO {
 
     private var state = State()
 
-    suspend fun request(): WatchConditionValue {
-        val requestString = if (WatchInfo.hasFineWatchCondition) "280000" else "28"
-        return CachedIO.request(requestString) { key -> getWatchCondition(key) }
-    }
+    suspend fun request(): WatchConditionValue =
+        CachedIO.request("28") { key -> getWatchCondition(key) }
 
     private suspend fun getWatchCondition(key: String): WatchConditionValue {
         state = state.copy(deferredResult = CompletableDeferred())
@@ -100,9 +98,6 @@ object WatchConditionIO {
         WatchConditionIOFunctional.decode(data)
             .fold(
                 onSuccess = { condition ->
-                    if (condition.batteryLevel == 0 && condition.temperature == 0) {
-                        return@fold
-                    }
                     // Convert to our public data class
                     state.deferredResult?.complete(
                         WatchConditionValue(condition.batteryLevel, condition.temperature)
