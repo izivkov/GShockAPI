@@ -16,6 +16,7 @@ data object WatchInfo {
     // Immutable State
     // =========================================================================
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private data class State(
         val name: String = "",
         val shortName: String = "",
@@ -24,50 +25,58 @@ data object WatchInfo {
         val info: ModelInfo = ModelInfo(model = WatchModel.GENERIC)
     )
 
-    private var state = State()
+    private var state: Any = "" // placeholder for late init
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun getState(): State {
+        if (state !is State) {
+            state = State()
+        }
+        return state as State
+    }
 
     // =========================================================================
     // Public read-only accessors
     // =========================================================================
 
-    val name:                   String  get() = state.name
-    val shortName:              String  get() = state.shortName
-    val model:                  WatchModel get() = state.model
-    val worldCitiesCount:       Int     get() = state.info.worldCitiesCount
-    val dstCount:               Int     get() = state.info.dstCount
-    val alarmCount:             Int     get() = state.info.alarmCount
-    val hasAutoLight:           Boolean get() = state.info.hasAutoLight
-    val hasReminders:           Boolean get() = state.info.hasReminders
-    val shortLightDuration:     String  get() = state.info.shortLightDuration
-    val longLightDuration:      String  get() = state.info.longLightDuration
-    val weekLanguageSupported:  Boolean get() = state.info.weekLanguageSupported
-    val worldCities:            Boolean get() = state.info.worldCities
-    val hasTemperature:         Boolean get() = state.info.hasTemperature
-    val hasBatteryLevel:        Boolean get() = state.info.hasBatteryLevel
-    val batteryLevelLowerLimit: Int     get() = state.info.batteryLevelLowerLimit
-    val batteryLevelUpperLimit: Int     get() = state.info.batteryLevelUpperLimit
-    val alwaysConnected:        Boolean get() = state.info.alwaysConnected
-    val findButtonUserDefined:  Boolean get() = state.info.findButtonUserDefined
-    val hasPowerSavingMode:     Boolean get() = state.info.hasPowerSavingMode
-    val chimeInSettings:        Boolean get() = state.info.chimeInSettings
-    val vibrate:                Boolean get() = state.info.vibrate
-    val hasHealthFunctions:     Boolean get() = state.info.hasHealthFunctions
-    val hasMessages:            Boolean get() = state.info.hasMessages
-    val hasDateFormat:          Boolean get() = state.info.hasDateFormat
-    val hasWorldCities:         Boolean get() = state.info.hasWorldCities
-    val hasHomeTime:            Boolean get() = state.info.hasHomeTime
-    val hasMultipleFonts:       Boolean get() = state.info.hasMultipleFonts
-    val hasStepCounter:         Boolean get() = state.info.hasStepCounter
-    val hasNewTimeFormat:       Boolean get() = state.info.hasNewTimeFormat
-    val hasTimeAdjustment:      Boolean get() = state.info.hasTimeAdjustment
-    val hasSecondDial:          Boolean get() = state.info.hasSecondDial
-    val hasFineWatchCondition:  Boolean get() = state.info.hasFineWatchCondition
-    val hasTimeFormat:          Boolean get() = state.info.hasTimeFormat
-    val hasHourlyChime:         Boolean get() = state.info.hasHourlyChime
-    val hasLongTimerKey:        Boolean get() = state.info.hasLongTimerKey
-    val settingsSize:           Int     get() = state.info.settingsSize
-    val timerSize:              Int     get() = state.info.timerSize
-    val protocol:               WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = state.info.protocol
+    val name:                   String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().name
+    val shortName:              String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().shortName
+    val model:                  WatchModel @RequiresApi(Build.VERSION_CODES.O) get() = getState().model
+    val worldCitiesCount:       Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCitiesCount
+    val dstCount:               Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.dstCount
+    val alarmCount:             Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alarmCount
+    val hasAutoLight:           Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasAutoLight
+    val hasReminders:           Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasReminders
+    val shortLightDuration:     String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.shortLightDuration
+    val longLightDuration:      String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.longLightDuration
+    val weekLanguageSupported:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.weekLanguageSupported
+    val worldCities:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCities
+    val hasTemperature:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTemperature
+    val hasBatteryLevel:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasBatteryLevel
+    val batteryLevelLowerLimit: Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelLowerLimit
+    val batteryLevelUpperLimit: Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelUpperLimit
+    val alwaysConnected:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alwaysConnected
+    val findButtonUserDefined:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.findButtonUserDefined
+    val hasPowerSavingMode:     Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasPowerSavingMode
+    val chimeInSettings:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.chimeInSettings
+    val vibrate:                Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.vibrate
+    val hasHealthFunctions:     Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHealthFunctions
+    val hasMessages:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMessages
+    val hasDateFormat:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasDateFormat
+    val hasWorldCities:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasWorldCities
+    val hasHomeTime:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHomeTime
+    val hasMultipleFonts:       Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMultipleFonts
+    val hasStepCounter:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasStepCounter
+    val hasNewTimeFormat:       Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasNewTimeFormat
+    val hasTimeAdjustment:      Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeAdjustment
+    val hasSecondDial:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasSecondDial
+    val hasFineWatchCondition:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasFineWatchCondition
+    val hasTimeFormat:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeFormat
+    val hasHourlyChime:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHourlyChime
+    val hasLongTimerKey:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasLongTimerKey
+    val settingsSize:           Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.settingsSize
+    
+    val protocol: WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.protocol
 
     // =========================================================================
     // Domain Types
@@ -115,7 +124,6 @@ data object WatchInfo {
         val hasHourlyChime: Boolean = true,
         val hasLongTimerKey: Boolean = false,
         val settingsSize: Int = 17,
-        val timerSize: Int = 7,
         val protocol: WatchProtocol = StandardProtocol
     )
 
@@ -173,7 +181,7 @@ data object WatchInfo {
             shortLightDuration = "1.5s", longLightDuration = "3s",
             hasWorldCities = false, hasHomeTime = true,
             hasDateFormat = false, weekLanguageSupported = false,
-            hasTimeFormat = false, settingsSize = 12, timerSize = 15,
+            hasTimeFormat = false, settingsSize = 12,
             batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 100,
             hasSecondDial = true,
             hasFineWatchCondition = true,
@@ -253,6 +261,7 @@ data object WatchInfo {
         ModelInfo(model = WatchModel.GENERIC),
     )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val modelMap: Map<WatchModel, ModelInfo> = modelList.associateBy { it.model }
 
     /** Pure: derive short name from full device name. */
@@ -289,10 +298,12 @@ data object WatchInfo {
     }
 
     /** Pure: look up ModelInfo, falling back to GENERIC. */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveModelInfo(model: WatchModel): ModelInfo =
         modelMap[model] ?: modelMap.getValue(WatchModel.GENERIC)
 
     /** Pure: build a complete new State from a device name. */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun buildState(name: String): State {
         val shortName = deriveShortName(name)
         val model     = resolveModel(shortName)
@@ -304,19 +315,26 @@ data object WatchInfo {
     // Imperative Shell: state mutations + side effects
     // =========================================================================
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun setNameAndModel(name: String) {
         state = buildState(name)
-        ProgressEvents.onNext("DeviceName", state.name)
+        ProgressEvents.onNext("DeviceName", (state as State).name)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun setAddress(address: String) {
-        state = state.copy(address = address)
+        if (state !is State) {
+            state = State(address = address)
+        } else {
+            state = (state as State).copy(address = address)
+        }
         ProgressEvents.onNext("DeviceAddress", address)
     }
 
-    fun getAddress(): String = state.address
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getAddress(): String = if (state is State) (state as State).address else ""
 
     fun reset() {
-        state = State()
+        state = ""
     }
 }

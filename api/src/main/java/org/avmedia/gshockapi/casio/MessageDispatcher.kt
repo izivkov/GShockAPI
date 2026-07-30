@@ -29,16 +29,16 @@ object MessageDispatcher {
      * Pure data — no side effects, no mutable state.
      */
     private val watchSenders: Map<String, (String) -> Unit> = mapOf(
-        "GET_ALARMS"          to AlarmsIO::sendToWatch,
-        "SET_ALARMS"          to AlarmsIO::sendToWatchSet,
-        "SET_REMINDERS"       to EventsIO::sendToWatchSet,
-        "GET_SETTINGS"        to SettingsIO::sendToWatch,
-        "SET_SETTINGS"        to SettingsIO::sendToWatchSet,
-        "GET_TIME_ADJUSTMENT" to TimeAdjustmentIO::sendToWatch,
-        "SET_TIME_ADJUSTMENT" to TimeAdjustmentIO::sendToWatchSet,
-        "GET_TIMER"           to TimerIO::sendToWatch,
-        "SET_TIMER"           to TimerIO::sendToWatchSet,
-        "SET_TIME"            to TimeIO::sendToWatchSet,
+        "GET_ALARMS"          to { AlarmsIO.sendToWatch(it) },
+        "SET_ALARMS"          to { AlarmsIO.sendToWatchSet(it) },
+        "SET_REMINDERS"       to { EventsIO.sendToWatchSet(it) },
+        "GET_SETTINGS"        to { SettingsIO.sendToWatch(it) },
+        "SET_SETTINGS"        to { SettingsIO.sendToWatchSet(it) },
+        "GET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatch(it) },
+        "SET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatchSet(it) },
+        "GET_TIMER"           to { TimerIO.sendToWatch(it) },
+        "SET_TIMER"           to { TimerIO.sendToWatchSet(it) },
+        "SET_TIME"            to { TimeIO.sendToWatchSet(it) },
     )
 
     // =========================================================================

@@ -84,8 +84,10 @@ object WatchConditionIO {
 
     private var state = State()
 
-    suspend fun request(): WatchConditionValue =
-        CachedIO.request("28") { key -> getWatchCondition(key) }
+    suspend fun request(): WatchConditionValue {
+        val requestString = WatchInfo.protocol.getWatchConditionRequest()
+        return CachedIO.request(requestString) { key -> getWatchCondition(key) }
+    }
 
     private suspend fun getWatchCondition(key: String): WatchConditionValue {
         state = state.copy(deferredResult = CompletableDeferred())

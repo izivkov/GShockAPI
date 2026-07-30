@@ -20,13 +20,11 @@ import org.avmedia.gshockapi.io.EventsIO
 import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
-import org.avmedia.gshockapi.io.MtgB1000TimeIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
-import org.avmedia.gshockapi.io.TimerIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
 import org.avmedia.gshockapi.io.WatchConditionIO
 import org.avmedia.gshockapi.io.WatchNameIO
@@ -357,7 +355,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return The timer number in seconds as an Int. E.g.: 180 means the timer is set for 3 minutes.
      */
     override suspend fun getTimer(): Int {
-        return TimerIO.request()
+        return WatchInfo.protocol.getTimer()
     }
 
     /**
@@ -366,7 +364,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param timerValue Timer number of seconds as an Int.  E.g.: 180 means the timer will be set for 3 minutes.
      */
     override fun setTimer(timerValue: Int) {
-        TimerIO.set(timerValue)
+        WatchInfo.protocol.setTimer(timerValue)
     }
 
     /**
@@ -424,7 +422,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *  ```
      */
     override suspend fun setTime(timeZone: String, timeMs: Long?) {
-        if (org.avmedia.gshockapi.WatchInfo.hasNewTimeFormat) {
+        if (WatchInfo.hasNewTimeFormat) {
             org.avmedia.gshockapi.io.GwBx5600TimeIO.set(timeMs)
             return
         }
@@ -436,11 +434,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         }
 
         TimeIO.setTimezone(timeZone)
-        TimeIO.set(timeMs)
-
-        if (org.avmedia.gshockapi.WatchInfo.hasSecondDial) {
-            MtgB1000TimeIO.setSecondDial()
-        }
+        WatchInfo.protocol.setTime(timeMs)
     }
 
     /**

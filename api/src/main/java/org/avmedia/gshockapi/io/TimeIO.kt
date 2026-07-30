@@ -227,14 +227,14 @@ object TimeIO {
         }
     }
 
-    private suspend fun writeHomeTimes() {
+    suspend fun writeHomeTimes() {
         for (i in 0 until WatchInfo.worldCitiesCount) {
             readAndWrite({ slot -> HomeTimeIO.requestRaw(slot) }, i)
             Timber.i("writeHomeTimes: $i")
         }
     }
 
-    private suspend fun <T> readAndWrite(
+    suspend fun <T> readAndWrite(
         function: suspend (T) -> String,
         param: T
     ) {
@@ -243,7 +243,7 @@ object TimeIO {
         IO.writeCmd(GetSetMode.SET, shortStr)
     }
 
-    private suspend fun writeDST() {
+    suspend fun writeDST() {
         data class Dts(
             val param: IO.DstState,
             val function: suspend (IO.DstState) -> String,
@@ -260,7 +260,7 @@ object TimeIO {
         }
     }
 
-    private suspend fun writeDSTForWorldCities() {
+    suspend fun writeDSTForWorldCities() {
         data class DstForWorldCities(
             val param: Int,
             val function: suspend (Int) -> String,
@@ -281,7 +281,7 @@ object TimeIO {
         }
     }
 
-    private suspend fun writeWorldCities() {
+    suspend fun writeWorldCities() {
         data class WorldCities(
             val param: Int,
             val function: suspend (Int) -> String,

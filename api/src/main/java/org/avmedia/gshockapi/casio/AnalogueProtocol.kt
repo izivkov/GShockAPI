@@ -38,4 +38,37 @@ object AnalogueProtocol : WatchProtocol {
         }
         return data
     }
+
+    override fun getWatchConditionRequest(): String {
+        return "280000"
+    }
+
+    override suspend fun setTime(timeMs: Long?) {
+        org.avmedia.gshockapi.io.TimeIO.apply {
+            writeDST()
+            writeDSTForWorldCities()
+            writeHomeTimes()
+            set(timeMs)
+        }
+
+        if (org.avmedia.gshockapi.WatchInfo.hasSecondDial) {
+            org.avmedia.gshockapi.io.MtgB1000TimeIO.setSecondDial()
+        }
+    }
+
+    override suspend fun getTimer(): Int {
+        return org.avmedia.gshockapi.io.TimerIO.request(getTimerRequest())
+    }
+
+    override fun setTimer(timerValue: Int) {
+        org.avmedia.gshockapi.io.TimerIO.set(timerValue)
+    }
+
+    override fun getTimerRequest(): String {
+        return "182000"
+    }
+
+    override fun getTimerSize(): Int {
+        return 15
+    }
 }

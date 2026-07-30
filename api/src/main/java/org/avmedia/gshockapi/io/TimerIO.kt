@@ -80,15 +80,14 @@ object TimerIOFunctional {
      * Pure encoder: Encodes timer state to byte array.
      * 
      * No side effects - pure transformation.
-     * Returns 7-byte array (or 15-byte for MTG-B3000/long-timer models):
+     * Returns byte array of specified size:
      * [0] = 0x18 (command)
      * [1] = hours
      * [2] = minutes
      * [3] = seconds
      * [4..] = padding
      */
-    fun encode(timerState: TimerState): ByteArray {
-        val size = WatchInfo.timerSize
+    fun encode(timerState: TimerState, size: Int): ByteArray {
         return ByteArray(size).apply {
             this[0] = 0x18
             this[1] = timerState.hours.toByte()
@@ -108,10 +107,10 @@ object TimerIOFunctional {
      * 
      * Parses and validates input without side effects.
      */
-    fun buildSetCommand(message: String): Result<ByteArray> = runCatching {
+    fun buildSetCommand(message: String, size: Int): Result<ByteArray> = runCatching {
         JSONObject(message).get("value").toString().toInt()
             .let { secondsToTimerState(it) }
-            .let { encode(it) }
+            .let { encode(it, size) }
     }
 }
 
@@ -133,8 +132,8 @@ object TimerIO {
 
     private var state = State()
 
-    suspend fun request(): Int =
-        CachedIO.request("18") { key -> getTimer(key) }
+    suspend fun request(requestString: String = "18"): Int =
+        CachedIO.request(requestString) { key -> getTimer(key) }
 
     private suspend fun getTimer(key: String): Int {
         val deferred = CompletableDeferred<Int>()
@@ -186,7 +185,8 @@ object TimerIO {
 
     fun sendToWatchSet(message: String) {
         // Use pure function to build command, then execute
-        TimerIOFunctional.buildSetCommand(message)
+        val size = WatchInfo.protocol.getTimerSize()
+        TimerIOFunctional.buildSetCommand(message, size)
             .fold(
                 onSuccess = { encodedData ->
                     IO.writeCmd(GetSetMode.SET, encodedData)

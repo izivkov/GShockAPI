@@ -51,4 +51,10 @@ interface WatchProtocol {
 
     fun extractKey(data: String): Int?
     fun unwrapPayload(data: String, key: Int): String
+    fun getWatchConditionRequest(): String
+    suspend fun setTime(timeMs: Long?)
+    suspend fun getTimer(): Int
+    fun setTimer(timerValue: Int)
+    fun getTimerRequest(): String
+    fun getTimerSize(): Int
 }

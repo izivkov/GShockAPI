@@ -13,4 +13,33 @@ object StandardProtocol : WatchProtocol {
     override fun unwrapPayload(data: String, key: Int): String {
         return data
     }
+
+    override fun getWatchConditionRequest(): String {
+        return "28"
+    }
+
+    override suspend fun setTime(timeMs: Long?) {
+        org.avmedia.gshockapi.io.TimeIO.apply {
+            writeDST()
+            writeDSTForWorldCities()
+            writeWorldCities()
+            set(timeMs)
+        }
+    }
+
+    override suspend fun getTimer(): Int {
+        return org.avmedia.gshockapi.io.TimerIO.request(getTimerRequest())
+    }
+
+    override fun setTimer(timerValue: Int) {
+        org.avmedia.gshockapi.io.TimerIO.set(timerValue)
+    }
+
+    override fun getTimerRequest(): String {
+        return "18"
+    }
+
+    override fun getTimerSize(): Int {
+        return 7
+    }
 }
