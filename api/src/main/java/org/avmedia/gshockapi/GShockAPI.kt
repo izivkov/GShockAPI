@@ -9,7 +9,6 @@ import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.MessageDispatcher
-import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO
 import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.ButtonPressedIO
@@ -442,7 +441,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
 
     override suspend fun getAlarms(): ArrayList<Alarm> {
-        return AlarmsIO.request()
+        return WatchInfo.protocol.getAlarms()
     }
 
     /**
@@ -452,7 +451,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
 
     override fun setAlarms(alarms: ArrayList<Alarm>) {
-        AlarmsIO.set(alarms)  // Renamed for clarity
+        WatchInfo.protocol.setAlarms(alarms)
     }
 
     /**

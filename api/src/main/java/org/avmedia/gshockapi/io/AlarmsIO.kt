@@ -69,13 +69,9 @@ object AlarmsIOFunctional {
      * Pure command builder: Creates the sequence of commands to fetch alarms.
      * 
      * Returns data structures (commands) instead of executing them.
-     * 
-     * IMPORTANT: Commands MUST be executed sequentially. The watch requires a response 
-     * to the first command before the second command is sent. Do not parallelize.
-     * Order: CASIO_SETTING_FOR_ALM -> (wait for response) -> CASIO_SETTING_FOR_ALM2
      */
-    fun buildFetchCommands(): List<BLEAction> {
-        if (WatchInfo.alarmCount == 1) {
+    fun buildFetchCommands(alarmCount: Int): List<BLEAction> {
+        if (alarmCount == 1) {
             return listOf(
                 BLEAction.Write(
                     GetSetMode.GET,
@@ -102,9 +98,9 @@ object AlarmsIOFunctional {
      * 
      * Parses JSON and builds write commands without side effects.
      */
-    fun buildSetCommand(message: String): Result<List<BLEAction>> = runCatching {
+    fun buildSetCommand(message: String, alarmCount: Int): Result<List<BLEAction>> = runCatching {
         JSONObject(message).get("value").let { it as JSONArray }.let { jsonArray ->
-            if (WatchInfo.alarmCount == 1) {
+            if (alarmCount == 1) {
                 val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
                 listOf(
                     BLEAction.Write(GetSetMode.SET, firstAlarm)
@@ -123,8 +119,8 @@ object AlarmsIOFunctional {
     /**
      * Pure validation: Checks if all alarms have been received.
      */
-    fun isAlarmCountComplete(alarmCount: Int, expectedCount: Int = 5): Boolean =
-        alarmCount == expectedCount
+    fun isAlarmCountComplete(receivedCount: Int, expectedCount: Int): Boolean =
+        receivedCount >= expectedCount
 }
 
 // ============================================================================
@@ -178,8 +174,6 @@ object AlarmsIO {
         Alarm.addSorted(parsedAlarms.toTypedArray())
 
         // Use pure function to check completion
-        // State accumulation: response 1 contains 1 alarm, response 2 contains 4 alarms = 5 total
-        // This mechanism respects the sequential command requirement automatically
         if (AlarmsIOFunctional.isAlarmCountComplete(
                 Alarm.getAlarms().size,
                 WatchInfo.alarmCount
@@ -194,9 +188,9 @@ object AlarmsIO {
 
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
-        // Use pure function to build commands, then execute them sequentially
-        // The forEach ensures sequential dispatch to the watch (required by device protocol)
-        AlarmsIOFunctional.buildFetchCommands().forEach { action ->
+        // Use protocol to build commands, then execute them sequentially
+        val commands = AlarmsIOFunctional.buildFetchCommands(WatchInfo.alarmCount)
+        commands.forEach { action ->
             when (action) {
                 is BLEAction.Write -> IO.writeCmd(action.mode, action.data)
             }
@@ -204,8 +198,8 @@ object AlarmsIO {
     }
 
     fun sendToWatchSet(message: String) {
-        // Use pure function to build commands, then execute them
-        AlarmsIOFunctional.buildSetCommand(message)
+        // Use protocol to build commands, then execute them
+        AlarmsIOFunctional.buildSetCommand(message, WatchInfo.alarmCount)
             .onSuccess { commands ->
                 commands.forEach { action ->
                     when (action) {
@@ -296,7 +290,7 @@ object AlarmDecoder {
             hour = intArray[2],
             minute = intArray[3],
             enabled = intArray[0] and Alarms.ENABLED_MASK != 0,
-            hasHourlyChime = intArray[0] and HOURLY_CHIME_MASK != 0
+            hasHourlyChime = if (WatchInfo.hasHourlyChime) (intArray[0] and HOURLY_CHIME_MASK != 0) else false
         ).let { alarm ->
             JSONObject(Gson().toJson(alarm))
         }

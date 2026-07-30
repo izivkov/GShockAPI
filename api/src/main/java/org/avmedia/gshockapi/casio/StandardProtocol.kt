@@ -55,4 +55,12 @@ object StandardProtocol : WatchProtocol {
     override suspend fun getWatchTemperature(): Int {
         return org.avmedia.gshockapi.io.WatchConditionIO.request(getWatchConditionRequest()).temperature
     }
+
+    override suspend fun getAlarms(): ArrayList<org.avmedia.gshockapi.Alarm> {
+        return org.avmedia.gshockapi.io.AlarmsIO.request()
+    }
+
+    override fun setAlarms(alarms: ArrayList<org.avmedia.gshockapi.Alarm>) {
+        org.avmedia.gshockapi.io.AlarmsIO.set(alarms)
+    }
 }

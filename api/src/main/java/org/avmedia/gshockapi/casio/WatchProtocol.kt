@@ -60,4 +60,6 @@ interface WatchProtocol {
     suspend fun getHomeTime(): String
     suspend fun getBatteryLevel(): Int
     suspend fun getWatchTemperature(): Int
+    suspend fun getAlarms(): ArrayList<org.avmedia.gshockapi.Alarm>
+    fun setAlarms(alarms: ArrayList<org.avmedia.gshockapi.Alarm>)
 }

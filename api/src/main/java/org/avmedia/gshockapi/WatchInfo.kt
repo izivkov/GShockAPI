@@ -166,12 +166,13 @@ data object WatchInfo {
         ),
         ModelInfo(
             model = WatchModel.MTG_B1000,
-            worldCitiesCount = 6, dstCount = 3,
+            worldCitiesCount = 6, dstCount = 3, alarmCount = 1,
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
             hasFineWatchCondition = true,
+            hasHourlyChime = false,
             protocol = AnalogueProtocol,
         ),
         ModelInfo(
