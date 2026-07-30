@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.ProgressEvents
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.IDataReceived
 import org.avmedia.gshockapi.casio.MessageDispatcher
@@ -29,7 +30,7 @@ object WatchDataListener {
     fun init() {
         state = state.copy(
             dataCallback = { data ->
-                data?.let { MessageDispatcher.onReceived(it) }
+                data?.let { MessageDispatcher.onReceived(it, WatchInfo.protocol) }
             }
         )
         setupConnectionListener()

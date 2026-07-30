@@ -59,6 +59,7 @@ object CasioConstants {
         GW_BX5600_SP_DATA_HEADER_05(0x05),
         GW_BX5600_SP_DATA_HEADER_06(0x06),
         ERROR(0xFF),
+        CASIO_HOME_TIME(0x24),
 
         // ECB-30
         CMD_SET_TIMEMODE(0x47),

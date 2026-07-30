@@ -74,10 +74,16 @@ object SettingsIOFunctional {
         val settingType = if (settingArray.size == 17) SettingType.EXTENDED else SettingType.SHORT
 
         // Time format (bit 0 of byte 1)
-        settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
+        if (WatchInfo.hasTimeFormat) {
+            settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
+        } else {
+            settings.timeFormat = "24h" // Default
+        }
 
         // Button tone and vibration
-        if (settingType == SettingType.SHORT) {
+        if (!WatchInfo.vibrate) {
+            settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
+        } else if (settingType == SettingType.SHORT) {
             settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
         } else {
             settings.buttonTone = settingArray[12] and SOUND_ONLY != 0
@@ -86,22 +92,30 @@ object SettingsIOFunctional {
         }
 
         // Flags from byte 1
-        settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
+        if (WatchInfo.hasAutoLight) {
+            settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
+        }
         settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
-        settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
+        if (WatchInfo.findButtonUserDefined) { // DnD is usually on watches with user defined buttons
+            settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
+        }
 
         // Date format (byte 4)
-        settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
+        if (WatchInfo.hasDateFormat) {
+            settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
+        }
 
         // Language (byte 5)
-        settings.language = when (settingArray[5]) {
-            0 -> "English"
-            1 -> "Spanish"
-            2 -> "French"
-            3 -> "German"
-            4 -> "Italian"
-            5 -> "Russian"
-            else -> "English"
+        if (WatchInfo.weekLanguageSupported) {
+            settings.language = when (settingArray[5]) {
+                0 -> "English"
+                1 -> "Spanish"
+                2 -> "French"
+                3 -> "German"
+                4 -> "Italian"
+                5 -> "Russian"
+                else -> "English"
+            }
         }
 
         // Light duration (bit 0 of byte 2)
@@ -122,75 +136,94 @@ object SettingsIOFunctional {
      * Constructs the raw byte array with all necessary bit flags.
      * No side effects - pure transformation.
      * 
-     * Returns 17-byte array containing all settings encoded per protocol.
+     * Returns 17-byte array (or 12-byte for shorter modules) containing all settings encoded per protocol.
      */
     fun encode(settings: JSONObject): ByteArray {
-        val arr = ByteArray(17)
+        val size = WatchInfo.settingsSize
+        val arr = ByteArray(size)
 
         // Command code
         arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
 
         // Byte 1 - Multiple flags
-        if (settings.get("timeFormat") == "24h") {
+        if (!WatchInfo.hasTimeFormat) {
+            arr[1] = (arr[1] or MASK_24_HOURS.toByte()) // Always 24h if no format setting
+        } else if (settings.get("timeFormat") == "24h") {
             arr[1] = (arr[1] or MASK_24_HOURS.toByte())
         }
 
         // Button tone and vibration settings
         if (settings.get("buttonTone") == false) {
             arr[1] = (arr[1] or MASK_BUTTON_TONE_OFF.toByte())
-            arr[12] = (arr[12] and SOUND_ONLY.inv().toByte())
+            if (size == 17) {
+                arr[12] = (arr[12] and SOUND_ONLY.inv().toByte())
+            }
         } else {
-            arr[12] = (arr[12] or SOUND_ONLY.toByte())
+            if (size == 17) {
+                arr[12] = (arr[12] or SOUND_ONLY.toByte())
+            }
         }
 
-        if (settings.get("keyVibration") == true) {
-            arr[12] = (arr[12] or VIBRATION_ONLY.toByte())
-        }
+        if (size == 17) {
+            if (settings.get("keyVibration") == true) {
+                arr[12] = (arr[12] or VIBRATION_ONLY.toByte())
+            }
 
-        if (settings.get("hourlyChime") == true) {
-            arr[12] = (arr[12] or CHIME.toByte())
+            if (settings.get("hourlyChime") == true) {
+                arr[12] = (arr[12] or CHIME.toByte())
+            }
         }
 
         // Additional byte 1 flags
-        if (settings.get("autoLight") == false) {
-            arr[1] = (arr[1] or MASK_AUTO_LIGHT_OFF.toByte())
+        if (WatchInfo.hasAutoLight) {
+            if (settings.get("autoLight") == false) {
+                arr[1] = (arr[1] or MASK_AUTO_LIGHT_OFF.toByte())
+            }
         }
 
         if (settings.get("powerSavingMode") == false) {
             arr[1] = (arr[1] or POWER_SAVING_MODE.toByte())
         }
 
-        if (settings.get("DnD") == false) {
-            arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
+        if (WatchInfo.findButtonUserDefined) {
+            if (settings.get("DnD") == false) {
+                arr[1] = (arr[1] or DO_NOT_DISTURB_OFF.toByte())
+            }
         }
 
         // Byte 2 - Light duration flags
         var flags = RESET_VALUE
-        if (settings["lightDuration"] == "4s") {
+        if (settings["lightDuration"] == "4s" || settings["lightDuration"] == "3s") {
             flags = flags or LIGHT_DURATION_LONG
         }
         arr[2] = flags.toByte()
 
         // Byte 8 - Font flags
-        var fontFlags = RESET_VALUE
-        if (WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
-            fontFlags = fontFlags or FONT_CLASSIC_MASK
+        if (size == 17) {
+            var fontFlags = RESET_VALUE
+            if (WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
+                fontFlags = fontFlags or FONT_CLASSIC_MASK
+            }
+            arr[8] = fontFlags.toByte()
         }
-        arr[8] = fontFlags.toByte()
 
         // Byte 4 - Date format
-        if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
+        if (WatchInfo.hasDateFormat) {
+            if (settings.get("dateFormat") == "DD:MM") arr[4] = 1
+        }
 
         // Byte 5 - Language
-        arr[5] = when (settings.get("language")) {
-            "English" -> 0
-            "Spanish" -> 1
-            "French" -> 2
-            "German" -> 3
-            "Italian" -> 4
-            "Russian" -> 5
-            else -> 0
-        }.toByte()
+        if (WatchInfo.weekLanguageSupported) {
+            arr[5] = when (settings.get("language")) {
+                "English" -> 0
+                "Spanish" -> 1
+                "French" -> 2
+                "German" -> 3
+                "Italian" -> 4
+                "Russian" -> 5
+                else -> 0
+            }.toByte()
+        }
 
         return arr
     }
@@ -213,51 +246,6 @@ object SettingsIOFunctional {
  * 
  * Manages the asynchronous request/response cycle for settings data.
  * Uses pure functional core for all transformations.
- * 
- * Protocol reference (kept for documentation):
- * Time Format:
- *     24 h:   13 05 00 00 00 00 00 00 00 00 00 00
- *     12 h:   13 04 00 00 00 00 00 00 00 00 00 00
- * 
- * Date format:
- *     mm:dd   13 04 00 00 00 00 00 00 00 00 00 00
- *     dd:mm   13 04 00 00 01 00 00 00 00 00 00 00
- * 
- * Languages:
- *     english:13 04 00 00 00 00 00 00 00 00 00 00
- *     spanish:13 04 00 00 00 01 00 00 00 00 00 00
- *     fr:     13 04 00 00 00 02 00 00 00 00 00 00
- *     german: 13 04 00 00 00 03 00 00 00 00 00 00
- *     italian:13 04 00 00 00 04 00 00 00 00 00 00
- *     russian:13 04 00 00 00 05 00 00 00 00 00 00
- * 
- * Button Tone:
- *     on:     13 04 00 00 00 00 00 00 00 00 00 00
- *     off:    13 06 00 00 00 00 00 00 00 00 00 00
- * 
- * For GMW-BZ5000
- *     standard font:          13 05 01 00 01 00 00 00 00 00 00 00
- *     classic font:           13 05 00 00 01 00 00 00 20 00 00 00
- *     light duration 1.5s:    13 05 00 00 01 00 00 00 20 00 00 00
- *     light duration 3s:      13 05 01 00 01 00 00 00 20 00 00 00
- * 
- * For DW-H5600
- *     sound:          13 00 00 00 00 00 00 00 00 00 00 00 04 00 00 06 00
- *     vibrate:        13 00 00 00 00 00 00 00 00 00 00 00 08 00 00 06 00
- *     both:           13 00 00 00 00 00 00 00 00 00 00 00 0c 00 00 06 00
- *     silent:         13 04 00 00 00 00 00 00 00 00 00 00 00 00 00 06 2d
- * 
- * Auto Light:
- *     on:     13 00 00 00 00 00 00 00 00 00 00 00
- *     off:    13 04 00 00 00 00 00 00 00 00 00 00
- * 
- * Light Duration:
- *     2s      13 04 00 00 00 00 00 00 00 00 00 00
- *     4s      13 04 01 00 00 00 00 00 00 00 00 00
- * 
- * Power Saving:
- *     on      13 04 00 00 00 00 00 00 00 00 00 00
- *     off     13 14 00 00 00 00 00 00 00 00 00 00
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object SettingsIO {
@@ -266,15 +254,17 @@ object SettingsIO {
     private var state = State()
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun request(): Settings {
-        return CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
-    }
+    suspend fun request(): Settings =
+        CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
-        state = state.copy(deferredResult = CompletableDeferred())
+        val deferred = CompletableDeferred<Settings>()
+        synchronized(this) {
+            state = state.copy(deferredResult = deferred)
+        }
         Connection.sendMessage("{ action: '$key'}")
-        return state.deferredResult?.await() ?: error("No deferred result available")
+        return deferred.await()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -291,20 +281,23 @@ object SettingsIO {
         SettingsIOFunctional.decode(data)
             .fold(
                 onSuccess = { model ->
-                    state.deferredResult?.complete(model)
-                    state = State() // Reset state after completion
+                    synchronized(this) {
+                        state.deferredResult?.complete(model)
+                    }
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode settings: ${error.message}")
-                    state.deferredResult?.completeExceptionally(error)
-                    state = State()
+                    synchronized(this) {
+                        state.deferredResult?.completeExceptionally(error)
+                    }
                 }
             )
     }
 
     fun onRunError() {
-        state.deferredResult?.complete(Settings())
-        state = State()
+        synchronized(this) {
+            state.deferredResult?.complete(Settings())
+        }
     }
 
     @Suppress("UNUSED_PARAMETER")

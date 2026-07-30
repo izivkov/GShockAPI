@@ -1,5 +1,11 @@
 package org.avmedia.gshockapi
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import org.avmedia.gshockapi.casio.AnalogueProtocol
+import org.avmedia.gshockapi.casio.StandardProtocol
+import org.avmedia.gshockapi.casio.WatchProtocol
+
 /**
  * This class keeps information about the characteristics of the currently connected watch. Based on
  * that, the application can display different information.
@@ -61,6 +67,7 @@ data object WatchInfo {
     val hasLongTimerKey:        Boolean get() = state.info.hasLongTimerKey
     val settingsSize:           Int     get() = state.info.settingsSize
     val timerSize:              Int     get() = state.info.timerSize
+    val protocol:               WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = state.info.protocol
 
     // =========================================================================
     // Domain Types
@@ -72,6 +79,7 @@ data object WatchInfo {
         GW_BX5600, MTG_B1000, MTG_B3000, GENERIC,
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     data class ModelInfo(
         val model: WatchModel,
         val worldCitiesCount: Int = 2,
@@ -108,12 +116,14 @@ data object WatchInfo {
         val hasLongTimerKey: Boolean = false,
         val settingsSize: Int = 17,
         val timerSize: Int = 7,
+        val protocol: WatchProtocol = StandardProtocol
     )
 
     // =========================================================================
     // Pure Functional Core
     // =========================================================================
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val modelList = listOf(
         ModelInfo(
             model = WatchModel.GW,
@@ -153,6 +163,8 @@ data object WatchInfo {
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
+            hasFineWatchCondition = true,
+            protocol = AnalogueProtocol,
         ),
         ModelInfo(
             model = WatchModel.MTG_B3000,
@@ -168,6 +180,7 @@ data object WatchInfo {
             hasPowerSavingMode = false,
             hasHourlyChime = false,
             hasLongTimerKey = true,
+            protocol = AnalogueProtocol,
         ),
         ModelInfo(
             model = WatchModel.MRG_B5000,

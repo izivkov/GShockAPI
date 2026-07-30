@@ -222,6 +222,15 @@ object TimeIO {
         writeDSTForWorldCities()
         if (WatchInfo.hasWorldCities) {
             writeWorldCities()
+        } else if (WatchInfo.hasHomeTime) {
+            writeHomeTimes()
+        }
+    }
+
+    private suspend fun writeHomeTimes() {
+        for (i in 0 until WatchInfo.worldCitiesCount) {
+            readAndWrite({ slot -> HomeTimeIO.requestRaw(slot) }, i)
+            Timber.i("writeHomeTimes: $i")
         }
     }
 
