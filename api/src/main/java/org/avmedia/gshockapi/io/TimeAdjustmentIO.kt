@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
@@ -125,8 +126,12 @@ object TimeAdjustmentIO {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun request(): TimeAdjustmentInfo =
-        CachedIO.request("GET_TIME_ADJUSTMENT") { key -> getTimeAdjustment(key) }
+    suspend fun request(): TimeAdjustmentInfo {
+        if (!WatchInfo.hasTimeAdjustment) {
+            return TimeAdjustmentInfo()
+        }
+        return CachedIO.request("GET_TIME_ADJUSTMENT") { key -> getTimeAdjustment(key) }
+    }
 
     private suspend fun getTimeAdjustment(key: String): TimeAdjustmentInfo {
         state = state.copy(deferredResult = CompletableDeferred())
@@ -161,6 +166,11 @@ object TimeAdjustmentIO {
                     state = State()
                 }
             )
+    }
+
+    fun onRunError() {
+        state.deferredResult?.complete(TimeAdjustmentInfo())
+        state = State()
     }
 
     @Suppress("UNUSED_PARAMETER")

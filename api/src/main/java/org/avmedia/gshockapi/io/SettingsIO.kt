@@ -266,8 +266,9 @@ object SettingsIO {
     private var state = State()
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun request(): Settings =
-        CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
+    suspend fun request(): Settings {
+        return CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
@@ -299,6 +300,11 @@ object SettingsIO {
                     state = State()
                 }
             )
+    }
+
+    fun onRunError() {
+        state.deferredResult?.complete(Settings())
+        state = State()
     }
 
     @Suppress("UNUSED_PARAMETER")

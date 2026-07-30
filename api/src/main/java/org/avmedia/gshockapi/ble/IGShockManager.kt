@@ -55,6 +55,8 @@ private class GShockManagerImpl(
     private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
 
+    private val subscribedCharacteristics = mutableSetOf<UUID>()
+
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
     override var connectionState = ConnectionState.DISCONNECTED
@@ -98,7 +100,8 @@ private class GShockManagerImpl(
             service.characteristics.forEach { char ->
                 val hasNotify = char.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
                 val hasIndicate = char.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
-                if (hasNotify || hasIndicate) {
+                if ((hasNotify || hasIndicate) && !subscribedCharacteristics.contains(char.uuid)) {
+                    subscribedCharacteristics.add(char.uuid)
                     setNotificationCallback(char).with { _, data ->
                         val hexData = data.value?.joinToString(separator = " ", prefix = "0x") {
                             String.format("%02X", it)
@@ -154,6 +157,7 @@ private class GShockManagerImpl(
         writeCharacteristicHolderSPRequest = null
         writeCharacteristicHolderSPData = null
         characteristicUUIDs.clear()
+        subscribedCharacteristics.clear()
 
         if (isReady) {
             disconnect().enqueue()
