@@ -18,9 +18,7 @@ import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
-import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO
-import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
@@ -513,11 +511,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      */
 
     override suspend fun getSettings(): Settings {
-        val settings = getBasicSettings()
-        val timeAdjustment = getTimeAdjustment()
-        settings.timeAdjustment = timeAdjustment.isTimeAdjustmentSet
-        settings.adjustmentTimeMinutes = timeAdjustment.adjustmentTimeMinutes
-        return settings
+        return WatchInfo.protocol.getSettings()
     }
 
     /**
@@ -526,7 +520,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return A [Settings] object containing basic configuration.
      */
     override suspend fun getBasicSettings(): Settings {
-        return SettingsIO.request()
+        return WatchInfo.protocol.getBasicSettings()
     }
 
     /**
@@ -535,7 +529,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return A [TimeAdjustmentInfo] object.
      */
     override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {
-        return TimeAdjustmentIO.request()
+        return WatchInfo.protocol.getTimeAdjustment()
     }
 
     /**
@@ -592,8 +586,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param settings
      */
     override fun setSettings(settings: Settings) {
-        SettingsIO.set(settings)
-        TimeAdjustmentIO.set(settings)
+        WatchInfo.protocol.setSettings(settings)
     }
 
     /**

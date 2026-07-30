@@ -63,4 +63,25 @@ object StandardProtocol : WatchProtocol {
     override fun setAlarms(alarms: ArrayList<org.avmedia.gshockapi.Alarm>) {
         org.avmedia.gshockapi.io.AlarmsIO.set(alarms)
     }
+
+    override suspend fun getSettings(): org.avmedia.gshockapi.Settings {
+        val settings = org.avmedia.gshockapi.io.SettingsIO.request()
+        val timeAdjustment = org.avmedia.gshockapi.io.TimeAdjustmentIO.request()
+        settings.timeAdjustment = timeAdjustment.isTimeAdjustmentSet
+        settings.adjustmentTimeMinutes = timeAdjustment.adjustmentTimeMinutes
+        return settings
+    }
+
+    override fun setSettings(settings: org.avmedia.gshockapi.Settings) {
+        org.avmedia.gshockapi.io.SettingsIO.set(settings)
+        org.avmedia.gshockapi.io.TimeAdjustmentIO.set(settings)
+    }
+
+    override suspend fun getBasicSettings(): org.avmedia.gshockapi.Settings {
+        return org.avmedia.gshockapi.io.SettingsIO.request()
+    }
+
+    override suspend fun getTimeAdjustment(): org.avmedia.gshockapi.io.TimeAdjustmentInfo {
+        return org.avmedia.gshockapi.io.TimeAdjustmentIO.request()
+    }
 }

@@ -62,4 +62,8 @@ interface WatchProtocol {
     suspend fun getWatchTemperature(): Int
     suspend fun getAlarms(): ArrayList<org.avmedia.gshockapi.Alarm>
     fun setAlarms(alarms: ArrayList<org.avmedia.gshockapi.Alarm>)
+    suspend fun getSettings(): org.avmedia.gshockapi.Settings
+    fun setSettings(settings: org.avmedia.gshockapi.Settings)
+    suspend fun getBasicSettings(): org.avmedia.gshockapi.Settings
+    suspend fun getTimeAdjustment(): org.avmedia.gshockapi.io.TimeAdjustmentInfo
 }
