@@ -76,4 +76,12 @@ object AnalogueProtocol : WatchProtocol {
         val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0, "24")
         return org.avmedia.gshockapi.io.HomeTimeIOFunctional.parseHomeCity(raw, 4)
     }
+
+    override suspend fun getBatteryLevel(): Int {
+        return org.avmedia.gshockapi.io.WatchConditionIO.request(getWatchConditionRequest()).batteryLevel
+    }
+
+    override suspend fun getWatchTemperature(): Int {
+        return org.avmedia.gshockapi.io.WatchConditionIO.request(getWatchConditionRequest()).temperature
+    }
 }

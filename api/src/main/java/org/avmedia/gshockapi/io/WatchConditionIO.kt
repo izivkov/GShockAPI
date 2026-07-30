@@ -84,15 +84,16 @@ object WatchConditionIO {
 
     private var state = State()
 
-    suspend fun request(): WatchConditionValue {
-        val requestString = WatchInfo.protocol.getWatchConditionRequest()
-        return CachedIO.request(requestString) { key -> getWatchCondition(key) }
-    }
+    suspend fun request(requestString: String = "28"): WatchConditionValue =
+        CachedIO.request(requestString) { key -> getWatchCondition(key) }
 
     private suspend fun getWatchCondition(key: String): WatchConditionValue {
-        state = state.copy(deferredResult = CompletableDeferred())
+        val deferred = CompletableDeferred<WatchConditionValue>()
+        synchronized(this) {
+            state = state.copy(deferredResult = deferred)
+        }
         IO.request(key)
-        return state.deferredResult?.await() ?: WatchConditionValue(0, 0)
+        return deferred.await()
     }
 
     fun onReceived(data: String) {
@@ -100,16 +101,23 @@ object WatchConditionIO {
         WatchConditionIOFunctional.decode(data)
             .fold(
                 onSuccess = { condition ->
+                    if (condition.batteryLevel == 0 && condition.temperature == 0) {
+                        return@fold
+                    }
                     // Convert to our public data class
-                    state.deferredResult?.complete(
-                        WatchConditionValue(condition.batteryLevel, condition.temperature)
-                    )
-                    state = State()
+                    synchronized(this) {
+                        state.deferredResult?.complete(
+                            WatchConditionValue(condition.batteryLevel, condition.temperature)
+                        )
+                        state = state.copy(deferredResult = null)
+                    }
                 },
                 onFailure = { error ->
                     Timber.e("Failed to decode watch condition: ${error.message}")
-                    state.deferredResult?.complete(WatchConditionValue(0, 0))
-                    state = State()
+                    synchronized(this) {
+                        state.deferredResult?.complete(WatchConditionValue(0, 0))
+                        state = state.copy(deferredResult = null)
+                    }
                 }
             )
     }

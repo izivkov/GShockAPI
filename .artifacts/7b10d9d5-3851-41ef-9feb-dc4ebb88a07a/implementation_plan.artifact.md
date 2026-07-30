@@ -1,46 +1,47 @@
-# Implementation Plan: Protocol-Delegated HomeTime Logic
+# Implementation Plan: Protocol-Delegated Watch Condition
 
-Refactor the Home Time retrieval logic to be delegated to the `WatchProtocol` implementations. This ensures that different watch generations use the correct hardware registers (`0x1F` vs `0x24`) and parsing offsets to avoid malformed ASCII output (the "yyyyyy" issue).
+Refactor the Watch Condition retrieval (battery level and temperature) to be delegated to the `WatchProtocol` implementations. This ensures that the correct request format (`28` vs `280000`) and scaling logic (calibrated vs direct) are used based on the watch generation.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This change moves the hardware-specific details of Home City retrieval out of `HomeTimeIO.kt` and into the protocol generations.
-> - **Standard Protocol** will continue using the World Cities register (`0x1F`).
-> - **Analogue Protocol** (MTG models) will switch to the dedicated Home Time register (`0x24`) with a specialized offset.
+> This change moves the responsibility for requesting and parsing hardware status data out of the generic `WatchConditionIO.kt` and into the protocol generations.
+> - **Standard Protocol** will use calibrated values based on `WatchInfo` limits.
+> - **Analogue Protocol** will use the direct percentage/celsius values discovered in the MTG-B3000 logs.
 
 ## Proposed Changes
 
 ### Protocol Interface Extension
 #### [MODIFY] [WatchProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/WatchProtocol.kt)
-- Add `suspend fun getHomeTime(): String`.
+- Add `suspend fun getBatteryLevel(): Int`.
+- Add `suspend fun getWatchTemperature(): Int`.
 
 ### Standard Implementation
 #### [MODIFY] [StandardProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/StandardProtocol.kt)
-- Implement `getHomeTime()`:
-    1. Request Register `0x1F`, Slot 0.
-    2. Parse using `HomeTimeIOFunctional.parseHomeCity` with **offset 2**.
+- Implement status methods:
+    1. Request using string `"28"`.
+    2. Apply calibration logic from `WatchConditionIOFunctional`.
 
 ### Analogue (MTG) Implementation
 #### [MODIFY] [AnalogueProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/AnalogueProtocol.kt)
-- Implement `getHomeTime()`:
-    1. Request Register `0x24`, Slot 0.
-    2. Parse using `HomeTimeIOFunctional.parseHomeCity` with **offset 4** (matching B3000 log observations).
+- Implement status methods:
+    1. Request using string `"280000"`.
+    2. Use direct byte mapping (second byte = battery %, third byte = temp).
 
 ### IO Layer Refactoring
-#### [MODIFY] [HomeTimeIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/HomeTimeIO.kt)
-- Refactor `parseHomeCity` to accept a dynamic offset.
-- Update `requestRaw` and `request` to be protocol-agnostic.
+#### [MODIFY] [WatchConditionIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/WatchConditionIO.kt)
+- Refactor to accept a `requestString` in `request()`.
+- Expose pure decoding helpers that protocols can use.
 
 ### Integration
 #### [MODIFY] [GShockAPI.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/GShockAPI.kt)
-- Update `getHomeTime()` to delegate to `WatchInfo.protocol.getHomeTime()`.
+- Update `getBatteryLevel()` and `getWatchTemperature()` to delegate to `WatchInfo.protocol`.
 
 ## Verification Plan
 
 ### Logic Verification
-- Verify that MTG-B3000 now uses Register `0x24` and returns a valid city name.
-- Verify that digital watches (B5600) still use Register `0x1F` and show the correct Home City.
+- Verify that standard models continue to send `"28"` and return calibrated percentages.
+- Verify that MTG-B3000 sends `"280000"` and returns direct percentages (e.g. `0x11` -> `17%`).
 
 ### Manual Verification
-- Review the logs to ensure no `FF FF FF` data is being parsed as ASCII for analogue models.
+- Review logs to ensure the 0/0 filter in `WatchConditionIO` remains effective for both protocols.

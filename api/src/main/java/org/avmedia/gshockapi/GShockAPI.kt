@@ -25,7 +25,6 @@ import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
-import org.avmedia.gshockapi.io.WatchConditionIO
 import org.avmedia.gshockapi.io.WatchNameIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
 import timber.log.Timber
@@ -327,7 +326,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return the battery level in percent as a String. E.g.: 83
      */
     override suspend fun getBatteryLevel(): Int {
-        return WatchConditionIO.request().batteryLevel
+        return WatchInfo.protocol.getBatteryLevel()
     }
 
     /**
@@ -336,7 +335,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return the watch's temperature in degree Celsius
      */
     override suspend fun getWatchTemperature(): Int {
-        return WatchConditionIO.request().temperature
+        return WatchInfo.protocol.getWatchTemperature()
     }
 
     /**

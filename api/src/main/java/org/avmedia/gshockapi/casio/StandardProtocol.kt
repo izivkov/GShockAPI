@@ -47,4 +47,12 @@ object StandardProtocol : WatchProtocol {
         val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0, "1F")
         return org.avmedia.gshockapi.io.HomeTimeIOFunctional.parseHomeCity(raw, 2)
     }
+
+    override suspend fun getBatteryLevel(): Int {
+        return org.avmedia.gshockapi.io.WatchConditionIO.request(getWatchConditionRequest()).batteryLevel
+    }
+
+    override suspend fun getWatchTemperature(): Int {
+        return org.avmedia.gshockapi.io.WatchConditionIO.request(getWatchConditionRequest()).temperature
+    }
 }

@@ -58,4 +58,6 @@ interface WatchProtocol {
     fun getTimerRequest(): String
     fun getTimerSize(): Int
     suspend fun getHomeTime(): String
+    suspend fun getBatteryLevel(): Int
+    suspend fun getWatchTemperature(): Int
 }
