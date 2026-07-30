@@ -71,4 +71,9 @@ object AnalogueProtocol : WatchProtocol {
     override fun getTimerSize(): Int {
         return 15
     }
+
+    override suspend fun getHomeTime(): String {
+        val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0, "24")
+        return org.avmedia.gshockapi.io.HomeTimeIOFunctional.parseHomeCity(raw, 4)
+    }
 }

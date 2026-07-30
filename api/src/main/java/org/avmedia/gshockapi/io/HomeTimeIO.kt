@@ -4,7 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.WatchInfo
+import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
+import timber.log.Timber
 
 // ============================================================================
 // Pure Functional Core: Home Time Data Processing
@@ -21,12 +23,11 @@ object HomeTimeIOFunctional {
     /**
      * Pure parser: Extracts home city name from world cities data.
      * 
-     * Converts raw city data (starting at index 2 or 4) to ASCII string.
+     * Converts raw city data to ASCII string using the provided offset.
      * No side effects - pure string transformation.
      */
-    fun parseHomeCity(data: String): String {
+    fun parseHomeCity(data: String, offset: Int): String {
         if (data.isBlank()) return "N/A"
-        val offset = if (!WatchInfo.hasWorldCities) 4 else 2
         val name = Utils.toAsciiString(data, offset)
         return if (name.isBlank() || name.all { it == 'ÿ' }) "N/A" else name
     }
@@ -51,23 +52,20 @@ object HomeTimeIO {
 
     private var state = State()
 
-    suspend fun request(slot: Int = 0): String {
-        val raw = requestRaw(slot)
-        return HomeTimeIOFunctional.parseHomeCity(raw)
+    suspend fun request(): String {
+        return WatchInfo.protocol.getHomeTime()
     }
 
-    suspend fun requestRaw(slot: Int = 0): String {
-        return if (WatchInfo.hasHomeTime && !WatchInfo.hasWorldCities) {
-            CachedIO.request("240$slot") { key ->
-                val deferred = CompletableDeferred<String>()
-                synchronized(this) {
-                    state = state.copy(deferredResult = deferred)
-                }
-                IO.request(key)
-                deferred.await()
+    suspend fun requestRaw(slot: Int, register: String = "1F"): String {
+        val key = if (register == "24") "240$slot" else "1f0$slot"
+        
+        return CachedIO.request(key) { k ->
+            val deferred = CompletableDeferred<String>()
+            synchronized(this) {
+                state = state.copy(deferredResult = deferred)
             }
-        } else {
-            WorldCitiesIO.request(slot)
+            IO.request(k)
+            deferred.await()
         }
     }
 

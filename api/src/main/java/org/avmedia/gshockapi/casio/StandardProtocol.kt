@@ -42,4 +42,9 @@ object StandardProtocol : WatchProtocol {
     override fun getTimerSize(): Int {
         return 7
     }
+
+    override suspend fun getHomeTime(): String {
+        val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0, "1F")
+        return org.avmedia.gshockapi.io.HomeTimeIOFunctional.parseHomeCity(raw, 2)
+    }
 }

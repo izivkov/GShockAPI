@@ -1,37 +1,46 @@
-# Implementation Plan: Protocol-Owned Timer Logic
+# Implementation Plan: Protocol-Delegated HomeTime Logic
 
-Refactor the timer logic to move payload size decisions and request formatting entirely into the `WatchProtocol` implementations. This removes implementation details from the `io` layer.
+Refactor the Home Time retrieval logic to be delegated to the `WatchProtocol` implementations. This ensures that different watch generations use the correct hardware registers (`0x1F` vs `0x24`) and parsing offsets to avoid malformed ASCII output (the "yyyyyy" issue).
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This change moves the `timerSize` logic out of the global `WatchInfo` feature set and into the specific protocol generations where it belongs.
+> This change moves the hardware-specific details of Home City retrieval out of `HomeTimeIO.kt` and into the protocol generations.
+> - **Standard Protocol** will continue using the World Cities register (`0x1F`).
+> - **Analogue Protocol** (MTG models) will switch to the dedicated Home Time register (`0x24`) with a specialized offset.
 
 ## Proposed Changes
 
 ### Protocol Interface Extension
 #### [MODIFY] [WatchProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/WatchProtocol.kt)
-- Add `fun getTimerSize(): Int`.
+- Add `suspend fun getHomeTime(): String`.
 
-### Protocol Implementations
+### Standard Implementation
 #### [MODIFY] [StandardProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/StandardProtocol.kt)
-- Implement `getTimerSize()`: returns `7`.
+- Implement `getHomeTime()`:
+    1. Request Register `0x1F`, Slot 0.
+    2. Parse using `HomeTimeIOFunctional.parseHomeCity` with **offset 2**.
+
+### Analogue (MTG) Implementation
 #### [MODIFY] [AnalogueProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/AnalogueProtocol.kt)
-- Implement `getTimerSize()`: returns `15`.
+- Implement `getHomeTime()`:
+    1. Request Register `0x24`, Slot 0.
+    2. Parse using `HomeTimeIOFunctional.parseHomeCity` with **offset 4** (matching B3000 log observations).
 
 ### IO Layer Refactoring
-#### [MODIFY] [TimerIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/TimerIO.kt)
-- Update `TimerIOFunctional.encode(timerState, size)` to accept a size parameter.
-- Update `TimerIOFunctional.buildSetCommand(message, size)` to pass the size.
-- Update `TimerIO.sendToWatchSet(message)` to use `WatchInfo.protocol.getTimerSize()`.
+#### [MODIFY] [HomeTimeIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/HomeTimeIO.kt)
+- Refactor `parseHomeCity` to accept a dynamic offset.
+- Update `requestRaw` and `request` to be protocol-agnostic.
 
-### Cleanup
-#### [MODIFY] [WatchInfo.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/WatchInfo.kt)
-- Remove `timerSize` property from `ModelInfo` and the public accessor.
+### Integration
+#### [MODIFY] [GShockAPI.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/GShockAPI.kt)
+- Update `getHomeTime()` to delegate to `WatchInfo.protocol.getHomeTime()`.
 
 ## Verification Plan
 
 ### Logic Verification
-- Verify that standard models continue to produce 7-byte payloads.
-- Verify that MTG models produce 15-byte payloads.
-- Ensure `TimerIO` no longer depends on `WatchInfo` for internal protocol decisions.
+- Verify that MTG-B3000 now uses Register `0x24` and returns a valid city name.
+- Verify that digital watches (B5600) still use Register `0x1F` and show the correct Home City.
+
+### Manual Verification
+- Review the logs to ensure no `FF FF FF` data is being parsed as ASCII for analogue models.

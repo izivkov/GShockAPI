@@ -57,4 +57,5 @@ interface WatchProtocol {
     fun setTimer(timerValue: Int)
     fun getTimerRequest(): String
     fun getTimerSize(): Int
+    suspend fun getHomeTime(): String
 }

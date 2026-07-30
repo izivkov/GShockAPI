@@ -17,7 +17,6 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
-import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
 import org.avmedia.gshockapi.io.SettingsIO
@@ -319,7 +318,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return The name of Home City as a String.
      */
     override suspend fun getHomeTime(): String {
-        return HomeTimeIO.request()
+        return WatchInfo.protocol.getHomeTime()
     }
 
     /**
