@@ -4,9 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.WatchInfo
-import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
-import timber.log.Timber
 
 // ============================================================================
 // Pure Functional Core: Home Time Data Processing
@@ -40,14 +38,13 @@ object HomeTimeIOFunctional {
 /**
  * Home Time IO handler with state management.
  * 
- * Provides access to the primary home city timezone.
+ * Provides access to the primary home city timezone (Register 0x24).
  * Uses pure functional core for data parsing.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object HomeTimeIO {
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null,
-        val homeCity: String = ""
+        val deferredResult: CompletableDeferred<String>? = null
     )
 
     private var state = State()
@@ -56,8 +53,8 @@ object HomeTimeIO {
         return WatchInfo.protocol.getHomeTime()
     }
 
-    suspend fun requestRaw(slot: Int, register: String = "1F"): String {
-        val key = if (register == "24") "240$slot" else "1f0$slot"
+    suspend fun requestRaw(slot: Int): String {
+        val key = "240$slot"
         
         return CachedIO.request(key) { k ->
             val deferred = CompletableDeferred<String>()
@@ -72,7 +69,7 @@ object HomeTimeIO {
     fun onReceived(data: String) {
         synchronized(this) {
             state.deferredResult?.complete(data)
-            state = state.copy(homeCity = data)
+            state = state.copy(deferredResult = null)
         }
     }
 }

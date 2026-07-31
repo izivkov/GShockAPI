@@ -73,7 +73,7 @@ object AnalogueProtocol : WatchProtocol {
     }
 
     override suspend fun getHomeTime(): String {
-        val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0, "24")
+        val raw = org.avmedia.gshockapi.io.HomeTimeIO.requestRaw(0)
         return org.avmedia.gshockapi.io.HomeTimeIOFunctional.parseHomeCity(raw, 4)
     }
 

@@ -1,53 +1,34 @@
-# Implementation Plan - Protocol-Delegated Alarms
+# Implementation Plan - Fixing Home Time Routing Hang
 
-Refactor the alarm functionality to be delegated to the `WatchProtocol` implementations. This ensures that the library correctly handles watches with limited alarm slots (like MTG-B3000's single alarm) and those without hourly chime support.
+Fix the app hang during `getHomeTime()` on digital watches (like GW-B5600) by ensuring requests for Register `0x1F` are handled by their designated IO component (`WorldCitiesIO`), while dedicated Home Time requests (`0x24`) remain in `HomeTimeIO`.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This change moves the alarm execution sequence and chime handling out of `AlarmsIO.kt` and into the specific protocol generations.
-> - **Standard Protocol** manages 5 alarms and the hourly chime.
-> - **Analogue Protocol** (MTG models) manages a single alarm and suppresses chime data.
+> This change resolves a routing conflict where `HomeTimeIO` was requesting data that was being delivered to `WorldCitiesIO`, causing the app to wait indefinitely for a response that never arrived.
 
 ## Proposed Changes
 
-### Protocol Interface Extension
-#### [MODIFY] [WatchProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/WatchProtocol.kt)
-- Add `suspend fun getAlarms(): ArrayList<Alarm>`.
-- Add `fun setAlarms(alarms: ArrayList<Alarm>)`.
-
-### Standard Implementation
+### Protocol Logic Refinement
 #### [MODIFY] [StandardProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/StandardProtocol.kt)
-- Implement `getAlarms()`:
-    - Sequentially request Registers `0x15` and `0x16`.
-    - Wait for all 5 alarms to be collected via `AlarmsIO.request()`.
-- Implement `setAlarms()`:
-    - Delegate to `AlarmsIO.set(alarms)` (standard 5-alarm encoding).
+- Update `getHomeTime()` to use `WorldCitiesIO.request(0)`. This ensures that the response to Register `0x1F` is caught by the correct listener.
 
-### Analogue (MTG) Implementation
 #### [MODIFY] [AnalogueProtocol.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/casio/AnalogueProtocol.kt)
-- Implement `getAlarms()`:
-    - Only request Register `0x15`.
-    - Ensure `AlarmsIO.request()` completes after the first alarm is received (respecting `WatchInfo.alarmCount`).
-- Implement `setAlarms()`:
-    - Ensure only the first alarm in the list is encoded and sent to the watch.
+- Update `getHomeTime()` to call the simplified `HomeTimeIO.requestRaw(0)`.
 
-### IO Layer Refactoring
-#### [MODIFY] [AlarmsIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/AlarmsIO.kt)
-- Refactor `AlarmsIOFunctional` to remove `WatchInfo` checks.
-- Expose generic building blocks for protocols to construct their specific write commands.
-- Update `onReceived()` to correctly handle the completion signal based on the active watch's `alarmCount`.
+### IO Layer Cleanup
+#### [MODIFY] [HomeTimeIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/HomeTimeIO.kt)
+- Simplify `requestRaw()` to focus strictly on Register `0x24`.
+- Reset `deferredResult` to `null` in `onReceived` to prevent state leakage and ensure thread-safe cleanup.
 
-### Integration
-#### [MODIFY] [GShockAPI.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/GShockAPI.kt)
-- Update `getAlarms()` and `setAlarms()` to delegate entirely to `WatchInfo.protocol`.
+#### [MODIFY] [WorldCitiesIO.kt](file:///home/izivkov/projects/GShockAPI/api/src/main/java/org/avmedia/gshockapi/io/WorldCitiesIO.kt)
+- Update `onReceived` to reset `deferredResult` to `null` after completion, matching the standard robust IO pattern used elsewhere.
 
 ## Verification Plan
 
 ### Logic Verification
-- Verify that MTG-B3000 only makes one BLE request for alarms.
-- Verify that standard models continue to make two requests and collect all 5 alarms.
-- Ensure that the Hourly Chime UI remains disabled or hidden for models where `hasHourlyChime` is false.
+- **GW-B5600**: Verify `getHomeTime()` completes and returns the correct city name via `WorldCitiesIO`.
+- **MTG-B3000**: Verify `getHomeTime()` completes and returns the correct city name via `HomeTimeIO` (Register `0x24`).
 
 ### Manual Verification
-- Review the generated BLE commands to ensure they match the Module-specific requirements in the HCI logs.
+- Run the test app and confirm it proceeds past the "Home Time" log line on a GW-B5600.

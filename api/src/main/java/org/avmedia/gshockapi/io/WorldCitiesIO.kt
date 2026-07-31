@@ -81,8 +81,10 @@ object WorldCitiesIO {
     }
 
     fun onReceived(data: String) {
-        state.deferredResult?.complete(data)
-        // state = State() // Intentionally not reset to preserve cache
+        synchronized(this) {
+            state.deferredResult?.complete(data)
+            state = state.copy(deferredResult = null)
+        }
     }
 
     /**
