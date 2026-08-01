@@ -47,9 +47,12 @@ object DstWatchStateIO {
         }
 
     private suspend fun getDSTWatchState(key: String): String {
-        state = state.copy(deferredResult = CompletableDeferred())
+        val deferred = CompletableDeferred<String>()
+        synchronized(this) {
+            state = state.copy(deferredResult = deferred)
+        }
         IO.request(key)
-        return state.deferredResult?.await() ?: ""
+        return deferred.await()
     }
 
     /*
@@ -67,9 +70,12 @@ object DstWatchStateIO {
         DstWatchStateIOFunctional.setDST(dstState, dst)
 
     fun onReceived(data: String) {
-        state.deferredResult?.complete(data)
-
-        // Do not reset state here, as it is used in the request function.
-        // state = State()
+        synchronized(this) {
+            val currentDeferred = state.deferredResult
+            currentDeferred?.complete(data)
+            if (state.deferredResult === currentDeferred) {
+                state = state.copy(deferredResult = null)
+            }
+        }
     }
 }

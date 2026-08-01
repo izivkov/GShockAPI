@@ -1,3 +1,36 @@
+# GShockAPI Release Notes - v1.6.0
+
+## Overview
+This major release introduces a new **Protocol-Based Architecture**, enabling seamless support for varied watch generations (Standard, Analogue/MTG, and MIP) while significantly improving thread safety and reliability across the entire IO layer.
+
+## 🏗 Major Architectural Shift: Protocol-Delegated Logic
+- **WatchProtocol Abstraction**: The library has been refactored to use a decoupled, table-driven protocol system. Core logic for time synchronization, timers, alarms, and settings is now delegated to specific protocol implementations:
+    - `StandardProtocol`: Optimized for digital modules (B5600, etc.).
+    - `AnalogueProtocol`: Specialized for premium analogue modules (MTG series).
+    - `MipProtocol`: Designed for Memory-in-Pixel display watches.
+- **Dynamic Routing**: `MessageDispatcher` now performs intelligent packet unwrapping and routing based on the active watch generation, eliminating hardcoded model checks in the IO layer.
+- **Hardware Abstraction**: Implementation details like register IDs (e.g., 0x1F vs 0x24 for Home Time) and payload sizes (7-byte vs 15-byte timers) are now fully encapsulated within their respective protocols.
+
+## 🚀 Enhanced Watch Support
+- **Full MTG-B3000 & MTG-B3100 Integration**: 
+    - Support for the specialized Home Time register (0x24).
+    - Automated synchronization for watches with a "Second Dial" (sub-dial).
+    - Support for extended status requests (`280000`) and 15-byte timer payloads.
+    - Corrected battery level scaling for modules that report direct percentage values.
+- **MIP Module Support**: Explicit protocol support for the latest generation of MIP-based modules.
+
+## 🔒 Concurrency & Reliability Improvements
+- **Thread-Safe IO Layer**: A system-wide refactoring of all IO handlers now utilizes synchronized state management and localized `CompletableDeferred` instances. This eliminates race conditions during high-frequency BLE notifications.
+- **Robust Status Retrieval**: `WatchConditionIO` now includes intelligent filtering to ignore invalid `0/0` status responses that can occur during hardware initialization.
+- **Register Routing Fixes**: Resolved a critical hang in `getHomeTime()` on standard watches by ensuring register `0x1F` and `0x24` responses are routed to their designated listeners.
+
+## 🔧 Bug Fixes
+- **Timer Accuracy**: Fixed a logic error in `TimerIO` where seconds were incorrectly calculated.
+- **Battery Calibration**: Corrected battery limits for the MTG series to ensure accurate 0-100% reporting.
+- **API Cleanup**: Removed redundant public methods and unused imports from the main `GShockAPI` facade.
+
+---
+
 # GShockAPI Release Notes - v1.5.0
 
 ## Overview

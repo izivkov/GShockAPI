@@ -1,7 +1,10 @@
-package org.avmedia.gshockapi.casio
+package org.avmedia.gshockapi.protocols
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import org.avmedia.gshockapi.Alarm
+import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO
 import org.avmedia.gshockapi.io.ButtonPressedIO
@@ -15,6 +18,7 @@ import org.avmedia.gshockapi.io.RunActionsIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
+import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimerIO
 import org.avmedia.gshockapi.io.UnknownIO
 import org.avmedia.gshockapi.io.WatchConditionIO
@@ -60,10 +64,10 @@ interface WatchProtocol {
     suspend fun getHomeTime(): String
     suspend fun getBatteryLevel(): Int
     suspend fun getWatchTemperature(): Int
-    suspend fun getAlarms(): ArrayList<org.avmedia.gshockapi.Alarm>
-    fun setAlarms(alarms: ArrayList<org.avmedia.gshockapi.Alarm>)
-    suspend fun getSettings(): org.avmedia.gshockapi.Settings
-    fun setSettings(settings: org.avmedia.gshockapi.Settings)
-    suspend fun getBasicSettings(): org.avmedia.gshockapi.Settings
-    suspend fun getTimeAdjustment(): org.avmedia.gshockapi.io.TimeAdjustmentInfo
+    suspend fun getAlarms(): ArrayList<Alarm>
+    fun setAlarms(alarms: ArrayList<Alarm>)
+    suspend fun getSettings(): Settings
+    fun setSettings(settings: Settings)
+    suspend fun getBasicSettings(): Settings
+    suspend fun getTimeAdjustment(): TimeAdjustmentInfo
 }

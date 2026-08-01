@@ -2,9 +2,10 @@ package org.avmedia.gshockapi
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.casio.AnalogueProtocol
-import org.avmedia.gshockapi.casio.StandardProtocol
-import org.avmedia.gshockapi.casio.WatchProtocol
+import org.avmedia.gshockapi.protocols.AnalogueProtocol
+import org.avmedia.gshockapi.protocols.MipProtocol
+import org.avmedia.gshockapi.protocols.StandardProtocol
+import org.avmedia.gshockapi.protocols.WatchProtocol
 
 /**
  * This class keeps information about the characteristics of the currently connected watch. Based on
@@ -163,6 +164,7 @@ data object WatchInfo {
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasMultipleFonts = true,
             hasNewTimeFormat = true,
+            protocol = MipProtocol,
         ),
         ModelInfo(
             model = WatchModel.MTG_B1000,
@@ -234,7 +236,7 @@ data object WatchInfo {
             findButtonUserDefined = true,
             shortLightDuration = "1.5s", longLightDuration = "5s",
             hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
-            weekLanguageSupported = false
+            weekLanguageSupported = false,
         ),
         ModelInfo(model = WatchModel.DW,     hasAutoLight = true,  hasReminders = false),
         ModelInfo(

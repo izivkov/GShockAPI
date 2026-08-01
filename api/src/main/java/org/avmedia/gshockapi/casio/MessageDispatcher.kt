@@ -14,6 +14,8 @@ import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.TimerIO
+import org.avmedia.gshockapi.protocols.StandardProtocol
+import org.avmedia.gshockapi.protocols.WatchProtocol
 import org.json.JSONObject
 import timber.log.Timber
 

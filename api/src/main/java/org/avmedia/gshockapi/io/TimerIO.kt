@@ -43,7 +43,7 @@ object TimerIOFunctional {
         val hours = totalSeconds / 3600
         val minutesAndSeconds = totalSeconds % 3600
         val minutes = minutesAndSeconds / 60
-        val seconds = minutesAndSeconds / 60
+        val seconds = minutesAndSeconds % 60
         return TimerState(hours, minutes, seconds, totalSeconds)
     }
 
@@ -163,12 +163,14 @@ object TimerIO {
                     Timber.d("TimerIO: Decoded seconds: $seconds")
                     synchronized(this) {
                         state.deferredResult?.complete(seconds)
+                        state = state.copy(deferredResult = null)
                     }
                 },
                 onFailure = { error ->
                     Timber.e(error, "TimerIO: Failed to decode timer data")
                     synchronized(this) {
                         state.deferredResult?.completeExceptionally(error)
+                        state = state.copy(deferredResult = null)
                     }
                 }
             )
