@@ -98,6 +98,7 @@ object GwBx5600TimeIO {
 
     private fun writeTimeCommand(now: LocalDateTime) {
         val casioDow = (now.dayOfWeek.value % 7)
+        val subSecondByte = ((now.nano.toLong() * 256) / 1_000_000_000).toByte()
 
         val timeCmd = byteArrayOf(
             0x09,
@@ -109,7 +110,7 @@ object GwBx5600TimeIO {
             now.minute.toByte(),
             now.second.toByte(),
             casioDow.toByte(),
-            0x50,
+            subSecondByte,
             0x01
         )
         val hexStr = timeCmd.joinToString("") { "%02X".format(it) }

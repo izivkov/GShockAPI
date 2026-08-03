@@ -1,3 +1,15 @@
+# GShockAPI Release Notes - v1.6.1
+
+## 🚀 Precise Time Synchronization
+- **System Time Offset**: Added an optional `offsetFormSystemTime` parameter to `setTime()`. This allows applications to provide a fine-tuned offset (in milliseconds) to account for network latency or processing delays, ensuring millisecond-accurate watch synchronization.
+- **High-Precision MIP Setting**: Enhanced the time-setting protocol for MIP modules (`GwBx5600TimeIO`) to include sub-second precision data, utilizing the hardware's fractional second register.
+
+## 🛠 Model Support & Fixes
+- **GW-BX5600 Enhancements**: Expanded World City support for the GW-BX5600, increasing the available slots from 2 to 6 to match the hardware's full capacity.
+- **Durations**: Migrated internal timeouts and durations to idiomatic `kotlin.time` APIs for improved type safety and code clarity.
+
+---
+
 # GShockAPI Release Notes - v1.6.0
 
 ## Overview

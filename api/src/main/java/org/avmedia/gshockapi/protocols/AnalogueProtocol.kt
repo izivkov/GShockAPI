@@ -48,7 +48,7 @@ object AnalogueProtocol : StandardProtocol() {
         return "280000"
     }
 
-    override suspend fun setTime(timeMs: Long?) {
+    override suspend fun setTime(timeMs: Long?, offset: Long?) {
         TimeIO.apply {
             writeDST()
             writeDSTForWorldCities()

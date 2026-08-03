@@ -179,9 +179,10 @@ object TimeIO {
         )
     }
 
-    suspend fun set(timeMs: Long? = null) {
+    suspend fun set(timeMs: Long? = null, offset: Long? = null) {
         initializeForSettingTime()
-        val timeToSet = timeMs ?: Clock.systemDefaultZone().millis()
+        val timeToSet = timeMs ?: (Clock.systemDefaultZone().millis() + (offset ?: 0L))
+
         Connection.sendMessage(
             "{action: \"SET_TIME\", value: ${timeToSet}}"
         )

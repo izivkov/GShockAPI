@@ -63,7 +63,7 @@ import java.time.ZoneId
  */
 
 @RequiresApi(Build.VERSION_CODES.O)
-class GShockAPI(private val context: Context) : IGShockAPI {
+ class GShockAPI(private val context: Context) : IGShockAPI {
 
     /**
      * This function waits for the watch to connect to the phone.
@@ -416,7 +416,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *      setTime("Europe/Sofia")
      *  ```
      */
-    override suspend fun setTime(timeZone: String, timeMs: Long?) {
+    override suspend fun setTime(timeZone: String, timeMs: Long?, offsetFormSystemTime: Long?) {
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("setTime: Invalid timezone $timeZone passed")
             ProgressEvents.onNext("ApiError")
@@ -424,7 +424,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         }
 
         TimeIO.setTimezone(timeZone)
-        WatchInfo.protocol.setTime(timeMs)
+        WatchInfo.protocol.setTime(timeMs, offset = offsetFormSystemTime)
     }
 
     /**

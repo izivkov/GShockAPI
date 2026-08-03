@@ -182,7 +182,7 @@ interface IGShockAPI {
      * @param timeZone The target timezone ID (e.g., "Europe/Sofia"). Defaults to phone's current timezone.
      * @param timeMs Optional timestamp in milliseconds to set. Defaults to current time.
      */
-    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null)
+    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null, offsetFormSystemTime: Long? = null)
 
     /**
      * Retrieves the list of alarms from the watch.
