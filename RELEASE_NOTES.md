@@ -1,3 +1,13 @@
+# GShockAPI Release Notes - v1.6.2
+
+## ✨ Enhanced Event Sanitization
+- **Intelligent Title Cleaning**: Implemented a robust sanitization engine for event/reminder titles.
+    - **Emoji Removal**: Automatically strips emojis and other special symbols that the watch hardware cannot render.
+    - **Accent Normalization**: Converts accented characters (e.g., "é", "ö") to their base ASCII equivalents to maintain legibility.
+    - **Unsupported Character Filtering**: Replaces unsupported special symbols with a placeholder (`*`) to prevent display corruption on the watch.
+
+---
+
 # GShockAPI Release Notes - v1.6.1
 
 ## 🚀 Precise Time Synchronization

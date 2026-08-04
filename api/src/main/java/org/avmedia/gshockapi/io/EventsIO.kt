@@ -19,6 +19,8 @@ import org.avmedia.gshockapi.utils.Utils.getStringSafe
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
+import java.text.Normalizer
+import java.util.regex.Pattern
 
 // ============================================================================
 // Pure Functional Core: Event/Reminder Encoding & Decoding
@@ -130,6 +132,30 @@ object EventsIOFunctional {
         reminderCmd
     }
 
+    private fun String.sanitizeEventTitle(): String {
+        fun String.filterAllowedCharacters(): String {
+            val allowedSymbols =
+                " !\"#\\\$%&'()*+,-./:;<=>?@[\\]^_`{|}" // Not supported on the watch: "~。「」、・。¥±♪⟪⟫♦▶◀"
+            val regex = "[^A-Za-z0-9${Regex.escape(allowedSymbols)}]".toRegex()
+            return this.replace(regex, "*")
+        }
+
+        fun String.removeEmojis(): String {
+            return this.replace(Regex("[\\p{So}\\p{Cn}]"), "")
+        }
+
+        fun String.removeAccents(): String {
+            val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
+            return Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(normalized)
+                .replaceAll("")
+        }
+
+        return this.removeEmojis()
+            .removeAccents()
+            .filterAllowedCharacters()
+            .trim()
+    }
+
     /**
      * Pure encoder: Converts JSON reminder title to protocol bytes.
      *
@@ -137,7 +163,7 @@ object EventsIOFunctional {
      * Shorter titles are null-padded; longer titles are truncated.
      */
     fun reminderTitleFromJson(reminderJson: JSONObject): Result<ByteArray> = runCatching {
-        val titleStr: String = reminderJson.get("title") as String
+        val titleStr: String = (reminderJson.get("title") as String).sanitizeEventTitle()
         Utils.toByteArray(titleStr, 18)
     }
 
