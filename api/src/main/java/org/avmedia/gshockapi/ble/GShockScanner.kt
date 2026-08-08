@@ -53,6 +53,7 @@ object GShockScanner {
 
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
             .build()
 
         val scanFilters = listOf(
