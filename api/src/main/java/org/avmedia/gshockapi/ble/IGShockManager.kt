@@ -102,6 +102,7 @@ private class GShockManagerImpl(
                 val hasIndicate = char.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
                 if ((hasNotify || hasIndicate) && !subscribedCharacteristics.contains(char.uuid)) {
                     subscribedCharacteristics.add(char.uuid)
+
                     setNotificationCallback(char).with { _, data ->
                         val hexData = data.value?.joinToString(separator = " ", prefix = "0x") {
                             String.format("%02X", it)

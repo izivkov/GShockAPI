@@ -79,6 +79,7 @@ object Connection {
 
     fun write(handle: GetSetMode, data: ByteArray) {
         scope.launch {
+            Timber.i("Writing to ${handle.name}: ${org.avmedia.gshockapi.utils.Utils.fromByteArrayToHexStr(data)}")
             bleManager.write(handle, data)
         }
     }

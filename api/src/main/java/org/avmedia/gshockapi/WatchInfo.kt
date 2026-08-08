@@ -140,7 +140,7 @@ data object WatchInfo {
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
-        ),
+            ),
         ModelInfo(
             model = WatchModel.DW_B5600,
             worldCitiesCount = 6, dstCount = 3,

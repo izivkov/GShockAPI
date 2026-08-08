@@ -1,3 +1,16 @@
+# GShockAPI Release Notes - v1.6.3
+
+## 🌍 Advanced MIP Time-Setting Protocol
+- **Reverse-Engineered World-City Data**: Significantly overhauled the `GwBx5600TimeIO` module to support the complex multi-step time-setting protocol used by MIP modules (e.g., DW-H5600, GMW-B5000 series variants).
+- **Geographic Data Integration**: Implemented `WorldCityCoordinates` to provide the hardware-required latitude and longitude for Home City registration. 
+- **Protocol Fidelity**: Refined the construction of 94-byte "Step 2" packets, including accurate sub-record headers and trailing DST booleans confirmed against official Casio communication captures.
+
+## 🛠 Diagnostics & Reliability
+- **Hex Write Logging**: Enhanced the BLE `Connection` layer to log the raw hex content of every outbound packet, dramatically improving the ability to diagnose hardware communication issues.
+- **Hardened State Machine**: Refined `GwBx5600TimeIO` to use exact expected byte counts for protocol reassembly, ensuring reliable execution even in noisy Bluetooth environments.
+
+---
+
 # GShockAPI Release Notes - v1.6.2
 
 ## ✨ Enhanced Event Sanitization

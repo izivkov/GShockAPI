@@ -179,6 +179,14 @@ object TimeIO {
         )
     }
 
+    /**
+     * Exposes the currently-configured CasioTimeZone so watch-specific
+     * protocol code (e.g. GwBx5600TimeIO) that needs more than just the
+     * home-clock timestamp -- coordinates, DST rules -- can read it
+     * without threading a wider parameter list through setTime().
+     */
+    fun getCasioTimezone(): CasioTimeZoneHelper.CasioTimeZone = state.casioTimezone
+
     suspend fun set(timeMs: Long? = null, offset: Long? = null) {
         initializeForSettingTime()
         val timeToSet = timeMs ?: (Clock.systemDefaultZone().millis() + (offset ?: 0L))
