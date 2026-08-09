@@ -149,8 +149,8 @@ object GShockScanner {
 
         val settings =
             ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
                 .build()
 
         try {
