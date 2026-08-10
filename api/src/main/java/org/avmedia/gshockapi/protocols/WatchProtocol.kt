@@ -48,9 +48,9 @@ interface WatchProtocol {
             CasioConstants.CHARACTERISTICS.FIND_PHONE.code to RunActionsIO::onReceived,
             CasioConstants.CHARACTERISTICS.CMD_SET_TIMEMODE.code to UnknownIO::onReceived,
             CasioConstants.CHARACTERISTICS.CASIO_HOME_TIME.code to HomeTimeIO::onReceived,
-            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_03.code to GwBx5600TimeIO::onReceived,
-            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_05.code to GwBx5600TimeIO::onReceived,
-            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_06.code to GwBx5600TimeIO::onReceived,
+            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_03.code to GwBx5600TimeIO::onReceivedStep2,
+            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_05.code to GwBx5600TimeIO::onReceivedStep1,
+            CasioConstants.CHARACTERISTICS.GW_BX5600_SP_DATA_HEADER_06.code to GwBx5600TimeIO::onReceivedStep3,
         )
 
     fun extractKey(data: String): Int?
