@@ -26,7 +26,7 @@ object AppInfoIOFunctional {
     const val CMD_BYTE_INDEX = 0
     const val MAGIC_NUMBER_INDEX = 1
     const val USER_DATA_START_INDEX = 2 // User data starts after magic number
-    const val MAGIC_NUMBER = 0x94
+    const val MAGIC_NUMBER = 0x95
 
     /**
      * Pure validator: Checks if scratchpad has been initialized.
