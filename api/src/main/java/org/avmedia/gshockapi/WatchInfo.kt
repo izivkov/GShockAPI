@@ -76,7 +76,7 @@ data object WatchInfo {
     val hasHourlyChime:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHourlyChime
     val hasLongTimerKey:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasLongTimerKey
     val settingsSize:           Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.settingsSize
-    
+
     val protocol: WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.protocol
 
     // =========================================================================
@@ -140,7 +140,7 @@ data object WatchInfo {
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
-            ),
+        ),
         ModelInfo(
             model = WatchModel.DW_B5600,
             worldCitiesCount = 6, dstCount = 3,
@@ -206,7 +206,7 @@ data object WatchInfo {
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
-        ),
+            ),
         ModelInfo(
             model = WatchModel.GMW,
             worldCitiesCount = 6, dstCount = 3,
@@ -267,39 +267,247 @@ data object WatchInfo {
     @RequiresApi(Build.VERSION_CODES.O)
     private val modelMap: Map<WatchModel, ModelInfo> = modelList.associateBy { it.model }
 
-    /** Pure: derive short name from full device name. */
-    private fun deriveShortName(name: String): String =
-        name.split(" ").getOrElse(1) { "" }
+    /**
+     * Exact model-name mapping from the official Casio app.
+     *
+     * Matching is deliberately exact: no startsWith()/contains() matching is used.
+     * Watches sharing a known Casio module are assigned to the same WatchInfo block.
+     * Models for which we do not yet have enough information use GENERIC.
+     */
+    private val exactModelMap: Map<String, WatchModel> = buildMap {
+        // -----------------------------------------------------------------
+        // Additional Casio model-index research. Module numbers are the
+        // hardware module numbers.
+        // Same module number is authoritative: all models sharing a module
+        // MUST use the same WatchModel/ModelInfo block. Existing cross-module
+        // mappings are retained only as a secondary compatibility rule.
+        // GENERIC entries below intentionally remain GENERIC: module identity
+        // alone does not prove that their attributes match another WatchModel.
+        // -----------------------------------------------------------------
+        // Module 3452: GPR-B1000
+        put("GPR-B1000", WatchModel.GPR)
+        // Module 3459: GMW-B5000, GW-B5000
+        // GW-B5000 was explicitly mapped in the original WatchInfo to the
+        // same functional WatchModel family as GW-B5600, despite its
+        // different module. Preserve that previous mapping.
+        put("GMW-B5000", WatchModel.GMW)
+        put("GW-B5000", WatchModel.GW)
+        // Module 3461: GW-B5600, MRG-B5000
+        put("GW-B5600", WatchModel.GW)
+        put("MRG-B5000", WatchModel.GW)
+        // Module 3464: GBD-800, GMD-B800
+        put("GBD-800", WatchModel.GBD_800)
+        put("GMD-B800", WatchModel.GBD_800)
+        // Module 3475: GBD-H1000
+        put("GBD-H1000", WatchModel.GBD)
+        // Module 3481: GBD-100
+        put("GBD-100", WatchModel.GBD)
+        // Module 3482: GBX-100
+        put("GBX-100", WatchModel.GBD)
+        // Module 3491: GSR-H1000
+        put("GSR-H1000", WatchModel.GENERIC)
+        // Module 3506: GBD-200
+        put("GBD-200", WatchModel.GBD)
+        // Module 3509: DW-B5600
+        put("DW-B5600", WatchModel.DW_B5600)
+        // Module 3515: GBD-H2000, DW-GH5600
+        put("GBD-H2000", WatchModel.DW_H5600)
+        // Module 3515: DW-GH5600
+        put("DW-GH5600", WatchModel.DW_H5600)
+        // Module 3516: DW-H5600
+        put("DW-H5600", WatchModel.DW_H5600)
+        // Module 3539: GMW-B5000#, GW-B5600#, MRG-B5000#, TRN-50, GCW-B5000, PRJ-BW002
+        put("GMW-B5000#", WatchModel.GCW_B5000)
+        put("GW-B5600#", WatchModel.GCW_B5000)
+        put("MRG-B5000#", WatchModel.GCW_B5000)
+        put("TRN-50", WatchModel.GCW_B5000)
+        put("GCW-B5000", WatchModel.GCW_B5000)
+        put("PRJ-BW002", WatchModel.GCW_B5000)
+        // Module 3552: GD-B500
+        // Module 3520: GD-B500
+        put("GD-B500", WatchModel.GENERIC)
+        // Module 3554: GPR-H1000
+        put("GPR-H1000", WatchModel.GPR)
+        // Module 3565: ABL-100WE
+        put("ABL-100WE", WatchModel.ABL_100)
+        // Module 3568: GBD-300
+        put("GBD-300", WatchModel.GBD)
+        // Module 3575: GMW-BZ5000
+        put("GMW-BZ5000", WatchModel.GMW_BZ5000)
+        // Module 3577: GM-H5600
+        put("GM-H5600", WatchModel.DW_H5600)
+        // Module 3586: GBX-H5600
+        put("GBX-H5600", WatchModel.GBD)
+        // Module 3587: GDG-B100
+        put("GDG-B100", WatchModel.GBD)
+        // Module 3599: GWF-300
+        put("GWF-300", WatchModel.GENERIC)
+        // Module 5537: ECB-800
+        put("ECB-800", WatchModel.ECB)
+        // Module 5554: GBA-800
+        put("GBA-800", WatchModel.GA)
+        // Module 5582: ECB-900, ECB-950, GST-B200, GST-B300
+        put("ECB-900", WatchModel.GST)
+        put("ECB-950", WatchModel.GST)
+        put("GST-B200", WatchModel.GST)
+        put("GST-B300", WatchModel.GST)
+        // Module 5588: GWR-B1000
+        put("GWR-B1000", WatchModel.GW)
+        // Module 5594: GMC-B100
+        put("GMC-B100", WatchModel.GENERIC)
+        // Module 5597: OCW-B1300
+        put("OCW-B1300", WatchModel.GENERIC)
+        // Module 5602: PRT-B70
+        put("PRT-B70", WatchModel.GENERIC)
+        // Module 5603: OCW-S5000
+        put("OCW-S5000", WatchModel.GENERIC)
+        // Module 5604: EQB-1000
+        put("EQB-1000", WatchModel.EQB)
+        // Module 5618: ECB-10
+        put("ECB-10", WatchModel.ECB)
+        // Module 5623: GWF-A1000
+        put("GWF-A1000", WatchModel.GENERIC)
+        // Module 5624: OCW-P2000
+        put("OCW-P2000", WatchModel.GENERIC)
+        // Module 5636: MTG-B2000, MRG-BF1000
+        put("MTG-B2000", WatchModel.GENERIC)
+        put("MRG-BF1000", WatchModel.GENERIC)
+        // Module 5641: GBA-900
+        put("GBA-900", WatchModel.GA)
+        // Module 5657: GST-B400
+        put("GST-B400", WatchModel.GST)
+        // Module 5672: MTG-B3000
+        put("MTG-B3000", WatchModel.MTG_B3000)
+        // Module 5701: OCW-S7000
+        put("OCW-S7000", WatchModel.GENERIC)
+        // Module 5713: GWG-B1000
+        put("GWG-B1000", WatchModel.GW)
+        // Module 5728: OCW-S400
+        put("OCW-S400", WatchModel.GENERIC)
+        // Module 5736: GA-B010
+        put("GA-B010", WatchModel.GA)
+        // Module 5737: GBA-950
+        // Module 5725: GBA-950
+        put("GBA-950", WatchModel.GA)
+        // Module 5744: GG-B100X
+        put("GG-B100X", WatchModel.GENERIC)
+        // Module 5748: GST-B1000, EQB-1300
+        // Module 5631: GST-B1000
+        put("GST-B1000", WatchModel.GST)
+        // Module 5712: EQB-1300
+        put("EQB-1300", WatchModel.EQB)
+        // Module 5756: GWR-B3000
+        // Module 5775: GWR-B3000
+        put("GWR-B3000", WatchModel.GW)
 
-    /** Pure: map short name prefix to WatchModel. */
-    private fun resolveModel(shortName: String): WatchModel = when {
-        shortName.startsWith("MTG-B3000")  -> WatchModel.MTG_B3000
-        shortName.startsWith("MTG-B1000")  -> WatchModel.MTG_B1000
-        shortName.startsWith("MRG-B5000")  -> WatchModel.MRG_B5000
-        shortName.startsWith("GCW-B5000")  -> WatchModel.GCW_B5000
-        shortName.startsWith("GMW-BZ5000") -> WatchModel.GMW_BZ5000
-        shortName.startsWith("GW-BX5600")  -> WatchModel.GW_BX5600
-        shortName.startsWith("GM-B2100")   -> WatchModel.GA
-        shortName.startsWith("ABL-100")    -> WatchModel.ABL_100
-        shortName.startsWith("G-B001")     -> WatchModel.GB001
-        shortName.startsWith("GMW")        -> WatchModel.GMW
-        shortName.startsWith("GST")        -> WatchModel.GST
-        shortName.startsWith("GPR")        -> WatchModel.GPR
-        shortName.startsWith("MSG")        -> WatchModel.MSG
-        shortName.startsWith("GBD-800")    -> WatchModel.GBD_800
-        shortName.startsWith("GBD")        -> WatchModel.GBD
-        shortName.startsWith("EQB")        -> WatchModel.EQB
-        shortName.startsWith("GMB")        -> WatchModel.GA
-        shortName == "ECB-10" || shortName == "ECB-20" || shortName == "ECB-30" -> WatchModel.ECB
-        shortName.startsWith("GA")         -> WatchModel.GA
-        shortName.startsWith("GB")         -> WatchModel.GA
-        shortName.startsWith("GW")         -> WatchModel.GW
-        shortName.startsWith("DW-H5600")   -> WatchModel.DW_H5600
-        shortName.startsWith("DW-B5600")   -> WatchModel.DW_B5600
-        shortName.startsWith("DW")         -> WatchModel.DW
-        else                               -> WatchModel.GENERIC
+        // Official-app models whose module number
+        put("GB-5600A", WatchModel.GA)
+        put("GB-6900A", WatchModel.GA)
+        put("GB-5600B", WatchModel.GA)
+        put("GB-6900B", WatchModel.GA)
+        put("GB-X6900B", WatchModel.GA)
+        put("GBA-400", WatchModel.GA)
+        put("GA-B2100", WatchModel.GA)
+        put("GM-B2100", WatchModel.GA)
+        // Module 5690: GBM-2100
+        put("GBM-2100", WatchModel.GA)
+        // Module 5688: GA-B001
+        put("GA-B001", WatchModel.GA)
+        put("GST-B100", WatchModel.GST)
+        put("GST-B500", WatchModel.GST)
+        // Module 3523: GST-B600
+        put("GST-B600", WatchModel.GST)
+        // Module 5444: GST-W1000
+        put("GST-W1000", WatchModel.GST)
+        put("MSG-B100", WatchModel.MSG)
+        put("G-B001", WatchModel.GB001)
+        put("EQB-500", WatchModel.EQB)
+        put("EQB-510", WatchModel.EQB)
+        put("EQB-600", WatchModel.EQB)
+        put("EQB-700", WatchModel.EQB)
+        put("EQB-501", WatchModel.EQB)
+        put("EQB-800", WatchModel.EQB)
+        put("EQB-900", WatchModel.EQB)
+        put("EQB-1100", WatchModel.EQB)
+        put("EQB-1200", WatchModel.EQB)
+        put("EQB-2000", WatchModel.EQB)
+        put("ECB-500", WatchModel.ECB)
+        put("ECB-20", WatchModel.ECB)
+        put("ECB-30", WatchModel.ECB)
+        put("ECB-40", WatchModel.ECB)
+        put("ECB-S100", WatchModel.ECB)
+        // Module 5638: ECB-2000
+        put("ECB-2000", WatchModel.ECB)
+        // Module 5708: ECB-2300
+        put("ECB-2300", WatchModel.ECB)
+        // Module 5688: ECB-2200
+        put("ECB-2200", WatchModel.ECB)
+        // Module 5682: ECB-S10
+        put("ECB-S10", WatchModel.ECB)
+        put("GW-BX5600", WatchModel.GW_BX5600)
+        put("MTG-B1000", WatchModel.MTG_B1000)
+        put("STB-1000", WatchModel.GENERIC)
+        put("SHB-100", WatchModel.GENERIC)
+        put("SHB-200", WatchModel.GENERIC)
+        put("GPW-2000", WatchModel.GENERIC)
+        put("GPW-G2000", WatchModel.GENERIC)
+        put("MRG-G2000", WatchModel.GENERIC)
+        put("OCW-G2000", WatchModel.GENERIC)
+        put("MRG-B1000", WatchModel.GENERIC)
+        put("LIW-B1000", WatchModel.GENERIC)
+        put("OCW-S4000", WatchModel.GENERIC)
+        put("OCW-T3000", WatchModel.GENERIC)
+        put("OCW-T4000", WatchModel.GENERIC)
+        put("OCW-T6000", WatchModel.GENERIC)
+        put("OCW-T4000A", WatchModel.GENERIC)
+        put("OCW-T4000B", WatchModel.GENERIC)
+        put("OCW-T4000C", WatchModel.GENERIC)
+        put("GR-B300", WatchModel.GENERIC)
+        // Module 5718: MRG-B2100
+        put("MRG-B2100", WatchModel.GA)
+        // Module 5691: GMC-B2100
+        put("GMC-B2100", WatchModel.GA)
+        put("OCW-SG1000", WatchModel.GENERIC)
+        put("MTG-B4000", WatchModel.GENERIC)
+        put("BSA-B100", WatchModel.GENERIC)
+        put("GMA-B800", WatchModel.GENERIC)
+        put("GR-B100", WatchModel.GENERIC)
+        put("GG-B100", WatchModel.GENERIC)
+        put("PRT-B50", WatchModel.GENERIC)
+        put("GR-B200", WatchModel.GENERIC)
+        put("OCW-T200", WatchModel.GENERIC)
+        put("OCW-B1200", WatchModel.GENERIC)
+        put("OCW-S6000", WatchModel.GENERIC)
+        put("OCW-T5000", WatchModel.GENERIC)
+        put("OCW-B1400", WatchModel.GENERIC)
+        put("MRG-B2000", WatchModel.GENERIC)
+        // Module 3559: PRJ-B001
+        put("PRJ-B001", WatchModel.GB001)
+        put("OCW-5700", WatchModel.GENERIC)
+        // Module 5734: MTG-B3100
+        put("MTG-B3100", WatchModel.MTG_B3000)
+        put("OCW-5800", WatchModel.GENERIC)
+        // Module 5699: PRW-B1000
+        put("PRW-B1000", WatchModel.GENERIC)
+        // Module 3517: GMD-B300
+        put("GMD-B300", WatchModel.GENERIC)
+        // Module 3564: WS-B1000
+        put("WS-B1000", WatchModel.GENERIC)
+        // Module 3563: F-B100W
+        put("F-B100W", WatchModel.GENERIC)
+        // Module 5750: OCW-P3000
+        put("OCW-P3000", WatchModel.GENERIC)
     }
 
+    /** Pure: derive the short name from the Bluetooth device name. */
+    private fun deriveShortName(name: String): String =
+        name.removePrefix("CASIO ").trim().split(" ").firstOrNull().orEmpty()
+
+    /** Pure: resolve only an exact official model name; never use partial matching. */
+    private fun resolveModel(name: String): WatchModel {
+        val modelName = name.removePrefix("CASIO ").trim()
+        return exactModelMap[modelName] ?: WatchModel.GENERIC
+    }
     /** Pure: look up ModelInfo, falling back to GENERIC. */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveModelInfo(model: WatchModel): ModelInfo =
@@ -309,7 +517,7 @@ data object WatchInfo {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun buildState(name: String): State {
         val shortName = deriveShortName(name)
-        val model     = resolveModel(shortName)
+        val model     = resolveModel(name)
         val info      = resolveModelInfo(model)
         return State(name = name, shortName = shortName, model = model, info = info)
     }

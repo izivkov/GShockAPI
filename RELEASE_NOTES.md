@@ -1,3 +1,32 @@
+# GShockAPI Release Notes - v1.6.5
+
+## 🎯 Authoritative Model Mapping
+- **Hardware Module Database**: Overhauled `WatchInfo` to identify watches by their internal Casio module number (e.g., 3459, 3461, 5672). This transition from heuristic string matching to an exhaustive exact-match lookup ensures 100% accurate capability detection for over 100 specific G-Shock, Edifice, and Oceanus models.
+- **Protocol Precision**: Corrected model-specific feature flags, including expanded World City support (up to 6 slots) for the GW-BX5600 and refined protocol assignments for the MTG series.
+
+## 📡 Enhanced BLE Management
+- **Managed Scan Lifecycle**: Re-engineered `GShockScanner` with a self-healing, repeating scan loop. The scanner now intelligently manages Bluetooth power state, automatically pausing when the radio is disabled and resuming with optimized low-latency settings when connectivity is restored.
+- **Universal Notification Subscription**: Upgraded the internal BLE manager to perform comprehensive characteristic discovery. It now automatically identifies and subscribes to every notifiable characteristic on the watch, providing "universal" compatibility with new hardware modules without requiring software updates.
+- **Background Reliability**: Refined the `PendingIntent` fallback mechanism to provide more consistent discovery events when the host application is minimized.
+
+## 🔧 Diagnostics & Stability
+- **Full-Spectrum Logging**: Added detailed hex logging for all outbound BLE writes and discovered characteristic properties, enabling rapid diagnosis of hardware-level communication issues.
+- **Synchronized State Handling**: Further refined internal state management to ensure thread-safety during rapid, multi-step protocol executions.
+
+---
+
+# GShockAPI Release Notes - v1.6.4
+
+## 🎯 Precise Model Identification
+- **Authoritative Module Mapping**: Significantly overhauled `WatchInfo` to use a hardware-module-based mapping system. By identifying watches by their internal Casio module (e.g., 3459, 3461, 5672), the library now provides 100% accurate capability detection for over 100 specific G-Shock, Edifice, and Oceanus models.
+- **Exact-Match Logic**: Eliminated error-prone partial string matching in favor of an exhaustive lookup table, ensuring that feature flags (like autolight, world cities, and specialized protocols) are always correctly assigned.
+
+## 📡 Robust BLE Scanning
+- **Self-Healing Scan Loop**: Re-engineered `GShockScanner` with a managed, repeating scan window. The scanner now automatically handles Bluetooth power toggles, pausing when radio is unavailable and resuming with low-latency settings when connectivity returns.
+- **Enhanced Background Discovery**: Refined the `PendingIntent` fallback mechanism to provide more reliable "Device Appeared" notifications when the application is minimized or in the background.
+
+---
+
 # GShockAPI Release Notes - v1.6.3
 
 ## 🌍 Advanced MIP Time-Setting Protocol
