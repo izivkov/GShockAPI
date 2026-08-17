@@ -164,7 +164,7 @@ data object WatchInfo {
             worldCitiesCount = 6, dstCount = 3,
             hasAutoLight = true, hasReminders = false,
             shortLightDuration = "1.5s", longLightDuration = "3s",
-            batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
+            batteryLevelLowerLimit = 14, batteryLevelUpperLimit = 24,
             hasMultipleFonts = true,
             hasNewTimeFormat = true,
             protocol = MipProtocol,
