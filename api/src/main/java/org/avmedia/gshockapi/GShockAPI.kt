@@ -336,11 +336,11 @@ import java.time.ZoneId
     }
 
     /**
-     * Get daily step count from the watch (if supported).
+     * Get the complete step-count life log from the watch (if supported).
      *
-     * @return the daily step count, or 0 if not supported
+     * @return hourly and daily history plus the current-day total
      */
-    override suspend fun getStepCount(): Int {
+    override suspend fun getStepCount(): StepCounterData {
         return StepCounterIO.request()
     }
 

@@ -148,12 +148,12 @@ interface IGShockAPI {
     suspend fun getWatchTemperature(): Int
 
     /**
-     * Retrieves the daily step count from the watch (if supported).
+     * Retrieves the complete step-count life log from the watch (if supported).
      * This feature is only available on compatible watch models like ABL-100WE.
      *
-     * @return Daily step count, or 0 if the feature is not supported or unavailable.
+     * @return Hourly and daily history plus the current-day total.
      */
-    suspend fun getStepCount(): Int
+    suspend fun getStepCount(): StepCounterData
 
     /**
      * Retrieves the current timer setting in seconds.

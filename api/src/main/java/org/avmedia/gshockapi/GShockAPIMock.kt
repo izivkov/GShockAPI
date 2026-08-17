@@ -14,7 +14,6 @@ import timber.log.Timber
 import java.time.DayOfWeek
 import java.time.Month
 
-
 /*
 This class is used during development to mock the GShock API.
  */
@@ -133,8 +132,8 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return 37
     }
 
-    override suspend fun getStepCount(): Int {
-        return 0
+    override suspend fun getStepCount(): StepCounterData {
+        return StepCounterData.unavailable()
     }
 
     override suspend fun getTimer(): Int {

@@ -26,6 +26,7 @@ enum class GetSetMode {
     GET,
     SET,
     NOTIFY,
+    DATA_REQUEST,
     SP_REQUEST,
     SP_DATA
 }
@@ -52,6 +53,7 @@ private class GShockManagerImpl(
     private var readCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderNotifications: BluetoothGattCharacteristic? = null
+    private var writeCharacteristicHolderDataRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
 
@@ -155,6 +157,7 @@ private class GShockManagerImpl(
         readCharacteristicHolder = null
         writeCharacteristicHolder = null
         writeCharacteristicHolderNotifications = null
+        writeCharacteristicHolderDataRequest = null
         writeCharacteristicHolderSPRequest = null
         writeCharacteristicHolderSPData = null
         characteristicUUIDs.clear()
@@ -270,6 +273,9 @@ private class GShockManagerImpl(
                     CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID,
                 )
             }
+            writeCharacteristicHolderDataRequest = getCharacteristic(
+                CasioConstants.CASIO_DATA_REQUEST_CHARACTERISTIC_UUID,
+            )
             if (findCharacteristic(gatt, CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID)) {
                 writeCharacteristicHolderSPRequest = getCharacteristic(
                     CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID,
@@ -365,6 +371,7 @@ private class GShockManagerImpl(
             GetSetMode.GET -> CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID
             GetSetMode.SET -> CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID
             GetSetMode.NOTIFY -> CasioConstants.CASIO_NOTIFICATION_CHARACTERISTIC_UUID
+            GetSetMode.DATA_REQUEST -> CasioConstants.CASIO_DATA_REQUEST_CHARACTERISTIC_UUID
             GetSetMode.SP_REQUEST -> CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID
             GetSetMode.SP_DATA -> CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID
         }
@@ -387,6 +394,7 @@ private class GShockManagerImpl(
             GetSetMode.GET -> readCharacteristicHolder
             GetSetMode.SET -> writeCharacteristicHolder
             GetSetMode.NOTIFY -> writeCharacteristicHolderNotifications
+            GetSetMode.DATA_REQUEST -> writeCharacteristicHolderDataRequest
             GetSetMode.SP_REQUEST -> writeCharacteristicHolderSPRequest
             GetSetMode.SP_DATA -> writeCharacteristicHolderSPData
         }

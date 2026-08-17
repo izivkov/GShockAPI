@@ -32,12 +32,12 @@ open class StandardProtocol : WatchProtocol {
     }
 
     override suspend fun setTime(timeMs: Long?, offset: Long?) {
-        TimeIO.apply {
-            writeDST()
-            writeDSTForWorldCities()
-            writeWorldCities()
-            set(timeMs, offset)
-        }
+        // TimeIO owns the complete setup sequence and tailors it to the
+        // connected model.  Performing setup here as well used to force a
+        // world-city (0x1f) transaction for watches such as the ABL-100WE,
+        // which do not implement that register.  The watch replies with
+        // FF 81 1F and the actual current-time command never follows.
+        TimeIO.set(timeMs, offset)
     }
 
     override suspend fun getTimer(): Int {
