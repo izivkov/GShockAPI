@@ -7,6 +7,10 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.Event
+import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.StepCounterData
 import java.util.TimeZone
 
 /**
@@ -187,7 +191,7 @@ interface IGShockAPI {
     /**
      * Retrieves the list of alarms from the watch.
      *
-     * @return An ArrayList of [Alarm] objects.
+     * @return An ArrayList of [org.avmedia.gshockapi.model.Alarm] objects.
      */
     suspend fun getAlarms(): ArrayList<Alarm>
 
@@ -201,7 +205,7 @@ interface IGShockAPI {
     /**
      * Retrieves all events (reminders) stored on the watch.
      *
-     * @return An ArrayList of [Event] objects.
+     * @return An ArrayList of [org.avmedia.gshockapi.model.Event] objects.
      */
     suspend fun getEventsFromWatch(): ArrayList<Event>
 
@@ -228,7 +232,7 @@ interface IGShockAPI {
     /**
      * Retrieves the complete settings profile from the watch, including basic settings and time adjustment info.
      *
-     * @return A [Settings] object.
+     * @return A [org.avmedia.gshockapi.model.Settings] object.
      */
     suspend fun getSettings(): Settings
 

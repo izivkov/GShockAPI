@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi
+package org.avmedia.gshockapi.model
 
 enum class RepeatPeriod(val periodDuration: String) {
     NEVER("NEVER"),

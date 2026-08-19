@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi
+package org.avmedia.gshockapi.model
 
 import android.annotation.SuppressLint
 import android.os.Build

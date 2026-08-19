@@ -24,6 +24,10 @@ import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
 import org.avmedia.gshockapi.io.WatchNameIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.Event
+import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.StepCounterData
 import timber.log.Timber
 import java.time.ZoneId
 
@@ -430,7 +434,7 @@ import java.time.ZoneId
     /**
      * Gets the current alarms from the watch. Up to 5 alarms are supported on the watch.
      *
-     * @return ArrayList<[Alarm]>
+     * @return ArrayList<[org.avmedia.gshockapi.model.Alarm]>
      */
 
     override suspend fun getAlarms(): ArrayList<Alarm> {
@@ -450,7 +454,7 @@ import java.time.ZoneId
     /**
      * Gets the current events (reminders) from the watch. Up to 5 events are supported.
      *
-     * @return ArrayList<[Event]>
+     * @return ArrayList<[org.avmedia.gshockapi.model.Event]>
      */
     override suspend fun getEventsFromWatch(): ArrayList<Event> {
 
@@ -502,7 +506,7 @@ import java.time.ZoneId
      *      ...
      *      setSettings(settings)
      * ```
-     * @return [Settings]
+     * @return [org.avmedia.gshockapi.model.Settings]
      */
 
     override suspend fun getSettings(): Settings {

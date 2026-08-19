@@ -10,6 +10,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.Event
+import org.avmedia.gshockapi.model.EventDate
+import org.avmedia.gshockapi.model.RepeatPeriod
+import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.StepCounterData
 import timber.log.Timber
 import java.time.DayOfWeek
 import java.time.Month

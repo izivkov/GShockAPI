@@ -2,8 +2,8 @@ package org.avmedia.gshockapi.protocols
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.Alarm
-import org.avmedia.gshockapi.Settings
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.AppInfoIO

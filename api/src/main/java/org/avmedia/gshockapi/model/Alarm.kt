@@ -1,4 +1,4 @@
-package org.avmedia.gshockapi
+package org.avmedia.gshockapi.model
 
 data class Alarm(
     val hour: Int,
