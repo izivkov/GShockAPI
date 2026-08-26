@@ -32,7 +32,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.avmedia.gshock.ui.theme.GShockAPITheme
-import org.avmedia.gshockapi.Alarm
 import org.avmedia.gshockapi.AppNotification
 import org.avmedia.gshockapi.DeviceInfo
 import org.avmedia.gshockapi.EventAction
@@ -40,10 +39,11 @@ import org.avmedia.gshockapi.GShockAPI
 import org.avmedia.gshockapi.IGShockAPI
 import org.avmedia.gshockapi.NotificationType
 import org.avmedia.gshockapi.ProgressEvents
-import org.avmedia.gshockapi.Settings
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.IO
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.Settings
 import java.time.ZoneId
 import java.util.TimeZone
 import kotlin.system.measureTimeMillis

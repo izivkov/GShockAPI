@@ -1,3 +1,26 @@
+# GShockAPI Release Notes - v1.7.1
+
+## 🏗 Major Refactoring: Domain Model Organization
+- **Dedicated Model Package**: Relocated core data structures (`Alarm`, `Event`, `Settings`, `StepCounterData`, etc.) from the root package to `org.avmedia.gshockapi.model`. This improves project structure and simplifies imports for library consumers.
+- **Enhanced Type Safety**: Refined internal IO signatures to utilize these models, ensuring consistency across all watch communication modules.
+
+## 🚀 Advanced Step Counter Support
+- **Full Life-Log Retrieval**: Introduced comprehensive support for the ABL-100 series step counter. The library now retrieves:
+    - **Hourly History**: 144 slots of high-resolution step data (covering six 24-hour periods).
+    - **Daily History**: 14-day trailing summary.
+    - **Real-Time Tracking**: Current-day total steps with hardware-level sentinel handling for "unavailable" data.
+- **Coroutines Integration**: The `getStepCount()` API is now fully asynchronous, providing a clean, non-blocking interface for health-data analysis.
+
+## 🔧 Model-Specific Optimizations
+- **GW-BX5600 Battery Scaling**: Corrected the battery percentage limits (14-24 range) to ensure accurate power reporting for this specific hardware module.
+- **Protocol Fidelity**: Refined status message handling to avoid invalid initial states on standard digital modules.
+
+## 📚 Developer Experience
+- **KDoc Overhaul**: Performed a full documentation pass on `IGShockAPI` and `GShockAPI`, adding detailed descriptions for all public methods and lifecycle events.
+- **Improved Scoping**: Streamlined the API facade to expose only relevant communication methods, reducing the noise in IDE autocompletion.
+
+---
+
 # GShockAPI Release Notes - v1.6.5
 
 ## 🎯 Authoritative Model Mapping
