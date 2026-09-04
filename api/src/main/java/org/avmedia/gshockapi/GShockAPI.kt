@@ -97,9 +97,7 @@ import java.time.ZoneId
 
     override suspend fun init(): Boolean {
         IO.init()
-        if (WatchInfo.hasAppInfo) {
-            getAppInfo()
-        }
+        getAppInfo()
 
         getPressedButton()
         ProgressEvents.onNext("ButtonPressedInfoReceived")
@@ -344,10 +342,21 @@ import java.time.ZoneId
     /**
      * Get the complete step-count life log from the watch (if supported).
      *
+     * @param peek If true, retrieves history without closing the transaction.
      * @return hourly and daily history plus the current-day total
      */
-    override suspend fun getStepCount(): StepCounterData {
-        return StepCounterIO.request()
+    override suspend fun getStepCount(peek: Boolean): StepCounterData {
+        return StepCounterIO.request(peek)
+    }
+
+    /**
+     * Alias for a quick summary call that returns today's total steps.
+     *
+     * This is a lightweight call intended to return the current-day total
+     * without forcing the watch to finish a full history transfer.
+     */
+    override suspend fun getStepSummary(): Int {
+        return getStepCount(peek = false).currentDaySteps ?: 0
     }
 
     /**

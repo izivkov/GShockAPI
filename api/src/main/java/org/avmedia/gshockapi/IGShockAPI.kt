@@ -155,9 +155,17 @@ interface IGShockAPI {
      * Retrieves the complete step-count life log from the watch (if supported).
      * This feature is only available on compatible watch models like ABL-100WE.
      *
+     * @param peek If true, retrieves history without closing the transaction.
      * @return Hourly and daily history plus the current-day total.
      */
-    suspend fun getStepCount(): StepCounterData
+    suspend fun getStepCount(peek: Boolean = true): StepCounterData
+
+    /**
+     * Alias for a quick summary call that returns today's total steps.
+     * This is a lightweight call intended to return the current-day total
+     * without forcing the watch to finish a full history transfer.
+     */
+    suspend fun getStepSummary(): Int
 
     /**
      * Retrieves the current timer setting in seconds.

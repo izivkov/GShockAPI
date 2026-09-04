@@ -1,3 +1,25 @@
+# GShockAPI Release Notes - v1.8.0
+
+## 🚀 Advanced Step Counter API
+- **History "Peeking" Support**: Enhanced `getStepCount()` with a new `peek` parameter. This allows applications to retrieve step history without forcing the watch to finalize the current session, enabling more frequent background updates.
+- **Lightweight Summary Retrieval**: Introduced `getStepSummary()`, a high-speed API that returns only the current day's total steps. This is optimized for simple UI displays and minimal Bluetooth traffic.
+
+## 📊 Rich Health Data Models
+- **Expanded Distance Tracking**: The `StepCounterData` model now includes dedicated metrics for:
+    - **Current Distance**: Precise distance traveled in the current session (meters).
+    - **Daily History**: A 14-day trailing log of distances.
+    - **Lifetime Totals**: Access to the watch's cumulative total distance and "pending" distance.
+- **Hardware-Level Precision**:
+    - **BCD Total Steps**: Added direct access to the watch's internal Binary Coded Decimal step registers.
+    - **Diagnostic Warnings**: Integrated a new `warnings` field to surface hardware-level sentinels (e.g., "unavailable" records) directly to the application layer.
+    - **Record Timestamps**: Added `LocalDateTime` support for precise record-keeping.
+
+## 🔧 IO Layer Enhancements
+- **Robust Multi-Record Parsing**: Significant refactoring of `StepCounterIO` to handle expanded multi-step data transfers and complex hardware record headers.
+- **Error Handling**: Improved diagnostic reporting during intermittent BLE connectivity or partial data transfers.
+
+---
+
 # GShockAPI Release Notes - v1.7.1
 
 ## 🏗 Major Refactoring: Domain Model Organization

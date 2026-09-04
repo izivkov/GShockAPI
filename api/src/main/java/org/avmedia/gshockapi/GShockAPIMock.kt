@@ -138,8 +138,12 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return 37
     }
 
-    override suspend fun getStepCount(): StepCounterData {
+    override suspend fun getStepCount(peek: Boolean): StepCounterData {
         return StepCounterData.unavailable()
+    }
+
+    override suspend fun getStepSummary(): Int {
+        return 0
     }
 
     override suspend fun getTimer(): Int {

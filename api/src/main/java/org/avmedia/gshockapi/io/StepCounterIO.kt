@@ -9,6 +9,7 @@ import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
+import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
 // ============================================================================
@@ -17,96 +18,169 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Pure functional core for step counter processing.
- *
- * All methods are pure: no mutable state, no side effects.
- * Handles step count extraction from a fully-reassembled activity-record
- * (life-log) payload -- see StepCounterIO below for why reassembly is
- * required before this can be called.
- *
- * ### Payload Layout (0x26 Activity Record)
- * Confirmed from a real HCI capture (request/ack/first-fragment sequence
- * for category 0x11 = EXERCISE_DATA on ABL-100WE), cross-checked against
- * an independent reference implementation:
- *
- * | Offset | Size | Description |
- * | :--- | :--- | :--- |
- * | 0 | 1 | Header (must be 0x26) |
- * | 1 | 1 | Day of Week |
- * | 2 | 1 | Month |
- * | 3 | 1 | Day of Month (UNCONFIRMED -- see note below) |
- * | 4-5 | 2 | Padding/Unknown |
- * | 6 | 288 | 144 hourly slots (2 bytes each, LE; 0xFFFE = unavailable) |
- * | 294 | 24 | Between-history padding |
- * | 318 | 56 | 14 daily slots (4 bytes each, LE) |
- * | 374 | 4 | Current day total steps (4 bytes, LE) -- CONFIRMED from two
- * |   |   | independent sources (this file's own prior version, and a
- * |   |   | working Python reference implementation), both giving the
- * |   |   | same offset and matching decode against real capture data.
- *
- * UNCONFIRMED:
- *   - The 0xFFFE / 0xFFFFFFFE "unavailable" sentinel convention IS
- *     independently verified: the captured hourly slots (repeated
- *     "FE FF" pairs) decode to exactly 0xFFFE as claimed here.
- *   - byte[3] as "Day of Month" is NOT confirmed -- an earlier version
- *     of this file read the same byte as "hourly slot count" instead
- *     (both are consistent with the one captured value, 0x18=24, since
- *     24 is a plausible value for either interpretation). Only matters
- *     if you need that field; doesn't affect the step-count offsets.
- *   - The layout above only accounts for 378 of the 400 bytes the watch
- *     actually advertises as the total transfer length (confirmed from
- *     the real ack: 0x000190 = 400). The remaining 22 trailing bytes are
- *     NOT modeled here -- unknown content (checksum? reserved? additional
- *     fields?). Doesn't block step-count parsing since that offset (374)
- *     is well within the first 378 bytes, but worth resolving before
- *     treating this layout as fully understood.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object StepCounterIOFunctional {
     private const val HEADER_SIZE = 6
-    private const val HOURLY_SLOT_COUNT = 144
-    private const val HOURLY_SLOT_SIZE = 2
-    private const val BETWEEN_HISTORY_PADDING_SIZE = 24
-    private const val DAILY_SLOT_COUNT = 14
-    private const val DAILY_SLOT_SIZE = 4
+    private const val ACTIVITY_RECORD_SIZE = 10
+    private const val SENTINEL_BUCKET_VALUE = 0xFFFE
+    private const val SENTINEL_DAILY_VALUE = -2 // 0xFFFFFFFE
+    private const val ACTIVITY_SCAN_LIMIT = 146
+    private const val DAILY_SUMMARY_OFFSET = 318
+    private const val DAILY_SUMMARY_COUNT = 7
+    private const val DAILY_SUMMARY_SIZE = 8
+    private const val CURRENT_STEPS_OFFSET = 374
+    private const val CURRENT_DISTANCE_OFFSET = 378
+    private const val PENDING_INTENSITY_OFFSET = 382
+    private const val PENDING_DISTANCE_OFFSET = 392
+    private const val BCD_TOTAL_OFFSET = 396
+    private const val PACKET_HEADER_MARKER = 0x26
 
     fun parse(payload: ByteArray): StepCounterData? {
-        val dailyHistoryOffset = HEADER_SIZE + HOURLY_SLOT_COUNT * HOURLY_SLOT_SIZE +
-                BETWEEN_HISTORY_PADDING_SIZE
-        val currentDayOffset = dailyHistoryOffset + DAILY_SLOT_COUNT * DAILY_SLOT_SIZE
-        if (payload.size < currentDayOffset + DAILY_SLOT_SIZE || payload.firstOrNull()?.toInt() != 0x26) {
+        if (payload.isEmpty() || (payload[0].toInt() and 0xFF) != PACKET_HEADER_MARKER) {
             return null
         }
 
-        val hourlySteps = List(HOURLY_SLOT_COUNT) { index ->
-            payload.readUnsignedShortOrNull(HEADER_SIZE + index * HOURLY_SLOT_SIZE)
+        val warnings = mutableListOf<String>()
+        var timestamp: LocalDateTime? = null
+
+        if (payload.size >= 6) {
+            try {
+                val year = 2000 + decodeBcd(payload[0].toInt() and 0xFF)
+                val month = decodeBcd(payload[1].toInt() and 0xFF)
+                val day = decodeBcd(payload[2].toInt() and 0xFF)
+                val hour = decodeBcd(payload[3].toInt() and 0xFF)
+                val minute = decodeBcd(payload[4].toInt() and 0xFF)
+                val second = decodeBcd(payload[5].toInt() and 0xFF)
+                timestamp = LocalDateTime.of(year, month, day, hour, minute, second)
+            } catch (e: Exception) {
+                Timber.e(e, "invalid BCD timestamp in step counter header")
+                warnings.add("invalid BCD timestamp in step counter header")
+            }
         }
-        val dailyHistory = List(DAILY_SLOT_COUNT) { index ->
-            payload.readUnsignedIntOrNull(dailyHistoryOffset + index * DAILY_SLOT_SIZE)
+
+        val currentDaySteps = readUnsignedIntOrNull(payload, CURRENT_STEPS_OFFSET).takeUnless { it == SENTINEL_DAILY_VALUE }
+
+        var pendingSteps = 0
+        if (payload.size >= PENDING_INTENSITY_OFFSET + 6) {
+            for (i in 0 until 3) {
+                val value = readUnsignedShortOrNull(payload, PENDING_INTENSITY_OFFSET + i * 2)
+                if (value != null && value != SENTINEL_BUCKET_VALUE) {
+                    pendingSteps += value
+                }
+            }
+        }
+
+        // Variable-length record detection
+        var recordEnd = HEADER_SIZE
+        if (currentDaySteps != null) {
+            var minDiff = Int.MAX_VALUE
+            for (end in HEADER_SIZE..ACTIVITY_SCAN_LIMIT step ACTIVITY_RECORD_SIZE) {
+                var frontTotal = 0
+                for (offset in HEADER_SIZE until end step ACTIVITY_RECORD_SIZE) {
+                    for (i in 0 until 5) {
+                        val bucket = readUnsignedShortOrNull(payload, offset + i * 2)
+                        if (bucket != null && bucket != SENTINEL_BUCKET_VALUE) {
+                            frontTotal += bucket
+                        }
+                    }
+                }
+                val diff = Math.abs(currentDaySteps - pendingSteps - frontTotal)
+                if (diff <= minDiff) {
+                    minDiff = diff
+                    recordEnd = end
+                }
+            }
+        }
+
+        val activitySteps = mutableListOf<Int?>()
+        for (offset in HEADER_SIZE until recordEnd step ACTIVITY_RECORD_SIZE) {
+            var steps = 0
+            for (i in 0 until 5) {
+                val bucket = readUnsignedShortOrNull(payload, offset + i * 2)
+                if (bucket != null && bucket != SENTINEL_BUCKET_VALUE) {
+                    steps += bucket
+                }
+            }
+            activitySteps.add(if (steps > 0) steps else null)
+        }
+
+        val dailyHistory = mutableListOf<Int?>()
+        val dailyDistances = mutableListOf<Int?>()
+        for (i in 0 until DAILY_SUMMARY_COUNT) {
+            val offset = DAILY_SUMMARY_OFFSET + i * DAILY_SUMMARY_SIZE
+            if (offset + DAILY_SUMMARY_SIZE > payload.size) break
+
+            val steps = readUnsignedIntOrNull(payload, offset)
+            val distance = readUnsignedIntOrNull(payload, offset + 4)
+
+            if (steps == SENTINEL_DAILY_VALUE && distance == SENTINEL_DAILY_VALUE) {
+                dailyHistory.add(null)
+                dailyDistances.add(null)
+            } else {
+                dailyHistory.add(if (steps == SENTINEL_DAILY_VALUE) null else steps)
+                dailyDistances.add(if (distance == SENTINEL_DAILY_VALUE) null else distance)
+            }
+        }
+
+        val distanceMeters = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET)
+        val pendingDistanceMeters = readUnsignedIntOrNull(payload, PENDING_DISTANCE_OFFSET)
+        var bcdTotalSteps: Int? = null
+        if (payload.size >= BCD_TOTAL_OFFSET + 4) {
+            try {
+                bcdTotalSteps = 0
+                for (i in 0 until 4) {
+                    val b = payload[BCD_TOTAL_OFFSET + i].toInt() and 0xFF
+                    if (b != 0) {
+                        bcdTotalSteps = bcdTotalSteps!! + decodeBcd(b) * Math.pow(100.0, i.toDouble()).toInt()
+                    }
+                }
+            } catch (e: Exception) {
+                bcdTotalSteps = null
+            }
+        }
+
+        if (bcdTotalSteps != null && bcdTotalSteps > 0 && currentDaySteps != null && bcdTotalSteps != currentDaySteps) {
+            warnings.add("BCD total $bcdTotalSteps differs from current step count $currentDaySteps")
         }
 
         return StepCounterData(
-            dayOfWeek = payload[1].toInt() and 0xFF,
-            month = payload[2].toInt() and 0xFF,
-            dayOfMonth = payload[3].toInt() and 0xFF,
-            hourlySteps = hourlySteps,
+            timestamp = timestamp,
+            dayOfWeek = timestamp?.dayOfWeek?.value,
+            month = timestamp?.monthValue,
+            dayOfMonth = timestamp?.dayOfMonth,
+            hourlySteps = activitySteps,
             dailyHistory = dailyHistory,
-            currentDaySteps = payload.readUnsignedIntOrNull(currentDayOffset),
+            dailyDistances = dailyDistances,
+            currentDaySteps = currentDaySteps,
+            distanceMeters = distanceMeters,
+            pendingDistanceMeters = pendingDistanceMeters,
+            totalDistanceMeters = distanceMeters,
+            bcdTotalSteps = bcdTotalSteps,
+            raw = payload,
+            warnings = warnings
         )
     }
 
-    private fun ByteArray.readUnsignedShortOrNull(offset: Int): Int? {
-        if (offset + 2 > size) return null
-        val value = (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8)
-        return value.takeUnless { it == 0xFFFE } // confirmed against real capture, see doc comment above
+    private fun decodeBcd(byte: Int): Int {
+        val high = byte / 16
+        val low = byte % 16
+        if (high > 9 || low > 9) throw IllegalArgumentException("invalid BCD byte")
+        return high * 10 + low
     }
 
-    private fun ByteArray.readUnsignedIntOrNull(offset: Int): Int? {
-        if (offset + 4 > size) return null
-        val value = (this[offset].toInt() and 0xFF) or
-                ((this[offset + 1].toInt() and 0xFF) shl 8) or
-                ((this[offset + 2].toInt() and 0xFF) shl 16) or
-                ((this[offset + 3].toInt() and 0xFF) shl 24)
-        return value.takeUnless { it == -2 } // 0xFFFFFFFE
+    private fun readUnsignedShortOrNull(payload: ByteArray, offset: Int): Int? {
+        if (offset + 2 > payload.size) return null
+        val value = (payload[offset].toInt() and 0xFF) or ((payload[offset + 1].toInt() and 0xFF) shl 8)
+        return if (value == 0xFFFF) null else value
+    }
+
+    private fun readUnsignedIntOrNull(payload: ByteArray, offset: Int): Int? {
+        if (offset + 4 > payload.size) return null
+        return (payload[offset].toInt() and 0xFF) or
+                ((payload[offset + 1].toInt() and 0xFF) shl 8) or
+                ((payload[offset + 2].toInt() and 0xFF) shl 16) or
+                ((payload[offset + 3].toInt() and 0xFF) shl 24)
     }
 }
 
@@ -114,44 +188,8 @@ object StepCounterIOFunctional {
 // Imperative Shell: Side Effects & State Management
 // ============================================================================
 
-/*
-Confirmed from a real HCI capture and cross-checked against a working
-Python reference implementation:
-
-  TX  0x0011 (DRSP):   00 11 00 00 00        -- start: command=0, category=0x11
-  RX  0x0011 (DRSP):   00 11 90 01 00 00 00  -- ack: total length = 400 bytes
-  RX  0x0014 (Convoy): 26 07 01 18 40 01 ...  -- data fragments, ~20B each
-
-Two things a prior version of this file got wrong, both confirmed by the
-Python reference:
-  1. The watch's answer is NOT one notification -- it's ~20 separate
-     fragments that must be concatenated to the full 400-byte length
-     before parsing. There is no evidence anywhere else in this codebase
-     of a dispatcher layer that reassembles multiple GATT notification
-     EVENTS automatically (as opposed to ACL-level fragments within one
-     notification, which Android does reassemble) -- assuming otherwise
-     was untested and is very likely wrong.
-  2. The transfer needs an explicit end-transaction acknowledgment sent
-     back to the watch (command=0x04) once the full length has arrived --
-     matching WFS_DRSP_COMMANDS_END_TRANSACTION=4 seen in the official
-     app's own source. Neither prior Kotlin version sent this.
-
-STILL NEEDS YOUR INPUT:
-  - The DRSP length-announcement/end-transaction messages (the
-    "00 11 90 01 00 00 00"-style acks on handle 0x0011) need to be routed
-    to onDrspReceived() below. I don't know the CasioConstants key
-    WatchProtocol.dataReceivedHandlers should use for that -- presumably
-    CASIO_DATA_REQUEST_SP's own code, parallel to how 0x26 already routes
-    the Convoy data fragments to onReceived(). Please wire that in (or
-    tell me the constant).
-  - Until that's wired up, expectedLength falls back to a hardcoded 400,
-    which matches this capture but isn't a real fix for anything else.
-  - The 22 unmodeled trailing bytes (see StepCounterIOFunctional's doc
-    comment) are still unexplained.
-*/
 @RequiresApi(Build.VERSION_CODES.O)
 object StepCounterIO {
-
     private const val FALLBACK_EXPECTED_LENGTH = 400
     private const val DRSP_CATEGORY_EXERCISE = 0x11
     private val START_TRANSACTION_CMD = byteArrayOf(0x00, DRSP_CATEGORY_EXERCISE.toByte(), 0x00, 0x00, 0x00)
@@ -160,21 +198,23 @@ object StepCounterIO {
     private var accumulator = ByteArray(0)
     private var expectedLength: Int = FALLBACK_EXPECTED_LENGTH
     private var result: CompletableDeferred<StepCounterData>? = null
+    private var peekMode: Boolean = false
 
-    suspend fun request(): StepCounterData {
+    suspend fun request(peek: Boolean = true): StepCounterData {
         if (!WatchInfo.hasStepCounter) {
             Timber.i("Step counter not supported on watch model: ${WatchInfo.model}")
             return StepCounterData.unavailable()
         }
-        return getStepCount()
+        return getStepCount(peek)
     }
 
-    private suspend fun getStepCount(): StepCounterData {
+    private suspend fun getStepCount(peek: Boolean): StepCounterData {
         val deferred = CompletableDeferred<StepCounterData>()
         synchronized(this) {
             accumulator = ByteArray(0)
             expectedLength = FALLBACK_EXPECTED_LENGTH
             result = deferred
+            peekMode = peek
         }
         try {
             IO.writeCmd(GetSetMode.DATA_REQUEST, START_TRANSACTION_CMD)
@@ -191,16 +231,6 @@ object StepCounterIO {
         }
     }
 
-    /**
-     * Call this from whatever handler receives DRSP-envelope messages on
-     * the "Data Request SP" characteristic (handle 0x0011 in the capture)
-     * -- both the length-announcement ack (command=0x00) and any
-     * end-transaction confirmation from the watch (command=0x04). See
-     * file-level TODO -- the real WatchProtocol routing key for this is
-     * not yet confirmed.
-     *
-     * @param data Raw bytes of the DRSP message, e.g. [00,11,90,01,00,00,00]
-     */
     fun onDrspReceived(data: ByteArray) {
         if (data.size < 5) return
         val command = data[0].toInt() and 0xFF
@@ -218,19 +248,8 @@ object StepCounterIO {
                 }
             }
         }
-        // command == 0x04 (end transaction, watch-initiated) needs no action here --
-        // finalization already happens in onReceived() once the buffer is full.
     }
 
-    /**
-     * Called when a Convoy (activity-record) notification fragment is
-     * received. Appends it to the accumulator; only attempts to parse
-     * once the full advertised length has arrived, and sends the
-     * end-transaction acknowledgment back to the watch at that point
-     * (confirmed necessary -- see file-level note).
-     *
-     * @param data The notification payload as a string of space-separated hex values
-     */
     fun onReceived(data: String) {
         val deferred = synchronized(this) { result } ?: return
 
@@ -246,12 +265,13 @@ object StepCounterIO {
             Timber.d("StepCounterIO.onReceived: accumulated=${accumulated}B / expected=${expectedLength}B")
 
             if (accumulated < expectedLength) {
-                return // wait for more fragments
+                return
             }
 
-            // Full payload assembled -- acknowledge end of transaction before parsing,
-            // matching the confirmed-necessary DRSP end-transaction step.
-            IO.writeCmd(GetSetMode.DATA_REQUEST, END_TRANSACTION_CMD)
+            // End transaction if not in peek mode
+            if (!peekMode) {
+                IO.writeCmd(GetSetMode.DATA_REQUEST, END_TRANSACTION_CMD)
+            }
 
             val fullPayload = synchronized(this) { accumulator }
             val stepData = StepCounterIOFunctional.parse(fullPayload)
@@ -260,7 +280,7 @@ object StepCounterIO {
                 Timber.i("Step count parsed: $stepData")
                 synchronized(this) { deferred.complete(stepData) }
             } else {
-                Timber.w("Failed to parse activity record from ${fullPayload.size}B reassembled payload: ${fullPayload.joinToString("") { "%02X".format(it) }}")
+                Timber.w("Failed to parse activity record from ${fullPayload.size}B reassembled payload")
                 synchronized(this) { deferred.complete(StepCounterData.unavailable()) }
             }
         } catch (e: Exception) {
