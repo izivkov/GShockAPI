@@ -9,6 +9,8 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/*
+/.hourlySteps
+/.artifacts
 .DS_Store
 /build
 /captures
