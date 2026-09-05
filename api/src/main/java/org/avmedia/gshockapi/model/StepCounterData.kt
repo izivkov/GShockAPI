@@ -3,11 +3,24 @@ package org.avmedia.gshockapi.model
 import java.time.LocalDateTime
 
 /**
+ * Represents a single hourly activity record from the lifelog.
+ * The five intensity values are activity buckets, not time intervals.
+ */
+data class ActivityPeriod(
+    val index: Int,
+    val steps: Int?,
+    val intensity: IntArray,
+    val distanceMeters: Int? = null
+)
+
+/**
  * ABL-100WE life-log record.
  *
- * `hourlySteps` contains the 144 two-byte history slots (six 24-hour blocks),
- * while `dailyHistory` contains the 14 four-byte day slots. `null` represents
- * the watch's unavailable sentinel rather than a genuine zero-step period.
+ * `hourlySteps` contains the accumulated steps per interval.
+ * `hourlyIntensities` contains the raw 5-bucket activity records.
+ * `dailyHistory` contains the 14 daily step slots.
+ * `dailyDistances` contains the matching daily distance slots.
+ * `null` represents the watch's unavailable sentinel rather than a genuine zero-step period.
  */
 data class StepCounterData(
     val timestamp: LocalDateTime? = null,
@@ -22,6 +35,16 @@ data class StepCounterData(
     val pendingDistanceMeters: Int? = null,
     val totalDistanceMeters: Int? = null,
     val bcdTotalSteps: Int? = null,
+
+    // Detailed ABL-100 lifelog data
+    val hourlyIntensities: List<IntArray> = emptyList(),
+    val pendingIntensity: IntArray = intArrayOf(),
+    val committedDistances: List<Int> = emptyList(),
+
+    // Friendly representations
+    val hourlyIntervals: List<ActivityPeriod> = emptyList(),
+    val hourlyByHour: List<Int?> = emptyList(),
+
     val raw: ByteArray? = null,
     val warnings: List<String> = emptyList(),
 ) {

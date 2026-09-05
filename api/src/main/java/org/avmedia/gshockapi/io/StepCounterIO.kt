@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.model.StepCounterData
+import org.avmedia.gshockapi.model.ActivityPeriod
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
@@ -26,6 +27,8 @@ object StepCounterIOFunctional {
     private const val SENTINEL_BUCKET_VALUE = 0xFFFE
     private const val SENTINEL_DAILY_VALUE = -2 // 0xFFFFFFFE
     private const val ACTIVITY_SCAN_LIMIT = 146
+    private const val DISTANCE_STACK_OFFSET = 246
+    private const val DISTANCE_STACK_SIZE = 72
     private const val DAILY_SUMMARY_OFFSET = 318
     private const val DAILY_SUMMARY_COUNT = 7
     private const val DAILY_SUMMARY_SIZE = 8
@@ -59,13 +62,17 @@ object StepCounterIOFunctional {
             }
         }
 
-        val currentDaySteps = readUnsignedIntOrNull(payload, CURRENT_STEPS_OFFSET).takeUnless { it == SENTINEL_DAILY_VALUE }
+        val currentDaySteps = readUnsignedIntOrNull(payload, CURRENT_STEPS_OFFSET).let {
+            if (it == SENTINEL_DAILY_VALUE) null else it
+        }
 
         var pendingSteps = 0
+        val pendingIntensity = IntArray(3)
         if (payload.size >= PENDING_INTENSITY_OFFSET + 6) {
             for (i in 0 until 3) {
-                val value = readUnsignedShortOrNull(payload, PENDING_INTENSITY_OFFSET + i * 2)
-                if (value != null && value != SENTINEL_BUCKET_VALUE) {
+                val value = readUnsignedShortOrNull(payload, PENDING_INTENSITY_OFFSET + i * 2) ?: 0
+                pendingIntensity[i] = value
+                if (value != SENTINEL_BUCKET_VALUE) {
                     pendingSteps += value
                 }
             }
@@ -94,15 +101,49 @@ object StepCounterIOFunctional {
         }
 
         val activitySteps = mutableListOf<Int?>()
+        val hourlyIntensities = mutableListOf<IntArray>()
+        val hourlyIntervals = mutableListOf<ActivityPeriod>()
+
         for (offset in HEADER_SIZE until recordEnd step ACTIVITY_RECORD_SIZE) {
             var steps = 0
+            val buckets = IntArray(5)
             for (i in 0 until 5) {
-                val bucket = readUnsignedShortOrNull(payload, offset + i * 2)
-                if (bucket != null && bucket != SENTINEL_BUCKET_VALUE) {
+                val bucket = readUnsignedShortOrNull(payload, offset + i * 2) ?: 0
+                buckets[i] = bucket
+                if (bucket != SENTINEL_BUCKET_VALUE) {
                     steps += bucket
                 }
             }
-            activitySteps.add(if (steps > 0) steps else null)
+            val stepsOrNull = if (steps > 0) steps else null
+            activitySteps.add(stepsOrNull)
+            hourlyIntensities.add(buckets)
+            hourlyIntervals.add(ActivityPeriod(
+                index = (offset - HEADER_SIZE) / ACTIVITY_RECORD_SIZE,
+                steps = stepsOrNull,
+                intensity = buckets
+            ))
+        }
+
+        // Committed distances reconciliation
+        val totalDistance = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET) ?: 0
+        val pendingDistance = readUnsignedIntOrNull(payload, PENDING_DISTANCE_OFFSET) ?: 0
+        val committedTarget = totalDistance - pendingDistance
+        val committedDistances = mutableListOf<Int>()
+
+        if (committedTarget > 0) {
+            var accumulated = 0
+            for (offset in DISTANCE_STACK_OFFSET until (DISTANCE_STACK_OFFSET + DISTANCE_STACK_SIZE) step 2) {
+                val dist = readUnsignedShortOrNull(payload, offset)
+                if (dist != null && dist != SENTINEL_BUCKET_VALUE) {
+                    accumulated += dist
+                    committedDistances.add(dist)
+                    if (accumulated >= committedTarget) break
+                }
+            }
+            if (accumulated != committedTarget) {
+                warnings.add("Distance reconciliation failed: expected $committedTarget, got $accumulated")
+                committedDistances.clear()
+            }
         }
 
         val dailyHistory = mutableListOf<Int?>()
@@ -123,8 +164,6 @@ object StepCounterIOFunctional {
             }
         }
 
-        val distanceMeters = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET)
-        val pendingDistanceMeters = readUnsignedIntOrNull(payload, PENDING_DISTANCE_OFFSET)
         var bcdTotalSteps: Int? = null
         if (payload.size >= BCD_TOTAL_OFFSET + 4) {
             try {
@@ -144,6 +183,19 @@ object StepCounterIOFunctional {
             warnings.add("BCD total $bcdTotalSteps differs from current step count $currentDaySteps")
         }
 
+        val hourlyByHour = MutableList<Int?>(24) { null }
+        if (timestamp != null) {
+            activitySteps.forEachIndexed { index, steps ->
+                if (steps != null) {
+                    val h = (timestamp.hour - index - 1).let { if (it < 0) it + 24 else it }
+                    hourlyByHour[h] = steps
+                }
+            }
+            if (pendingSteps > 0) {
+                hourlyByHour[timestamp.hour] = pendingSteps
+            }
+        }
+
         return StepCounterData(
             timestamp = timestamp,
             dayOfWeek = timestamp?.dayOfWeek?.value,
@@ -153,10 +205,17 @@ object StepCounterIOFunctional {
             dailyHistory = dailyHistory,
             dailyDistances = dailyDistances,
             currentDaySteps = currentDaySteps,
-            distanceMeters = distanceMeters,
-            pendingDistanceMeters = pendingDistanceMeters,
-            totalDistanceMeters = distanceMeters,
+            distanceMeters = totalDistance,
+            pendingDistanceMeters = pendingDistance,
+            totalDistanceMeters = totalDistance,
             bcdTotalSteps = bcdTotalSteps,
+
+            hourlyIntensities = hourlyIntensities,
+            pendingIntensity = pendingIntensity,
+            committedDistances = committedDistances,
+            hourlyIntervals = hourlyIntervals,
+            hourlyByHour = hourlyByHour,
+
             raw = payload,
             warnings = warnings
         )
