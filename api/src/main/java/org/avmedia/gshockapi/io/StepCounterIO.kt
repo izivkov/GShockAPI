@@ -27,8 +27,8 @@ object StepCounterIOFunctional {
     private const val SENTINEL_BUCKET_VALUE = 0xFFFE
     private const val SENTINEL_DAILY_VALUE = -2 // 0xFFFFFFFE
     private const val ACTIVITY_SCAN_LIMIT = 146
-    private const val DISTANCE_STACK_OFFSET = 246
-    private const val DISTANCE_STACK_SIZE = 72
+    private const val COMMITTED_DISTANCE_OFFSET = 246
+    private const val COMMITTED_DISTANCE_END = 318
     private const val DAILY_SUMMARY_OFFSET = 318
     private const val DAILY_SUMMARY_COUNT = 7
     private const val DAILY_SUMMARY_SIZE = 8
@@ -78,7 +78,8 @@ object StepCounterIOFunctional {
             }
         }
 
-        // Variable-length record detection
+        // Activity records are variable-length 10-byte records. Find the
+        // boundary by reconciling their bucket sums with today's total.
         var recordEnd = HEADER_SIZE
         if (currentDaySteps != null) {
             var minDiff = Int.MAX_VALUE
@@ -93,7 +94,7 @@ object StepCounterIOFunctional {
                     }
                 }
                 val diff = Math.abs(currentDaySteps - pendingSteps - frontTotal)
-                if (diff <= minDiff) {
+                if (diff < minDiff) {
                     minDiff = diff
                     recordEnd = end
                 }
@@ -124,25 +125,25 @@ object StepCounterIOFunctional {
             ))
         }
 
-        // Committed distances reconciliation
-        val totalDistance = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET) ?: 0
-        val pendingDistance = readUnsignedIntOrNull(payload, PENDING_DISTANCE_OFFSET) ?: 0
-        val committedTarget = totalDistance - pendingDistance
-        val committedDistances = mutableListOf<Int>()
+        val distanceMeters = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET)
+        val pendingDistanceMeters = readUnsignedIntOrNull(payload, PENDING_DISTANCE_OFFSET)
 
-        if (committedTarget > 0) {
-            var accumulated = 0
-            for (offset in DISTANCE_STACK_OFFSET until (DISTANCE_STACK_OFFSET + DISTANCE_STACK_SIZE) step 2) {
-                val dist = readUnsignedShortOrNull(payload, offset)
-                if (dist != null && dist != SENTINEL_BUCKET_VALUE) {
-                    accumulated += dist
-                    committedDistances.add(dist)
-                    if (accumulated >= committedTarget) break
+        val committedDistances = mutableListOf<Int>()
+        if (distanceMeters != null && pendingDistanceMeters != null && distanceMeters >= pendingDistanceMeters) {
+            val committedTarget = distanceMeters - pendingDistanceMeters
+            if (committedTarget > 0) {
+                var distanceSum = 0
+                for (offset in COMMITTED_DISTANCE_OFFSET until COMMITTED_DISTANCE_END step 2) {
+                    val value = readUnsignedShortOrNull(payload, offset) ?: 0
+                    if (value == SENTINEL_BUCKET_VALUE) continue
+                    committedDistances.add(value)
+                    distanceSum += value
+                    if (distanceSum >= committedTarget) break
                 }
-            }
-            if (accumulated != committedTarget) {
-                warnings.add("Distance reconciliation failed: expected $committedTarget, got $accumulated")
-                committedDistances.clear()
+                if (distanceSum != committedTarget) {
+                    committedDistances.clear()
+                    warnings.add("distance components do not reconcile to $committedTarget m")
+                }
             }
         }
 
@@ -205,9 +206,9 @@ object StepCounterIOFunctional {
             dailyHistory = dailyHistory,
             dailyDistances = dailyDistances,
             currentDaySteps = currentDaySteps,
-            distanceMeters = totalDistance,
-            pendingDistanceMeters = pendingDistance,
-            totalDistanceMeters = totalDistance,
+            distanceMeters = distanceMeters,
+            pendingDistanceMeters = pendingDistanceMeters,
+            totalDistanceMeters = distanceMeters,
             bcdTotalSteps = bcdTotalSteps,
 
             hourlyIntensities = hourlyIntensities,
@@ -258,12 +259,21 @@ object StepCounterIO {
     private var expectedLength: Int = FALLBACK_EXPECTED_LENGTH
     private var result: CompletableDeferred<StepCounterData>? = null
     private var peekMode: Boolean = false
+    private var lastData: StepCounterData? = null
 
     suspend fun request(peek: Boolean = true): StepCounterData {
         if (!WatchInfo.hasStepCounter) {
             Timber.i("Step counter not supported on watch model: ${WatchInfo.model}")
             return StepCounterData.unavailable()
         }
+
+        // If we are peeking and an app transaction is already active, return cached data
+        val currentResult = synchronized(this) { result }
+        if (peek && currentResult != null && lastData != null) {
+            Timber.d("StepCounterIO: App transaction already active, returning cached data.")
+            return lastData!!
+        }
+
         return getStepCount(peek)
     }
 
@@ -277,6 +287,7 @@ object StepCounterIO {
         }
         try {
             IO.writeCmd(GetSetMode.DATA_REQUEST, START_TRANSACTION_CMD)
+
             val stepData = withTimeoutOrNull(10_000L.milliseconds) { deferred.await() }
             if (stepData == null) {
                 Timber.w("StepCounterIO: timed out waiting for activity record (accumulated ${accumulator.size}/${expectedLength}B)")
@@ -337,6 +348,7 @@ object StepCounterIO {
 
             if (stepData != null) {
                 Timber.i("Step count parsed: $stepData")
+                lastData = stepData
                 synchronized(this) { deferred.complete(stepData) }
             } else {
                 Timber.w("Failed to parse activity record from ${fullPayload.size}B reassembled payload")

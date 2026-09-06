@@ -4,7 +4,6 @@ import java.time.LocalDateTime
 
 /**
  * Represents a single hourly activity record from the lifelog.
- * The five intensity values are activity buckets, not time intervals.
  */
 data class ActivityPeriod(
     val index: Int,
@@ -17,7 +16,6 @@ data class ActivityPeriod(
  * ABL-100WE life-log record.
  *
  * `hourlySteps` contains the accumulated steps per interval.
- * `hourlyIntensities` contains the raw 5-bucket activity records.
  * `dailyHistory` contains the 14 daily step slots.
  * `dailyDistances` contains the matching daily distance slots.
  * `null` represents the watch's unavailable sentinel rather than a genuine zero-step period.
