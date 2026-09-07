@@ -1,27 +1,24 @@
 # GShockAPI Release Notes - v1.8.0
 
-## 🚀 Advanced Step Counter API
-- **History "Peeking" Support**: Enhanced `getStepCount()` with a new `peek` parameter. This allows applications to retrieve step history without forcing the watch to finalize the current session, enabling more frequent background updates.
-- **Lightweight Summary Retrieval**: Introduced `getStepSummary()`, a high-speed API that returns only the current day's total steps. This is optimized for simple UI displays and minimal Bluetooth traffic.
+## 🚀 Advanced Step Counter (ABL-100 Series)
+- **Robust Reassembly Engine**: Implemented a new GATT fragment reassembly layer that respects length announcements from the watch, ensuring reliable data transfer for large lifelog payloads (~400 bytes).
+- **Adaptive Record Parsing**: Added intelligent boundary detection for variable-length activity logs. The parser now reconciles bucket sums against the reported daily total to accurately identify interval boundaries.
+- **Activity Intensity Analysis**: Detailed parsing of the 5-bucket activity intensity records per interval, providing insights into movement quality.
+- **Peek Mode & Smart Caching**: Enhanced `getStepCount(peek=true)` to allow history retrieval without closing the watch transaction. Added an internal cache to serve concurrent app requests during active BLE transactions.
+- **Lightweight Summary API**: Introduced `getStepSummary()` for high-speed, minimal-traffic retrieval of the current day's total steps.
 
 ## 📊 Rich Health Data Models
-- **Activity Intensity Analysis**: Detailed parsing of the 5-bucket activity intensity records per interval, providing deeper insight into movement quality beyond simple step counts.
-- **Friendly Data Mapping**: 
-    - `ActivityPeriod` abstraction for unified interval reporting, including intensity and distance.
-    - `hourlyByHour` aggregation to easily map watch data to standard 24-hour clock cycles.
-- **Expanded Distance Tracking**: The `StepCounterData` model now includes dedicated metrics for:
-    - **Current Distance**: Precise distance traveled in the current session (meters).
-    - **Daily History**: A 14-day trailing log of distances.
-    - **Lifetime Totals**: Access to the watch's cumulative total distance and "pending" distance.
-- **Hardware-Level Precision**:
-    - **BCD Total Steps**: Added direct access to the watch's internal Binary Coded Decimal step registers.
-    - **Diagnostic Warnings**: Integrated a new `warnings` field to surface hardware-level sentinels (e.g., "unavailable" records) directly to the application layer.
-    - **Record Timestamps**: Added `LocalDateTime` support for precise record-keeping via BCD header decoding.
+- **Distance Reconciliation**: New logic to reconcile total distance with committed and pending distance components.
+- **Model Expansion**: The `StepCounterData` model now includes:
+    - **ActivityPeriod**: Friendly interval objects containing steps, intensity buckets, and distance.
+    - **Hourly Mapping**: `hourlyByHour` aggregation for easy clock-face synchronization.
+    - **Distance Metrics**: Current session, 14-day history, and lifetime totals.
+    - **Hardware Precision**: Direct BCD (Binary Coded Decimal) total step counters and record-level `LocalDateTime` timestamps.
+    - **Diagnostic Warnings**: Integrated reporting for hardware sentinels and reconciliation failures.
 
-## 🔧 IO Layer Enhancements
-- **High-Resolution Step History**: Improved reconstruction of the ABL-100's variable-length activity logs, including support for committed distances and pending data reconciliation.
-- **Robust Multi-Record Parsing**: Significant refactoring of `StepCounterIO` to handle expanded multi-step data transfers and complex hardware record headers.
-- **Error Handling**: Improved diagnostic reporting during intermittent BLE connectivity or partial data transfers.
+## 🔧 API & IO Enhancements
+- **Internal Cleanup**: Removed legacy `hasAppInfo` flag from `WatchInfo` and streamlined `StepCounterIO` to use pure functional decoding for the reassembled payload.
+- **Improved Error Handling**: Enhanced timeout management and diagnostic logging for intermittent BLE connections.
 
 ---
 

@@ -85,7 +85,8 @@ data object WatchInfo {
 
     enum class WatchModel {
         GA, GW, DW_B5600, DW, GMW, GPR, GST, MSG, GB001, GBD, GBD_800,
-        MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, DW_H5600, GMW_BZ5000,
+        MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, F_B100,
+        DW_H5600, GMW_BZ5000,
         GW_BX5600, MTG_B1000, MTG_B3000, GENERIC,
     }
 
@@ -220,6 +221,15 @@ data object WatchInfo {
         ModelInfo(model = WatchModel.GST,    hasAutoLight = false, hasReminders = true),
         ModelInfo(
             model = WatchModel.ABL_100,
+            hasAutoLight = false, hasReminders = false,
+            hasTemperature = false, hasBatteryLevel = false,
+            worldCities = false, hasHomeTime = false,
+            hasStepCounter = true,
+            hasDateFormat = false,
+            weekLanguageSupported = false,
+        ),
+        ModelInfo(
+            model = WatchModel.F_B100,
             hasAutoLight = false, hasReminders = false,
             hasTemperature = false, hasBatteryLevel = false,
             worldCities = false, hasHomeTime = false,
@@ -501,7 +511,7 @@ data object WatchInfo {
         // Module 3564: WS-B1000
         put("WS-B1000", WatchModel.GENERIC)
         // Module 3563: F-B100W
-        put("F-B100W", WatchModel.GENERIC)
+        put("F-B100W", WatchModel.F_B100)
         // Module 5750: OCW-P3000
         put("OCW-P3000", WatchModel.GENERIC)
     }
