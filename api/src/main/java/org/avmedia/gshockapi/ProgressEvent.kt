@@ -6,6 +6,7 @@
 
 package org.avmedia.gshockapi
 
+import androidx.annotation.Keep
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,16 +31,19 @@ import timber.log.Timber
 // Public API types
 // =============================================================================
 
+@Keep
 interface IEventAction {
     val label: String
     val action: () -> Unit
 }
 
+@Keep
 data class EventAction(
     override val label: String,
     override val action: () -> Unit
 ) : IEventAction
 
+@Keep
 object ProgressEvents {
 
     // =========================================================================
@@ -52,6 +56,7 @@ object ProgressEvents {
      * which is intentional: each registered event is a unique token used as a
      * map key in reverseEventMap.
      */
+    @Keep
     class Events
 
     // =========================================================================

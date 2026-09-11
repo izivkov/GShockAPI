@@ -14,6 +14,7 @@ import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import timber.log.Timber
 
+@androidx.annotation.Keep
 class TimeAdjustmentInfo(
     var isTimeAdjustmentSet: Boolean = false,
     var adjustmentTimeMinutes: Int = 0

@@ -1,5 +1,8 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
+
+@Keep
 data class Alarm(
     val hour: Int,
     val minute: Int,

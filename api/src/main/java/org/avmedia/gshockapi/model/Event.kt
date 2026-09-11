@@ -1,5 +1,6 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -14,6 +15,7 @@ import java.time.LocalDate
 import java.time.Month
 import java.util.Locale
 
+@Keep
 data class Event(
     var title: String,
     private var startDate: EventDate?,

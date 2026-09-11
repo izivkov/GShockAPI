@@ -1,5 +1,8 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
+
+@Keep
 enum class RepeatPeriod(val periodDuration: String) {
     NEVER("NEVER"),
     DAILY("DAILY"),

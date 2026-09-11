@@ -1,5 +1,8 @@
 package org.avmedia.gshockapi
 
+import androidx.annotation.Keep
+
+@Keep
 enum class NotificationType(val value: Int) {
     GENERIC(0),
     PHONE_CALL_URGENT(1),
@@ -10,6 +13,7 @@ enum class NotificationType(val value: Int) {
     EMAIL_SMS(6)
 }
 
+@Keep
 data class AppNotification(
     val type: NotificationType,
     val timestamp: String,

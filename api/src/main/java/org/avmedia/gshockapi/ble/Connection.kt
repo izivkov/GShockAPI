@@ -104,7 +104,13 @@ object Connection {
     private suspend fun connectToAddress(address: String) {
         getDefaultAdapter()
             ?.getRemoteDevice(address)
-            ?.let { device -> connectToDevice(device) }
+            ?.let { device ->
+                when (val result = connectToDevice(device)) {
+                    is ConnectionResult.Error ->
+                        ProgressEvents.onNext("ApiError", "Connection error: ${result.message}")
+                    ConnectionResult.Success -> Unit
+                }
+            }
             ?: ProgressEvents.onNext("ApiError", "Cannot obtain remote device")
     }
 

@@ -9,8 +9,8 @@ import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
-import org.avmedia.gshockapi.casio.Alarms
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.model.Alarms
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject

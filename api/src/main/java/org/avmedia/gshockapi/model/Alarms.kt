@@ -1,12 +1,7 @@
-/*
- * Created by Ivo Zivkov (izivkov@gmail.com) on 2022-03-30, 12:06 a.m.
- * Copyright (c) 2022 . All rights reserved.
- * Last modified 2022-03-27, 9:45 a.m.
- */
-
-package org.avmedia.gshockapi.casio
+package org.avmedia.gshockapi.model
 
 import com.google.gson.Gson
+import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -18,6 +13,7 @@ object Alarms {
 
     private const val ALARM_CONSTANT_VALUE = 0x40
 
+    @androidx.annotation.Keep
     class Alarm(val hour: Int, val minute: Int, val enabled: Boolean, val hasHourlyChime: Boolean)
 
     fun fromJsonAlarmFirstAlarm(alarmJson: JSONObject): ByteArray {

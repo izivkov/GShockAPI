@@ -1,10 +1,12 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
 import java.time.LocalDateTime
 
 /**
  * Represents a single hourly activity record from the lifelog.
  */
+@Keep
 data class ActivityPeriod(
     val index: Int,
     val steps: Int?,
@@ -20,6 +22,7 @@ data class ActivityPeriod(
  * `dailyDistances` contains the matching daily distance slots.
  * `null` represents the watch's unavailable sentinel rather than a genuine zero-step period.
  */
+@Keep
 data class StepCounterData(
     val timestamp: LocalDateTime? = null,
     val dayOfWeek: Int? = null,

@@ -1,7 +1,9 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
 import java.time.Month
 
+@Keep
 data class EventDate(
     var year: Int, // keeping var for compatibility
     val month: Month,

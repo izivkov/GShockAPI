@@ -1,5 +1,8 @@
 package org.avmedia.gshockapi.model
 
+import androidx.annotation.Keep
+
+@Keep
 data class Settings(
         var hourlyChime: Boolean = false,
         var keyVibration: Boolean = false,

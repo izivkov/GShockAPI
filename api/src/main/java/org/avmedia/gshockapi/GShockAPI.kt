@@ -96,6 +96,7 @@ import java.time.ZoneId
     }
 
     override suspend fun init(): Boolean {
+        Timber.i(" >>> init called...")
         IO.init()
         getAppInfo()
 
