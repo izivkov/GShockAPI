@@ -426,4 +426,5 @@ interface IGShockAPI {
      * @param pendingIntent Intent to trigger when a matching device is found.
      */
     fun startFallbackScan(context: Context, addresses: List<String>, pendingIntent: android.app.PendingIntent)
+    fun isConnectedTo(address: String): Boolean
 }

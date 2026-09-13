@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.getDefaultAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
@@ -20,10 +21,14 @@ import timber.log.Timber
 
 object Connection {
     private lateinit var bleManager: IGShockManager
+    private lateinit var appContext: Context
     private val scope = CoroutineScope(Dispatchers.IO)
     fun isInitialized(): Boolean = ::bleManager.isInitialized
 
     fun init(context: Context) {
+        if (!::appContext.isInitialized) {
+            appContext = context.applicationContext
+        }
 
         if (!::bleManager.isInitialized) {
             bleManager = IGShockManager(context)
@@ -55,11 +60,36 @@ object Connection {
             Timber.e("Connection not initialized. Call Connection.init() before calling this function. ${error.message}")
         }.getOrDefault(ConnectionState.DISCONNECTED)
 
-    fun isConnected(): Boolean =
-        getConnectionState() == ConnectionState.CONNECTED
+    fun isConnected(): Boolean {
+        return getConnectionState() == ConnectionState.CONNECTED
+    }
 
-    fun isConnecting(): Boolean =
-        getConnectionState() == ConnectionState.CONNECTING
+    fun isConnecting(): Boolean {
+        return getConnectionState() == ConnectionState.CONNECTING
+    }
+
+    /**
+     * Checks Android's own Bluetooth stack for whether the device we believe we're
+     * connected to is actually still connected at the OS level. This is
+     * authoritative when it can be checked - if the OS says "not connected", our
+     * internal flag is definitely wrong, regardless of how recently it changed, so
+     * a genuinely healthy but long-idle connection is never affected by this check.
+     * Returns null when we can't get a clean answer (no tracked address yet,
+     * missing permission, adapter unavailable), so the caller can fall back to the
+     * time-based heuristic instead.
+     */
+    @SuppressLint("MissingPermission")
+    private fun isTrackedDeviceConnectedAtOsLevel(): Boolean? {
+        val address = WatchInfo.getAddress()
+        if (address.isEmpty() || !::appContext.isInitialized) return null
+
+        return runCatching {
+            val bluetoothManager =
+                appContext.getSystemService(AppCompatActivity.BLUETOOTH_SERVICE) as BluetoothManager
+            bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)
+                .any { it.address == address }
+        }.getOrNull()
+    }
 
     fun teardownConnection() {
         bleManager.release()

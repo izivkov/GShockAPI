@@ -187,12 +187,12 @@ data class Event(
                         startDate?.month.toString(),
                         3
                     )
-                }-${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!.toInt())} each year"
+                }-${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!)} each year"
             }
 
             RepeatPeriod.MONTHLY -> {
                 formattedFreq =
-                    "${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!.toInt())} each month"
+                    "${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!)} each month"
             }
 
             RepeatPeriod.NEVER -> {

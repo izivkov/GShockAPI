@@ -155,6 +155,9 @@ import java.time.ZoneId
     override fun isConnected(): Boolean =
         Connection.isConnected()
 
+    override fun isConnectedTo(address: String): Boolean =
+        Connection.isConnected() && WatchInfo.getAddress().equals(address, ignoreCase = true)
+
     /**
      * Close the connection and free all associated resources.
      * @param[deviceId] The deviceId associated with current connection.

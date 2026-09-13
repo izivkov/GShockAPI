@@ -372,4 +372,8 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     ) {
     }
 
+    override fun isConnectedTo(address: String): Boolean {
+        TODO("Not yet implemented")
+    }
+
 }
