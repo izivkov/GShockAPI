@@ -66,6 +66,8 @@ of making every caller manage raw notification callbacks themselves.
   connection state) and externally (the host app subscribes to the same
   bus — see `API.md` §"Listening for events").
 
+<img src="ggshockapi_layers.svg", width=800>
+
 ## The pattern used throughout `io/`: pure core, imperative shell
 
 Once you've read two or three of the `io/` classes, you'll notice they
@@ -112,6 +114,8 @@ object TimerIO {                    // shell: the one piece of real state
     }
 }
 ```
+
+<img src="gshockapi_request_response_cycle.svg", width=800>
 
 `request()` looks synchronous to the caller (`suspend fun`, returns an
 `Int`) but internally it writes a command, parks on a
@@ -171,4 +175,3 @@ not a fork of the `IO` classes themselves.
    shape once you've read one.
 5. `GShockAPI.kt` — only once you understand the layers below it; this
    file should mostly just be gluing them together.
-6. 
