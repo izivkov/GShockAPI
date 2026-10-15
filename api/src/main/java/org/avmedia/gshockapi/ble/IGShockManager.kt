@@ -188,7 +188,7 @@ private class GShockManagerImpl(
         override fun onDeviceConnected(device: BluetoothDevice) {
             Timber.i("$device onDeviceConnected — waiting for service discovery")
             ProgressEvents.onNext("ConnectionStarted")
-            connectionState = ConnectionState.CONNECTED
+            connectionState = ConnectionState.CONNECTING
         }
 
         override fun onDeviceFailedToConnect(device: BluetoothDevice, reason: Int) {
@@ -215,6 +215,7 @@ private class GShockManagerImpl(
             val name = device.name ?: "CASIO"
             onConnected(name, device.address)
 
+            connectionState = ConnectionState.CONNECTED
             ProgressEvents.onNext("DeviceName", name)
             ProgressEvents.onNext("DeviceAddress", device.address)
             ProgressEvents.onNext("ConnectionSetupComplete", device)
@@ -404,8 +405,20 @@ private class GShockManagerImpl(
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
+        val isStartupRead = handle == GetSetMode.GET && data.firstOrNull()?.toInt()?.and(0xFF) in setOf(0x10, 0x22)
+        val requestHex = data.joinToString(" ") { "%02X".format(it) }
+        if (isStartupRead) {
+            Timber.i("Queueing startup read: request=0x$requestHex characteristic=${characteristic?.uuid} writeType=$writeType")
+        }
+
         try {
-            writeCharacteristic(characteristic, data, writeType).enqueue()
+            val request = writeCharacteristic(characteristic, data, writeType)
+            if (isStartupRead) {
+                request
+                    .done { Timber.i("Startup read write completed: request=0x$requestHex") }
+                    .fail { _, status -> Timber.e("Startup read write failed: request=0x$requestHex status=$status") }
+            }
+            request.enqueue()
         } catch (e: Exception) {
             Timber.e(e, "Error writing to characteristic ${characteristic?.uuid}")
             ProgressEvents.onNext("ApiError", "Failed to write data: ${e.message}")

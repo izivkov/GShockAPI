@@ -28,6 +28,8 @@ import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.time.ZoneId
 
@@ -98,12 +100,47 @@ import java.time.ZoneId
     override suspend fun init(): Boolean {
         Timber.i(" >>> init called...")
         IO.init()
-        getAppInfo()
 
-        getPressedButton()
+        try {
+            if (withTimeoutOrNull(INITIALIZATION_REQUEST_TIMEOUT_MS) { getAppInfo() } == null) {
+                Timber.w("Timed out waiting for app info; continuing watch initialization")
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Timber.e(error, "Failed to read app info; continuing watch initialization")
+        }
+
+        val button = try {
+            Timber.i("Requesting watch button info")
+            withTimeoutOrNull(INITIALIZATION_REQUEST_TIMEOUT_MS) { getPressedButton() }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Timber.e(error, "Failed to read button info")
+            null
+        }
+
+        if (button == null || button == IO.WatchButton.INVALID) {
+            val message = if (button == null) {
+                "Timed out waiting for button info from the watch"
+            } else {
+                "Received invalid button info from the watch"
+            }
+            Timber.e(message)
+            ProgressEvents.onNext("Error", message)
+            return false
+        }
+
+        Timber.i("Watch button info received: $button")
         ProgressEvents.onNext("ButtonPressedInfoReceived")
         ProgressEvents.onNext("WatchInitializationCompleted")
+        Timber.i("Watch initialization complete event emitted")
         return true
+    }
+
+    private companion object {
+        const val INITIALIZATION_REQUEST_TIMEOUT_MS = 3_000L
     }
 
     /**
@@ -152,11 +189,15 @@ import java.time.ZoneId
     /**
      * Returns a Boolean value indicating if the watch is currently commenced to the phone
      */
-    override fun isConnected(): Boolean =
-        Connection.isConnected()
+    override fun isConnected(): Boolean {
+        Connection.init(context)
+        return Connection.isConnected()
+    }
 
-    override fun isConnectedTo(address: String): Boolean =
-        Connection.isConnected() && WatchInfo.getAddress().equals(address, ignoreCase = true)
+    override fun isConnectedTo(address: String): Boolean {
+        Connection.init(context)
+        return Connection.isConnected() && WatchInfo.getAddress().equals(address, ignoreCase = true)
+    }
 
     /**
      * Close the connection and free all associated resources.

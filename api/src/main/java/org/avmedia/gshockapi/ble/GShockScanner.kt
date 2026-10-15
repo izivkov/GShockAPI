@@ -96,17 +96,19 @@ object GShockScanner {
 
                 Timber.d("GShockScanner: scan window opening")
                 try {
-                    bleScanner?.startScan(scanFilters, scanSettings, scanCallback)
-                } catch (e: SecurityException) {
-                    Timber.e(e, "GShockScanner: missing BLE scan permission")
-                }
+                    try {
+                        bleScanner?.startScan(scanFilters, scanSettings, scanCallback)
+                    } catch (e: SecurityException) {
+                        Timber.e(e, "GShockScanner: missing BLE scan permission")
+                    }
 
-                delay(SCAN_DURATION_MS)
-
-                try {
-                    bleScanner?.stopScan(scanCallback)
-                } catch (e: SecurityException) {
-                    Timber.e(e, "GShockScanner: missing BLE scan permission")
+                    delay(SCAN_DURATION_MS)
+                } finally {
+                    try {
+                        bleScanner?.stopScan(scanCallback)
+                    } catch (e: SecurityException) {
+                        Timber.e(e, "GShockScanner: missing BLE scan permission")
+                    }
                 }
                 Timber.d("GShockScanner: scan window closed, pausing ${SCAN_INTERVAL_MS}ms")
 

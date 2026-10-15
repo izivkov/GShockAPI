@@ -8,10 +8,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import org.avmedia.gshockapi.EventAction
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.utils.WatchDataListener
+import timber.log.Timber
 
 // ============================================================================
 // Pure Functional Core: Connection State Utilities
@@ -86,19 +89,53 @@ object WaitForConnectionIO {
         }
         // If already connecting, just fall through and wait for the event
 
-        return deferred.await()
+        try {
+            return withTimeout(CONNECTION_TIMEOUT_MS) { deferred.await() }
+        } catch (timeout: TimeoutCancellationException) {
+            Timber.e("Timed out waiting for GATT connection setup")
+            Connection.breakWait()
+            throw IllegalStateException("Timed out waiting for watch connection", timeout)
+        } finally {
+            synchronized(this) {
+                if (state.deferredResult === deferred) {
+                    state = state.copy(deferredResult = null)
+                }
+            }
+        }
     }
 
     private fun setupConnectionListener() {
         val eventActions = arrayOf(
             EventAction("ConnectionSetupComplete") {
                 CachedIO.clearCache()
-                synchronized(this) {
-                    state.deferredResult?.complete(WaitForConnectionIOFunctional.getSuccessResponse())
-                    state = state.copy(deferredResult = null)
-                }
+                completeCurrentWait(WaitForConnectionIOFunctional.getSuccessResponse())
+            },
+            EventAction("ConnectionFailed") {
+                completeCurrentWait(error = IllegalStateException("Failed to connect to watch"))
+            },
+            EventAction("ApiError") {
+                val message = ProgressEvents.getPayload("ApiError")?.toString()
+                    ?: "An error occurred while connecting to the watch"
+                completeCurrentWait(error = IllegalStateException(message))
+            },
+            EventAction("Disconnect") {
+                completeCurrentWait(error = IllegalStateException("Watch disconnected before setup completed"))
             }
         )
         ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions)
     }
+
+    private fun completeCurrentWait(result: String? = null, error: Throwable? = null) {
+        val deferred = synchronized(this) {
+            state.deferredResult.also { state = state.copy(deferredResult = null) }
+        } ?: return
+
+        if (error == null) {
+            deferred.complete(result ?: WaitForConnectionIOFunctional.getSuccessResponse())
+        } else {
+            deferred.completeExceptionally(error)
+        }
+    }
+
+    private const val CONNECTION_TIMEOUT_MS = 20_000L
 }

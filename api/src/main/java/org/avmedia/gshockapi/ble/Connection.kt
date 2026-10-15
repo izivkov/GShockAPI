@@ -20,22 +20,42 @@ import org.avmedia.gshockapi.casio.MessageDispatcher
 import timber.log.Timber
 
 object Connection {
-    private lateinit var bleManager: IGShockManager
+    @Volatile
+    private var bleManager: IGShockManager? = null
     private lateinit var appContext: Context
     private val scope = CoroutineScope(Dispatchers.IO)
-    fun isInitialized(): Boolean = ::bleManager.isInitialized
+    fun isInitialized(): Boolean = bleManager != null
 
+    @Synchronized
     fun init(context: Context) {
         if (!::appContext.isInitialized) {
             appContext = context.applicationContext
         }
 
-        if (!::bleManager.isInitialized) {
-            bleManager = IGShockManager(context)
+        if (bleManager == null) {
+            bleManager = IGShockManager(appContext)
+            Timber.i("Created BLE manager for connection lifecycle")
         }
     }
+
+    private fun requireBleManager(): IGShockManager =
+        bleManager ?: synchronized(this) {
+            bleManager ?: run {
+                check(::appContext.isInitialized) { "Connection.init(context) must be called first" }
+                IGShockManager(appContext).also { bleManager = it }
+            }
+        }
+
+    private fun releaseBleManager() {
+        val manager = synchronized(this) {
+            bleManager.also { bleManager = null }
+        }
+        if (manager != null) Timber.i("Releasing BLE manager; next connection will create a fresh manager")
+        manager?.release()
+    }
+
     private suspend fun connectToDevice(device: BluetoothDevice): ConnectionResult = try {
-        bleManager.connect(device) { name, address ->
+        requireBleManager().connect(device) { name, address ->
             WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
             WatchInfo.setAddress(address)
             Timber.i("onConnected() end")
@@ -46,16 +66,16 @@ object Connection {
     }
 
     fun disconnect() {
-        bleManager.release()
+        releaseBleManager()
     }
 
     fun close() {
-        bleManager.close()
+        releaseBleManager()
     }
 
     private fun getConnectionState(): ConnectionState =
         runCatching {
-            bleManager.connectionState
+            bleManager?.connectionState ?: ConnectionState.DISCONNECTED
         }.onFailure { error ->
             Timber.e("Connection not initialized. Call Connection.init() before calling this function. ${error.message}")
         }.getOrDefault(ConnectionState.DISCONNECTED)
@@ -92,7 +112,7 @@ object Connection {
     }
 
     fun teardownConnection() {
-        bleManager.release()
+        releaseBleManager()
     }
 
     fun validateAddress(address: String?): Boolean =
@@ -104,17 +124,22 @@ object Connection {
     }
 
     fun setDataCallback(dataCallback: IDataReceived) {
-        bleManager.setDataCallback(dataCallback)
+        requireBleManager().setDataCallback(dataCallback)
     }
 
     fun write(handle: GetSetMode, data: ByteArray) {
         scope.launch {
-            bleManager.write(handle, data)
+            val manager = bleManager
+            if (manager == null) {
+                ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
+            } else {
+                manager.write(handle, data)
+            }
         }
     }
 
     fun isServiceSupported(handle: GetSetMode): Boolean =
-        bleManager.isServiceSupported(handle)
+        bleManager?.isServiceSupported(handle) == true
 
     fun startConnection(context: Context, deviceId: String?) {
         ProgressEvents.onNext("ConnectionStarted")
@@ -151,11 +176,7 @@ object Connection {
     }
 
     fun breakWait() {
-        runCatching {
-            bleManager.release()
-        }.onFailure { error ->
-            Timber.e("Connection not initialized. Call Connection.init() before calling this function. ${error.message}")
-        }
+        releaseBleManager()
     }
 
     fun scan(

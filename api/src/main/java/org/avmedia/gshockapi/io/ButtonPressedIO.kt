@@ -87,15 +87,26 @@ object ButtonPressedIO {
     private var state = State()
 
     suspend fun request(): IO.WatchButton {
+        Timber.i("Button info request started (0x10)")
         return CachedIO.request("10") { key ->
             val deferred = CompletableDeferred<IO.WatchButton>()
             synchronized(this) {
                 state = state.copy(deferredResult = deferred)
             }
-            IO.request(key)
-            deferred.await()
+            try {
+                Timber.i("Sending button info request (0x$key)")
+                IO.request(key)
+                deferred.await()
+            } finally {
+                synchronized(this) {
+                    if (state.deferredResult === deferred) {
+                        state = state.copy(deferredResult = null)
+                    }
+                }
+            }
         }.also { button ->
             state = state.copy(lastKnownButton = button)
+            Timber.i("Button info request completed: $button")
         }
     }
 
@@ -106,6 +117,7 @@ object ButtonPressedIO {
     }
 
     fun onReceived(data: String) {
+        Timber.i("Button info response received: $data")
         // Use pure function to parse button press
         ButtonPressedIOFunctional.parseButtonPress(data)
             .fold(

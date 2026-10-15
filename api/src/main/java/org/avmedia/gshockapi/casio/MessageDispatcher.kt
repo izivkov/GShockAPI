@@ -70,6 +70,9 @@ object MessageDispatcher {
     fun onReceived(data: String, protocol: WatchProtocol = StandardProtocol) {
         val key = protocol.extractKey(data) ?: return
         Timber.d("MessageDispatcher: onReceived key: $key, data: $data")
+        if (key == 0x10) {
+            Timber.i("Dispatching button info response (0x10)")
+        }
         val handler = protocol.dataReceivedHandlers[key]
         if (handler == null) {
             Timber.e("No handler registered for key: $key")

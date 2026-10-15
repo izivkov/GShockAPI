@@ -18,6 +18,11 @@
 
 ## 🔧 API & IO Enhancements
 - **Internal Cleanup**: Removed legacy `hasAppInfo` flag from `WatchInfo` and streamlined `StepCounterIO` to use pure functional decoding for the reassembled payload.
+- **Connection & Initialization Robustness**:
+    - **Timed Initialization**: Added timeout protection (`3,000ms`) and exception handling for startup `getAppInfo()` and `getPressedButton()` calls during watch initialization.
+    - **Thread-Safe BLE Manager Lifecycle**: Re-engineered `Connection` manager handling with `@Synchronized` thread-safe initialization, explicit cleanup via `releaseBleManager()`, and lazy re-creation.
+    - **Connection & Wait Timeouts**: Implemented `20,000ms` timeout protection in `WaitForConnectionIO` with automatic cleanup and exception propagation on GATT connection timeout.
+    - **Scanner Safety**: Added `try-finally` blocks in `GShockScanner` to guarantee scan sessions are reliably stopped even when interrupted.
 - **Improved Error Handling**: Enhanced timeout management and diagnostic logging for intermittent BLE connections.
 
 ---
