@@ -40,42 +40,42 @@ data object WatchInfo {
     // Public read-only accessors
     // =========================================================================
 
-    val name:                   String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().name
-    val shortName:              String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().shortName
-    val model:                  WatchModel @RequiresApi(Build.VERSION_CODES.O) get() = getState().model
-    val worldCitiesCount:       Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCitiesCount
-    val dstCount:               Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.dstCount
-    val alarmCount:             Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alarmCount
-    val hasAutoLight:           Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasAutoLight
-    val hasReminders:           Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasReminders
-    val shortLightDuration:     String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.shortLightDuration
-    val longLightDuration:      String  @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.longLightDuration
-    val weekLanguageSupported:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.weekLanguageSupported
-    val hasWorldCities:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCities
-    val hasTemperature:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTemperature
-    val hasBatteryLevel:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasBatteryLevel
-    val batteryLevelLowerLimit: Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelLowerLimit
-    val batteryLevelUpperLimit: Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelUpperLimit
-    val alwaysConnected:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alwaysConnected
-    val findButtonUserDefined:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.findButtonUserDefined
-    val hasPowerSavingMode:     Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasPowerSavingMode
-    val chimeInSettings:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.chimeInSettings
-    val vibrate:                Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.vibrate
-    val hasHealthFunctions:     Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHealthFunctions
-    val hasMessages:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMessages
-    val hasDateFormat:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasDateFormat
-    val hasHomeTime:            Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHomeTime
-    val hasMultipleFonts:       Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMultipleFonts
-    val hasStepCounter:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasStepCounter
-    val hasStepCounterMock:     Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasStepCounterMock
-    val hasNewTimeFormat:       Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasNewTimeFormat
-    val hasTimeAdjustment:      Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeAdjustment
-    val hasSecondDial:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasSecondDial
-    val hasFineWatchCondition:  Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasFineWatchCondition
-    val hasTimeFormat:          Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeFormat
-    val hasHourlyChime:         Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHourlyChime
-    val hasLongTimerKey:        Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasLongTimerKey
-    val settingsSize:           Int     @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.settingsSize
+    val name: String @RequiresApi(Build.VERSION_CODES.O) get() = getState().name
+    val shortName: String @RequiresApi(Build.VERSION_CODES.O) get() = getState().shortName
+    val model: WatchModel @RequiresApi(Build.VERSION_CODES.O) get() = getState().model
+    val worldCitiesCount: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCitiesCount
+    val dstCount: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.dstCount
+    val alarmCount: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alarmCount
+    val hasAutoLight: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasAutoLight
+    val hasReminders: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasReminders
+    val shortLightDuration: String @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.shortLightDuration
+    val longLightDuration: String @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.longLightDuration
+    val weekLanguageSupported: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.weekLanguageSupported
+    val hasWorldCities: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.worldCities
+    val hasTemperature: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTemperature
+    val hasBatteryLevel: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasBatteryLevel
+    val batteryLevelLowerLimit: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelLowerLimit
+    val batteryLevelUpperLimit: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.batteryLevelUpperLimit
+    val alwaysConnected: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.alwaysConnected
+    val findButtonUserDefined: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.findButtonUserDefined
+    val hasPowerSavingMode: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasPowerSavingMode
+    val chimeInSettings: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.chimeInSettings
+    val vibrate: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.vibrate
+    val hasHealthFunctions: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHealthFunctions
+    val hasMessages: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMessages
+    val hasDateFormat: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasDateFormat
+    val hasHomeTime: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHomeTime
+    val hasMultipleFonts: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasMultipleFonts
+    val hasStepCounter: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasStepCounter
+    val hasStepCounterMock: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasStepCounterMock
+    val hasNewTimeFormat: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasNewTimeFormat
+    val hasTimeAdjustment: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeAdjustment
+    val hasSecondDial: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasSecondDial
+    val hasFineWatchCondition: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasFineWatchCondition
+    val hasTimeFormat: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeFormat
+    val hasHourlyChime: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHourlyChime
+    val hasLongTimerKey: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasLongTimerKey
+    val settingsSize: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.settingsSize
 
     val protocol: WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.protocol
 
@@ -85,7 +85,7 @@ data object WatchInfo {
 
     enum class WatchModel {
         GA, GW, DW_B5600, DW, GMW, GPR, GST, MSG, GB001, GBD, GBD_800,
-        MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, F_B100,
+        MRG_B5000, GCW_B5000, EQB, ECB, ABL_100, F_B100, BSA_B100,
         DW_H5600, GMW_BZ5000,
         GW_BX5600, MTG_B1000, MTG_B3000, GENERIC,
     }
@@ -178,7 +178,7 @@ data object WatchInfo {
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
             hasFineWatchCondition = true,
-            hasHourlyChime = false,
+            hasHourlyChime = true,
             protocol = AnalogueProtocol,
         ),
         ModelInfo(
@@ -210,7 +210,7 @@ data object WatchInfo {
             hasAutoLight = true, hasReminders = true,
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
-            ),
+        ),
         ModelInfo(
             model = WatchModel.GMW,
             worldCitiesCount = 6, dstCount = 3,
@@ -218,7 +218,7 @@ data object WatchInfo {
             shortLightDuration = "2s", longLightDuration = "4s",
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
         ),
-        ModelInfo(model = WatchModel.GST,    hasAutoLight = false, hasReminders = true),
+        ModelInfo(model = WatchModel.GST, hasAutoLight = false, hasReminders = true),
         ModelInfo(
             model = WatchModel.ABL_100,
             hasAutoLight = false, hasReminders = false,
@@ -237,9 +237,18 @@ data object WatchInfo {
             hasDateFormat = false,
             weekLanguageSupported = false,
         ),
-        ModelInfo(model = WatchModel.GA,     hasAutoLight = false, hasReminders = true),
-        ModelInfo(model = WatchModel.GB001,  hasAutoLight = true,  hasReminders = false),
-        ModelInfo(model = WatchModel.MSG,    hasAutoLight = false, hasReminders = true),
+        ModelInfo(
+            model = WatchModel.BSA_B100,
+            hasAutoLight = false, hasReminders = false,
+            hasTemperature = false, hasBatteryLevel = false,
+            worldCities = false, hasHomeTime = false,
+            hasStepCounter = true,
+            hasDateFormat = false,
+            weekLanguageSupported = false,
+        ),
+        ModelInfo(model = WatchModel.GA, hasAutoLight = false, hasReminders = true),
+        ModelInfo(model = WatchModel.GB001, hasAutoLight = true, hasReminders = false),
+        ModelInfo(model = WatchModel.MSG, hasAutoLight = false, hasReminders = true),
         ModelInfo(
             model = WatchModel.GPR,
             hasAutoLight = true, hasReminders = false, weekLanguageSupported = false,
@@ -254,8 +263,8 @@ data object WatchInfo {
             hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
             weekLanguageSupported = false,
             hasStepCounter = true,
-            ),
-        ModelInfo(model = WatchModel.DW,     hasAutoLight = true,  hasReminders = false),
+        ),
+        ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
         ModelInfo(
             model = WatchModel.GBD,
             hasAutoLight = true, hasReminders = false,
@@ -486,7 +495,7 @@ data object WatchInfo {
         put("GMC-B2100", WatchModel.GA)
         put("OCW-SG1000", WatchModel.GENERIC)
         put("MTG-B4000", WatchModel.GENERIC)
-        put("BSA-B100", WatchModel.GENERIC)
+        put("BSA-B100", WatchModel.BSA_B100)
         put("GMA-B800", WatchModel.GENERIC)
         put("GR-B100", WatchModel.GENERIC)
         put("GG-B100", WatchModel.GENERIC)
@@ -525,6 +534,7 @@ data object WatchInfo {
         val modelName = name.removePrefix("CASIO ").trim()
         return exactModelMap[modelName] ?: WatchModel.GENERIC
     }
+
     /** Pure: look up ModelInfo, falling back to GENERIC. */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveModelInfo(model: WatchModel): ModelInfo =
@@ -534,8 +544,8 @@ data object WatchInfo {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun buildState(name: String): State {
         val shortName = deriveShortName(name)
-        val model     = resolveModel(name)
-        val info      = resolveModelInfo(model)
+        val model = resolveModel(name)
+        val info = resolveModelInfo(model)
         return State(name = name, shortName = shortName, model = model, info = info)
     }
 
