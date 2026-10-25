@@ -178,7 +178,7 @@ data object WatchInfo {
             batteryLevelLowerLimit = 9, batteryLevelUpperLimit = 19,
             hasSecondDial = true,
             hasFineWatchCondition = true,
-            hasHourlyChime = true,
+            hasHourlyChime = false,
             protocol = AnalogueProtocol,
         ),
         ModelInfo(
