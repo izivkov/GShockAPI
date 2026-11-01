@@ -75,6 +75,8 @@ data object WatchInfo {
     val hasTimeFormat: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasTimeFormat
     val hasHourlyChime: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasHourlyChime
     val hasLongTimerKey: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasLongTimerKey
+    val hasExerciseProfile: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.hasExerciseProfile
+    val hasExcersiseProfile: Boolean @RequiresApi(Build.VERSION_CODES.O) get() = hasExerciseProfile
     val settingsSize: Int @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.settingsSize
 
     val protocol: WatchProtocol @RequiresApi(Build.VERSION_CODES.O) get() = getState().info.protocol
@@ -126,6 +128,7 @@ data object WatchInfo {
         val hasTimeFormat: Boolean = true,
         val hasHourlyChime: Boolean = true,
         val hasLongTimerKey: Boolean = false,
+        val hasExerciseProfile: Boolean = false,
         val settingsSize: Int = 17,
         val protocol: WatchProtocol = StandardProtocol
     )
@@ -227,6 +230,7 @@ data object WatchInfo {
             hasStepCounter = true,
             hasDateFormat = false,
             weekLanguageSupported = false,
+            hasExerciseProfile = true,
         ),
         ModelInfo(
             model = WatchModel.F_B100,
@@ -236,6 +240,7 @@ data object WatchInfo {
             hasStepCounter = true,
             hasDateFormat = false,
             weekLanguageSupported = false,
+            hasExerciseProfile = true,
         ),
         ModelInfo(
             model = WatchModel.BSA_B100,

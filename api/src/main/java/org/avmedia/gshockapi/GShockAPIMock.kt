@@ -13,6 +13,7 @@ import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.EventDate
+import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.RepeatPeriod
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
@@ -176,6 +177,14 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
 
     override fun setAlarms(alarms: ArrayList<Alarm>) {
         Timber.i("Alarms set: $alarms")
+    }
+
+    override suspend fun getExerciseProfile(): ExerciseProfile {
+        return ExerciseProfile(stepGoal = 10000, height = 170, weight = 65)
+    }
+
+    override fun setExerciseProfile(profile: ExerciseProfile) {
+        Timber.i("Exercise profile set: $profile")
     }
 
     override suspend fun getEventsFromWatch(): ArrayList<Event> {

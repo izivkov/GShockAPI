@@ -135,6 +135,8 @@ object TimeIOFunctional {
     fun prepareCurrentTime(date: LocalDateTime): ByteArray {
         val arr = ByteArray(10)
         val year = date.year
+        val weekdayZeroBased = (date.dayOfWeek.value + 6) % 7 // Monday=0..Sunday=6, matches Python datetime.weekday()
+
         arr[0] = (year ushr 0 and 0xff).toByte()
         arr[1] = (year ushr 8 and 0xff).toByte()
         arr[2] = date.month.value.toByte()
@@ -142,7 +144,7 @@ object TimeIOFunctional {
         arr[4] = date.hour.toByte()
         arr[5] = date.minute.toByte()
         arr[6] = date.second.toByte()
-        arr[7] = date.dayOfWeek.value.toByte()
+        arr[7] = weekdayZeroBased.toByte()
         arr[8] = ((date.nano.toLong() * 256) / 1_000_000_000).toByte()
         arr[9] = 1 // or 0?
         return arr

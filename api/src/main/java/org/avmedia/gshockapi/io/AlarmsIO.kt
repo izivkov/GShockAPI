@@ -101,13 +101,13 @@ object AlarmsIOFunctional {
     fun buildSetCommand(message: String, alarmCount: Int): Result<List<BLEAction>> = runCatching {
         JSONObject(message).get("value").let { it as JSONArray }.let { jsonArray ->
             if (alarmCount == 1) {
-                val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
+                val firstAlarm = AlarmsIO.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
                 listOf(
                     BLEAction.Write(GetSetMode.SET, firstAlarm)
                 )
             } else {
-                val firstAlarm = Alarms.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
-                val secondaryAlarms = Alarms.fromJsonAlarmSecondaryAlarms(jsonArray)
+                val firstAlarm = AlarmsIO.fromJsonAlarmFirstAlarm(jsonArray.getJSONObject(0))
+                val secondaryAlarms = AlarmsIO.fromJsonAlarmSecondaryAlarms(jsonArray)
                 listOf(
                     BLEAction.Write(GetSetMode.SET, firstAlarm),
                     BLEAction.Write(GetSetMode.SET, secondaryAlarms)
@@ -137,6 +137,18 @@ object AlarmsIO {
     )
 
     private var state = AlarmIOState()
+    private var receivedAlarms = ArrayList<Alarm>()
+
+    private fun clearReceivedAlarms() {
+        receivedAlarms.clear()
+    }
+
+    private fun addSortedReceivedAlarms(source: Array<Alarm>) {
+        val position = if (source.size == 1) 0 else receivedAlarms.size
+        receivedAlarms.addAll(position, source.toList())
+    }
+
+    private fun getReceivedAlarms(): ArrayList<Alarm> = receivedAlarms
 
     private fun updateState(transform: (AlarmIOState) -> AlarmIOState): AlarmIOState =
         synchronized(this) {
@@ -144,12 +156,69 @@ object AlarmsIO {
             state
         }
 
+    fun fromJsonAlarmFirstAlarm(alarmJson: JSONObject): ByteArray {
+        val gson = Gson()
+        val alarm: Alarm = gson.fromJson(alarmJson.toString(), Alarm::class.java)
+        return createFirstAlarm(alarm)
+    }
+
+    fun fromJsonAlarmSecondaryAlarms(alarmsJson: JSONArray): ByteArray {
+        if (alarmsJson.length() < 2) {
+            return ByteArray(0)
+        }
+        val gson = Gson()
+        val allAlarms: Array<Alarm> = gson.fromJson(alarmsJson.toString(), Array<Alarm>::class.java)
+        val alarms = allAlarms.toList().subList(1, allAlarms.size)
+        return createSecondaryAlarm(alarms)
+    }
+
+    private fun createFirstAlarm(alarm: Alarm): ByteArray {
+        var flag = 0
+        if (alarm.enabled) {
+            flag = flag or Alarms.ENABLED_MASK
+        }
+        if (alarm.hasHourlyChime) flag = flag or Alarms.HOURLY_CHIME_MASK
+
+        return Utils.byteArrayOfInts(
+            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code,
+            flag,
+            Alarms.ALARM_CONSTANT_VALUE,
+            alarm.hour,
+            alarm.minute
+        )
+    }
+
+    private fun createSecondaryAlarm(alarms: List<Alarm>): ByteArray {
+        var allAlarms =
+            Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code)
+
+        for (alarm in alarms) {
+            var flag = 0
+            if (alarm.enabled) {
+                flag = flag or Alarms.ENABLED_MASK
+                if (alarm.oneTime) {
+                    flag = flag or Alarms.ONE_TIME_MASK
+                }
+            }
+            if (alarm.hasHourlyChime) flag = flag or Alarms.HOURLY_CHIME_MASK
+
+            allAlarms += Utils.byteArrayOfInts(
+                flag,
+                Alarms.ALARM_CONSTANT_VALUE,
+                alarm.hour,
+                alarm.minute
+            )
+        }
+
+        return allAlarms
+    }
+
     suspend fun request(): ArrayList<Alarm> = CachedIO.request("GET_ALARMS") { key ->
         val deferred = CompletableDeferred<ArrayList<Alarm>>()
         synchronized(this) {
             state = state.copy(deferredResult = deferred, isProcessing = true)
         }
-        Alarm.clear()
+        clearReceivedAlarms()
         Connection.sendMessage("{ action: '$key'}")
         deferred.await()
     }
@@ -167,19 +236,17 @@ object AlarmsIO {
     }
 
     fun onReceived(data: String) {
-        // Use pure function to parse
         val parsedAlarms = AlarmsIOFunctional.parseReceivedAlarms(data)
-        Alarm.addSorted(parsedAlarms.toTypedArray())
+        addSortedReceivedAlarms(parsedAlarms.toTypedArray())
 
-        // Use pure function to check completion
         if (AlarmsIOFunctional.isAlarmCountComplete(
-                Alarm.getAlarms().size,
+                getReceivedAlarms().size,
                 WatchInfo.alarmCount
             )
         ) {
             synchronized(this) {
-                state.deferredResult?.complete(Alarm.getAlarms())
-                state = state.copy(alarms = Alarm.getAlarms(), isProcessing = false, deferredResult = null)
+                state.deferredResult?.complete(getReceivedAlarms())
+                state = state.copy(alarms = getReceivedAlarms(), isProcessing = false, deferredResult = null)
             }
         }
     }
@@ -284,11 +351,12 @@ object AlarmDecoder {
      * @return JSONObject containing the parsed alarm data
      */
     private fun createJsonAlarm(intArray: ArrayList<Int>): JSONObject = runCatching {
-        Alarms.Alarm(
+        Alarm(
             hour = intArray[2],
             minute = intArray[3],
             enabled = intArray[0] and Alarms.ENABLED_MASK != 0,
-            hasHourlyChime = if (WatchInfo.hasHourlyChime) (intArray[0] and HOURLY_CHIME_MASK != 0) else false
+            hasHourlyChime = if (WatchInfo.hasHourlyChime) (intArray[0] and HOURLY_CHIME_MASK != 0) else false,
+            oneTime = intArray[0] and Alarms.ONE_TIME_MASK != 0
         ).let { alarm ->
             JSONObject(Gson().toJson(alarm))
         }

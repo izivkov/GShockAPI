@@ -9,6 +9,7 @@ import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
+import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
 import java.util.TimeZone
@@ -209,6 +210,16 @@ interface IGShockAPI {
      * @param alarms The list of 5 alarms to set.
      */
     fun setAlarms(alarms: ArrayList<Alarm>)
+
+    /**
+     * Retrieves the exercise profile from the watch.
+     */
+    suspend fun getExerciseProfile(): ExerciseProfile
+
+    /**
+     * Updates the exercise profile on the watch.
+     */
+    fun setExerciseProfile(profile: ExerciseProfile)
 
     /**
      * Retrieves all events (reminders) stored on the watch.

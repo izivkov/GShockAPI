@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.2"
+agp = "9.3.3"
 kotlin = "2.2.10"
 appcompat = "1.7.1"
 ble = "2.11.0"

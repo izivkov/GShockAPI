@@ -26,6 +26,7 @@ import org.avmedia.gshockapi.io.WatchNameIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
+import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
 import kotlinx.coroutines.CancellationException
@@ -505,6 +506,14 @@ import java.time.ZoneId
 
     override fun setAlarms(alarms: ArrayList<Alarm>) {
         WatchInfo.protocol.setAlarms(alarms)
+    }
+
+    override suspend fun getExerciseProfile(): ExerciseProfile {
+        return WatchInfo.protocol.getExerciseProfile()
+    }
+
+    override fun setExerciseProfile(profile: ExerciseProfile) {
+        WatchInfo.protocol.setExerciseProfile(profile)
     }
 
     /**

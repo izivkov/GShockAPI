@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeIO
@@ -33,6 +34,8 @@ object MessageDispatcher {
     private val watchSenders: Map<String, (String) -> Unit> = mapOf(
         "GET_ALARMS"          to { AlarmsIO.sendToWatch(it) },
         "SET_ALARMS"          to { AlarmsIO.sendToWatchSet(it) },
+        "GET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatch(it) },
+        "SET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatchSet(it) },
         "SET_REMINDERS"       to { EventsIO.sendToWatchSet(it) },
         "GET_SETTINGS"        to { SettingsIO.sendToWatch(it) },
         "SET_SETTINGS"        to { SettingsIO.sendToWatchSet(it) },

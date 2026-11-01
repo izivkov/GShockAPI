@@ -12,6 +12,7 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.GwBx5600TimeIO
 import org.avmedia.gshockapi.io.HomeTimeIO
 import org.avmedia.gshockapi.io.RunActionsIO
@@ -31,6 +32,7 @@ interface WatchProtocol {
         get() = mapOf(
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code to AlarmsIO::onReceived,
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code to AlarmsIO::onReceived,
+            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_EXERCISE.code to ExerciseIO::onReceived,
             CasioConstants.CHARACTERISTICS.CASIO_DST_SETTING.code to DstForWorldCitiesIO::onReceived,
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code to EventsIO::onReceived,
             CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code to EventsIO::onReceivedTitle,
@@ -66,6 +68,8 @@ interface WatchProtocol {
     suspend fun getWatchTemperature(): Int
     suspend fun getAlarms(): ArrayList<Alarm>
     fun setAlarms(alarms: ArrayList<Alarm>)
+    suspend fun getExerciseProfile(): org.avmedia.gshockapi.model.ExerciseProfile
+    fun setExerciseProfile(profile: org.avmedia.gshockapi.model.ExerciseProfile)
     suspend fun getSettings(): Settings
     fun setSettings(settings: Settings)
     suspend fun getBasicSettings(): Settings

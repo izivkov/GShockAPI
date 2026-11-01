@@ -2,9 +2,12 @@ package org.avmedia.gshockapi.protocols
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.io.AlarmsIO
+import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.HomeTimeIOFunctional
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
@@ -14,6 +17,7 @@ import org.avmedia.gshockapi.io.TimerIO
 import org.avmedia.gshockapi.io.WatchConditionIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
 import org.avmedia.gshockapi.utils.Utils
+import kotlin.math.max
 
 @RequiresApi(Build.VERSION_CODES.O)
 open class StandardProtocol : WatchProtocol {
@@ -75,6 +79,14 @@ open class StandardProtocol : WatchProtocol {
 
     override fun setAlarms(alarms: ArrayList<Alarm>) {
         AlarmsIO.set(alarms)
+    }
+
+    override suspend fun getExerciseProfile(): ExerciseProfile {
+        return ExerciseIO.request()
+    }
+
+    override fun setExerciseProfile(profile: ExerciseProfile) {
+        ExerciseIO.set(profile)
     }
 
     override suspend fun getSettings(): Settings {
