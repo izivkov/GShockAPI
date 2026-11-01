@@ -1,3 +1,17 @@
+# GShockAPI Release Notes - v1.8.1
+
+## ⌚ New Watch Support: BSA-B100 Series
+- **BSA-B100 Integration**: Added full capability detection and configuration support for the Casio BSA-B100 watch model.
+
+## 🏃 Exercise Profile & Health Expansion
+- **Exercise IO & Data Models**: Introduced `ExerciseProfile` model and `ExerciseIO` module to support retrieving and configuring exercise tracking data on compatible watch models.
+
+## ⚙️ Protocol & API Enhancements
+- **Advanced Alarm Handling**: Added `ONE_TIME_MASK` support and refined alarm synchronization logic across `AlarmsIO` and `StandardProtocol`.
+- **Toolchain & Build Updates**: Upgraded Android Gradle Plugin (AGP) to version `9.3.3` for improved build performance and stability.
+
+---
+
 # GShockAPI Release Notes - v1.8.0
 
 ## 🚀 Advanced Step Counter (ABL-100 Series)
