@@ -13,6 +13,7 @@ import org.json.JSONObject
 @RequiresApi(Build.VERSION_CODES.O)
 object ExerciseIO {
     private const val OPCODE = 0x2D
+    private const val CACHE_KEY = "GET_EXERCISE_PROFILE"
 
     data class State(
         val deferredResult: CompletableDeferred<ExerciseProfile>? = null,
@@ -48,7 +49,7 @@ object ExerciseIO {
         .put("height", profile.height)
         .put("weight", profile.weight)
 
-    suspend fun request(): ExerciseProfile = CachedIO.request("GET_EXERCISE_PROFILE") {
+    suspend fun request(): ExerciseProfile = CachedIO.request(CACHE_KEY) {
         val deferred = CompletableDeferred<ExerciseProfile>()
         synchronized(this) {
             state = state.copy(deferredResult = deferred)
@@ -61,7 +62,9 @@ object ExerciseIO {
         synchronized(this) {
             state = state.copy(lastProfile = profile)
         }
-        IO.writeCmd(GetSetMode.SET, encode(profile))
+        CachedIO.set(CACHE_KEY) {
+            IO.writeCmd(GetSetMode.SET, encode(profile))
+        }
     }
 
     fun sendToWatch(message: String) {
