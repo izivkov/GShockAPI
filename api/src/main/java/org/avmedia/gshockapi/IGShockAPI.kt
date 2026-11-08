@@ -31,7 +31,7 @@ interface IGShockAPI {
 
     /**
      * Initializes the connection and retrieves basic watch information.
-     * Should be called automatically after connection is established.
+     * Should be called automatically after connection is  established.
      *
      * @return true if initialization was successful.
      */
