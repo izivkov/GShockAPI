@@ -26,13 +26,13 @@ fun CheckPermissions(onPermissionsGranted: @Composable () -> Unit) {
     fun getRequiredPermissions(): Array<String> {
         return mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION).apply {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        addAll(
-                                listOf(
-                                        Manifest.permission.BLUETOOTH_SCAN,
-                                        Manifest.permission.BLUETOOTH_CONNECT
-                                )
-                        )
-                    }
+                addAll(
+                    listOf(
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                    ),
+                )
+            }
         }.toTypedArray()
     }
 
@@ -45,28 +45,28 @@ fun CheckPermissions(onPermissionsGranted: @Composable () -> Unit) {
 
     // Launcher for requesting permissions
     val launcher =
-            rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestMultiplePermissions(),
-                    onResult = { permissions ->
-                        permissionsGranted = permissions.values.all { it }
-                        showRationaleDialog =
-                                permissions.values.any {
-                                    !it &&
-                                            activity.shouldShowRequestPermissionRationale(
-                                                    initialPermissions[0]
-                                            )
-                                }
-                        permanentlyDenied = !permissionsGranted && !showRationaleDialog
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+            onResult = { permissions ->
+                permissionsGranted = permissions.values.all { it }
+                showRationaleDialog =
+                    permissions.values.any {
+                        !it &&
+                            activity.shouldShowRequestPermissionRationale(
+                                initialPermissions[0],
+                            )
                     }
-            )
+                permanentlyDenied = !permissionsGranted && !showRationaleDialog
+            },
+        )
 
     // Check permissions before launching the request
     LaunchedEffect(Unit) {
         val arePermissionsGranted =
-                initialPermissions.all {
-                    ContextCompat.checkSelfPermission(context, it) ==
-                            PackageManager.PERMISSION_GRANTED
-                }
+            initialPermissions.all {
+                ContextCompat.checkSelfPermission(context, it) ==
+                    PackageManager.PERMISSION_GRANTED
+            }
 
         if (arePermissionsGranted) {
             permissionsGranted = true
@@ -83,21 +83,21 @@ fun CheckPermissions(onPermissionsGranted: @Composable () -> Unit) {
     // Show rationale dialog if needed
     if (showRationaleDialog) {
         AlertDialog(
-                onDismissRequest = { /* Do nothing */},
-                title = { Text(text = "Permissions Required") },
-                text = {
-                    Text("This app needs location and Bluetooth permissions to function properly.")
-                },
-                confirmButton = {
-                    Button(
-                            onClick = { launcher.launch(initialPermissions) },
-                    ) { Text("Retry") }
-                },
-                dismissButton = {
-                    Button(
-                            onClick = { activity.finish() },
-                    ) { Text("Exit") }
-                }
+            onDismissRequest = { /* Do nothing */ },
+            title = { Text(text = "Permissions Required") },
+            text = {
+                Text("This app needs location and Bluetooth permissions to function properly.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = { launcher.launch(initialPermissions) },
+                ) { Text("Retry") }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { activity.finish() },
+                ) { Text("Exit") }
+            },
         )
     }
 

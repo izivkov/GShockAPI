@@ -50,7 +50,6 @@ import kotlin.system.measureTimeMillis
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : ComponentActivity() {
-
     private val api = GShockAPI(this)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val customEventName =
@@ -79,33 +78,32 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun listenToProgressEvents(viewModel: MainScreenViewModel) {
-
-        val eventActions = arrayOf(
-            EventAction("ConnectionSetupComplete") {
-                println("Got \"ConnectionSetupComplete\" event")
-            },
-            EventAction("DeviceAppeared") {
-                val address = ProgressEvents.getPayload("DeviceAppeared") as String
-                println("Found a device: $address. Connecting...")
-                scope.launch {
-                    api.waitForConnection(address)
-                }
-            },
-            EventAction("Disconnect") {
-                println("Got \"Disconnect\" event")
-            },
-            EventAction("ConnectionFailed") {
-                println("Got \"ConnectionFailed\" event")
-            },
-            EventAction(customEventName) {
-                println("Got \"$customEventName\" event")
-            },
-            EventAction("WatchInitializationCompleted") {
-                println("Got \"WatchInitializationCompleted\" event")
-            },
-        )
+        val eventActions =
+            arrayOf(
+                EventAction("ConnectionSetupComplete") {
+                    println("Got \"ConnectionSetupComplete\" event")
+                },
+                EventAction("DeviceAppeared") {
+                    val address = ProgressEvents.getPayload("DeviceAppeared") as String
+                    println("Found a device: $address. Connecting...")
+                    scope.launch {
+                        api.waitForConnection(address)
+                    }
+                },
+                EventAction("Disconnect") {
+                    println("Got \"Disconnect\" event")
+                },
+                EventAction("ConnectionFailed") {
+                    println("Got \"ConnectionFailed\" event")
+                },
+                EventAction(customEventName) {
+                    println("Got \"$customEventName\" event")
+                },
+                EventAction("WatchInitializationCompleted") {
+                    println("Got \"WatchInitializationCompleted\" event")
+                },
+            )
 
         ProgressEvents.runEventActions(this.javaClass.simpleName, eventActions)
     }
@@ -117,7 +115,10 @@ class MainActivity : ComponentActivity() {
         var isScanning by mutableStateOf(false)
         val logMessages = mutableStateListOf<String>()
 
-        fun startScan(api: IGShockAPI, context: android.content.Context) {
+        fun startScan(
+            api: IGShockAPI,
+            context: android.content.Context,
+        ) {
             isScanning = true
             discoveredDevices.clear()
             api.scan(context, { info ->
@@ -150,34 +151,37 @@ class MainActivity : ComponentActivity() {
         val isScanning = viewModel.isScanning
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    MaterialTheme.colorScheme.surface,
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                ),
+                        ),
                     )
-                )
-                .padding(24.dp),
+                    .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Header
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "G-Shock Scanner",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary
+                    style =
+                        MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                        ),
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = "Find and connect to your watch",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -186,52 +190,60 @@ class MainActivity : ComponentActivity() {
             val scale by infiniteTransition.animateFloat(
                 initialValue = 1f,
                 targetValue = if (isScanning) 1.05f else 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(800, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "scale"
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(800, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "scale",
             )
 
             Button(
                 onClick = {
-                    if (isScanning) viewModel.stopScan(api)
-                    else viewModel.startScan(api, context)
+                    if (isScanning) {
+                        viewModel.stopScan(api)
+                    } else {
+                        viewModel.startScan(api, context)
+                    }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 16.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        },
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = if (isScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    ),
             ) {
                 Icon(
                     if (isScanning) Icons.Default.Refresh else Icons.Default.Bluetooth,
-                    contentDescription = null
+                    contentDescription = null,
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     if (isScanning) "STOP SCANNING" else "START SCANNING",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                 )
             }
 
             // Main Content: Either Discovered Devices or Logs
             Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     val showLogs = viewModel.logMessages.isNotEmpty()
@@ -239,7 +251,7 @@ class MainActivity : ComponentActivity() {
                         text = if (showLogs) "Test Logs" else "Discovered Devices",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 12.dp, start = 8.dp)
+                        modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
                     )
 
                     if (showLogs) {
@@ -252,39 +264,41 @@ class MainActivity : ComponentActivity() {
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             items(viewModel.logMessages) { log ->
                                 Text(
                                     text = log,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                                    ),
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                            RoundedCornerShape(4.dp)
-                                        )
-                                        .padding(8.dp)
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                                RoundedCornerShape(4.dp),
+                                            )
+                                            .padding(8.dp),
                                 )
                             }
                         }
                     } else if (discoveredDevices.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = if (isScanning) "Searching for watches..." else "No watches found",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     } else {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             items(discoveredDevices) { device ->
                                 DeviceItem(device) {
@@ -304,24 +318,25 @@ class MainActivity : ComponentActivity() {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                    ),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "Status: ${viewModel.dynamicText}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "Hold BOTTOM-LEFT for 3s to connect",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
                     )
                 }
             }
@@ -329,71 +344,80 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun DeviceItem(device: DeviceInfo, onClick: () -> Unit) {
+    private fun DeviceItem(
+        device: DeviceInfo,
+        onClick: () -> Unit,
+    ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClick),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                ),
         ) {
             Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
                     Text(
                         text = device.name,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     )
                     Text(
                         text = device.address,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Icon(
                     Icons.Default.Bluetooth,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
     }
 
     // Example: Updating the text from another part of the app
-    private fun updateDynamicText(viewModel: MainScreenViewModel, newText: String) {
+    private fun updateDynamicText(
+        viewModel: MainScreenViewModel,
+        newText: String,
+    ) {
         viewModel.dynamicText = newText
         viewModel.addLog(newText)
     }
 
     @Composable
     private fun Run(viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+        val eventActions =
+            arrayOf(
+                EventAction("WatchInitializationCompleted") {
+                    scope.launch {
+                        viewModel.clearLogs()
+                        updateDynamicText(viewModel, "Connected...")
+                        updateDynamicText(viewModel, "Running tests...")
 
-        val eventActions = arrayOf(
-            EventAction("WatchInitializationCompleted") {
-                scope.launch {
-                    viewModel.clearLogs()
-                    updateDynamicText(viewModel, "Connected...")
-                    updateDynamicText(viewModel, "Running tests...")
+                        runCommands(viewModel)
 
-                    runCommands(viewModel)
+                        if (api.supportsAppNotifications()) {
+                            runAppNotificationTest(viewModel)
+                        }
 
-                    if (api.supportsAppNotifications()) {
-                        runAppNotificationTest(viewModel)
+                        api.disconnect()
+                        updateDynamicText(viewModel, "Disconnected")
+                        updateDynamicText(viewModel, "Tests Ended..")
                     }
-
-                    api.disconnect()
-                    updateDynamicText(viewModel, "Disconnected")
-                    updateDynamicText(viewModel, "Tests Ended..")
-                }
-            }
-        )
+                },
+            )
 
         LaunchedEffect(Unit) {
             ProgressEvents.runEventActions("Run", eventActions)
@@ -443,51 +467,56 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun runAppNotificationTest(viewModel: MainScreenViewModel) {
-        val calendarNotification = AppNotification(
-            type = NotificationType.CALENDAR,
-            timestamp = "20231001T121000",
-            app = "Calendar",
-            title = "This is a very long Meeting with Team",
-            text = " 9:20 - 10:15 AM"
-        )
+        val calendarNotification =
+            AppNotification(
+                type = NotificationType.CALENDAR,
+                timestamp = "20231001T121000",
+                app = "Calendar",
+                title = "This is a very long Meeting with Team",
+                text = " 9:20 - 10:15 AM",
+            )
 
-        val calendarNotificationAllDay = AppNotification(
-            type = NotificationType.CALENDAR,
-            timestamp = "20250516T233000",
-            app = "Calendar",
-            title = "Full day event 3",
-            text = "Tomorrow"
-        )
+        val calendarNotificationAllDay =
+            AppNotification(
+                type = NotificationType.CALENDAR,
+                timestamp = "20250516T233000",
+                app = "Calendar",
+                title = "Full day event 3",
+                text = "Tomorrow",
+            )
 
-        val emailNotification2 = AppNotification(
-            type = NotificationType.EMAIL_SMS,
-            timestamp = "20250516T211520",
-            app = "Gmail",
-            title = "me",
-            text = """\u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
+        val emailNotification2 =
+            AppNotification(
+                type = NotificationType.EMAIL_SMS,
+                timestamp = "20250516T211520",
+                app = "Gmail",
+                title = "me",
+                text = """\u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
             \u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
             \u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n""",
-            shortText = """\u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
+                shortText = """\u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
             \u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n
-            \u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n"""
-        )
+            \u5f7c\u5973\u306f\u30d4\u30a2\n\u5f7c\u5973\u306f\u30d4\u30a2\u30ce\u3092\u5f3e\u3044\u305f\u308a\u3001\u7d75\u3092\u63cf\u304f\u306e\u304c\u597d\u304d\u3067\u3059\u3002\u30ea\u30a2\u5145\u3067\u3059\n""",
+            )
 
-        val emailNotificationArabic = AppNotification(
-            type = NotificationType.EMAIL_SMS,
-            timestamp = "20250516T211520",
-            app = "Gmail",
-            title = "me",
-            text = "الساعة\n"
-        )
+        val emailNotificationArabic =
+            AppNotification(
+                type = NotificationType.EMAIL_SMS,
+                timestamp = "20250516T211520",
+                app = "Gmail",
+                title = "me",
+                text = "الساعة\n",
+            )
 
-        val emailNotification = AppNotification(
-            type = NotificationType.EMAIL,
-            timestamp = "20231001T120000",
-            app = "EmailApp",
-            title = "Ivo",
-            shortText = "And this is a short message up to 40 chars",
-            text = "This is the message up to 193 characters, combined up to 206 characters"
-        )
+        val emailNotification =
+            AppNotification(
+                type = NotificationType.EMAIL,
+                timestamp = "20231001T120000",
+                app = "EmailApp",
+                title = "Ivo",
+                shortText = "And this is a short message up to 40 chars",
+                text = "This is the message up to 193 characters, combined up to 206 characters",
+            )
 
         viewModel.addLog("Sending calendar notification...")
         api.sendAppNotification(calendarNotification)
@@ -568,11 +597,12 @@ class MainActivity : ComponentActivity() {
         watchEvents = api.getEventsFromWatch()
         viewModel.addLog("After setting original events: $watchEvents")
 
-        val timeTaken = measureTimeMillis {
-            repeat(100) { // reduced from 1000 to keep log manageable
-                api.getEventsFromWatch()
+        val timeTaken =
+            measureTimeMillis {
+                repeat(100) { // reduced from 1000 to keep log manageable
+                    api.getEventsFromWatch()
+                }
             }
-        }
         viewModel.addLog("Time taken to execute 100 getEventsFromWatch: $timeTaken ms")
 
         viewModel.addLog("At the end events are: ${api.getEventsFromWatch()}")
@@ -580,7 +610,9 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun handleSettings(viewModel: MainScreenViewModel) {
         val settings: Settings = api.getSettings()
-        viewModel.addLog("Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}")
+        viewModel.addLog(
+            "Settings: ${settings.dateFormat}, ${settings.timeAdjustment}, ${settings.adjustmentTimeMinutes}, ${settings.language}",
+        )
         settings.dateFormat = "MM:DD"
         api.setSettings(settings)
     }
@@ -608,8 +640,10 @@ class MainActivity : ComponentActivity() {
             "fdfffffffffefacdcfcdcacfcacec9abcdcccccfcfcff7ffbc9e939a919b9e8de3ff1d7f711d7f55b98a9393df9b9e86df9a899a918bdfcc1d7f531d7f71ffffebff1d7f711d7f55ab9092908d8d90881d7f531d7f71"
 
         // Decode buffer and create notification
-        val decodedBuffer = AppNotificationIO.xorDecodeBuffer(
-            bufferGmailJapanese.hexToByteArray().joinToString("") { "%02x".format(it) })
+        val decodedBuffer =
+            AppNotificationIO.xorDecodeBuffer(
+                bufferGmailJapanese.hexToByteArray().joinToString("") { "%02x".format(it) },
+            )
         val notification = AppNotificationIO.decodeNotificationPacket(decodedBuffer)
         viewModel.addLog("Decoded notification: $notification")
 
@@ -620,7 +654,11 @@ class MainActivity : ComponentActivity() {
         compareBuffers(rebuiltBuffer, decodedBuffer, viewModel)
     }
 
-    private fun compareBuffers(buf1: ByteArray, buf2: ByteArray, viewModel: MainScreenViewModel) {
+    private fun compareBuffers(
+        buf1: ByteArray,
+        buf2: ByteArray,
+        viewModel: MainScreenViewModel,
+    ) {
         val minLen = minOf(buf1.size, buf2.size)
         for (i in 0 until minLen) {
             if (buf1[i] != buf2[i] && i > 0) { // ignore the first byte of the header, could be "ff" or "fe"
@@ -630,22 +668,24 @@ class MainActivity : ComponentActivity() {
                 viewModel.addLog(
                     "  Context buf1: ... ${
                         buf1.slice(
-                            maxOf(0, i - 5) until minOf(
-                                buf1.size,
-                                i + 5
-                            )
+                            maxOf(0, i - 5) until
+                                minOf(
+                                    buf1.size,
+                                    i + 5,
+                                ),
                         ).joinToString("") { "%02x".format(it) }
-                    } ..."
+                    } ...",
                 )
                 viewModel.addLog(
                     "  Context buf2: ... ${
                         buf2.slice(
-                            maxOf(0, i - 5) until minOf(
-                                buf2.size,
-                                i + 5
-                            )
+                            maxOf(0, i - 5) until
+                                minOf(
+                                    buf2.size,
+                                    i + 5,
+                                ),
                         ).joinToString("") { "%02x".format(it) }
-                    } ..."
+                    } ...",
                 )
                 return
             }

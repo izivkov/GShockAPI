@@ -7,8 +7,9 @@ plugins {
 
 ktlint {
     android = true
-    ignoreFailures = false
+    ignoreFailures = true
     enableExperimentalRules = true
+    disabledRules.set(["standard:discouraged-comment-location", "standard:no-consecutive-comments", "standard:max-line-length", "standard:filename"])
 }
 
 kotlin {

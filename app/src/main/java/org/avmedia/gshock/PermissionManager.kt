@@ -15,12 +15,12 @@ import androidx.core.app.ActivityCompat
 import org.avmedia.gshockapi.ProgressEvents
 
 data class PermissionManager(val context: Context) {
-
     private var ENABLE_BLUETOOTH_REQUEST_CODE = 3
     private var PERMISSION_ALL = 1
-    private var PERMISSIONS = arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-            )
+    private var PERMISSIONS =
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        )
 
     init {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -29,10 +29,13 @@ data class PermissionManager(val context: Context) {
         }
     }
 
-    private fun hasPermissions(context: Context, permissions: Array<String>): Boolean =
-            permissions.all {
-                ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-            }
+    private fun hasPermissions(
+        context: Context,
+        permissions: Array<String>,
+    ): Boolean =
+        permissions.all {
+            ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
 
     fun setupPermissions() {
         if (!hasPermissions(context, PERMISSIONS)) {
@@ -48,16 +51,16 @@ data class PermissionManager(val context: Context) {
 
     fun onRequestPermissionsResult(
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         permissions.forEachIndexed { index, permission ->
             when (permission) {
                 Manifest.permission.ACCESS_FINE_LOCATION -> {
                     ProgressEvents.onNext(
-                        if (grantResults[index] == 0) "FineLocationPermissionGranted" else "FineLocationPermissionNotGranted"
+                        if (grantResults[index] == 0) "FineLocationPermissionGranted" else "FineLocationPermissionNotGranted",
                     )
                 }
-            // ignore the rest. They are handled in their fragments
+                // ignore the rest. They are handled in their fragments
             }
         }
     }

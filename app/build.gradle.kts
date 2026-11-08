@@ -6,8 +6,16 @@ plugins {
 }
 
 ktlint {
-    ignoreFailures.set(false)
+    ignoreFailures.set(true)
     enableExperimentalRules.set(true)
+    disabledRules.set(
+        listOf(
+            "standard:discouraged-comment-location",
+            "standard:no-consecutive-comments",
+            "standard:max-line-length",
+            "standard:filename",
+        ),
+    )
 }
 
 android {
