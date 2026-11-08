@@ -44,19 +44,21 @@ object ExerciseIO {
         return ExerciseProfile(stepGoal = stepGoal, height = height, weight = weight)
     }
 
-    fun toJson(profile: ExerciseProfile): JSONObject = JSONObject()
-        .put("stepGoal", profile.stepGoal)
-        .put("height", profile.height)
-        .put("weight", profile.weight)
+    fun toJson(profile: ExerciseProfile): JSONObject =
+        JSONObject()
+            .put("stepGoal", profile.stepGoal)
+            .put("height", profile.height)
+            .put("weight", profile.weight)
 
-    suspend fun request(): ExerciseProfile = CachedIO.request(CACHE_KEY) {
-        val deferred = CompletableDeferred<ExerciseProfile>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
+    suspend fun request(): ExerciseProfile =
+        CachedIO.request(CACHE_KEY) {
+            val deferred = CompletableDeferred<ExerciseProfile>()
+            synchronized(this) {
+                state = state.copy(deferredResult = deferred)
+            }
+            IO.writeCmd(GetSetMode.GET, Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_EXERCISE.code.toByte()))
+            deferred.await()
         }
-        IO.writeCmd(GetSetMode.GET, Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_EXERCISE.code.toByte()))
-        deferred.await()
-    }
 
     fun set(profile: ExerciseProfile) {
         synchronized(this) {
@@ -74,18 +76,20 @@ object ExerciseIO {
     fun sendToWatchSet(message: String) {
         val value = JSONObject(message).optJSONObject("value") ?: JSONObject()
         val current = state.lastProfile
-        val profile = ExerciseProfile(
-            stepGoal = value.optInt("stepGoal", current.stepGoal),
-            height = value.optInt("height", current.height),
-            weight = value.optInt("weight", current.weight),
-        )
+        val profile =
+            ExerciseProfile(
+                stepGoal = value.optInt("stepGoal", current.stepGoal),
+                height = value.optInt("height", current.height),
+                weight = value.optInt("weight", current.weight),
+            )
         set(profile)
     }
 
     fun onReceived(data: String) {
-        val payload = Utils.toIntArray(data)
-            .map { it.toByte() }
-            .toByteArray()
+        val payload =
+            Utils.toIntArray(data)
+                .map { it.toByte() }
+                .toByteArray()
         val profile = decode(payload)
         synchronized(this) {
             state = state.copy(lastProfile = profile)
@@ -95,7 +99,10 @@ object ExerciseIO {
         }
     }
 
-    private fun toBcdLe(value: Int, length: Int): ByteArray {
+    private fun toBcdLe(
+        value: Int,
+        length: Int,
+    ): ByteArray {
         var remaining = value.coerceAtLeast(0)
         val output = ByteArray(length)
         for (index in 0 until length) {

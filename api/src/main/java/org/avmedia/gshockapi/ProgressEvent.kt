@@ -40,12 +40,11 @@ interface IEventAction {
 @Keep
 data class EventAction(
     override val label: String,
-    override val action: () -> Unit
+    override val action: () -> Unit,
 ) : IEventAction
 
 @Keep
 object ProgressEvents {
-
     // =========================================================================
     // Immutable domain type
     // =========================================================================
@@ -63,24 +62,25 @@ object ProgressEvents {
     // Immutable State
     // =========================================================================
 
-    private val builtInEventNames = listOf(
-        "Init",
-        "ConnectionStarted",
-        "ConnectionSetupComplete",
-        "Disconnect",
-        "AlarmDataLoaded",
-        "NotificationsEnabled",
-        "NotificationsDisabled",
-        "WatchInitializationCompleted",
-        "AllPermissionsAccepted",
-        "ButtonPressedInfoReceived",
-        "ConnectionFailed",
-        "SettingsLoaded",
-        "NeedToUpdateUI",
-        "CalendarUpdated",
-        "HomeTimeUpdated",
-        "ApiError",
-    )
+    private val builtInEventNames =
+        listOf(
+            "Init",
+            "ConnectionStarted",
+            "ConnectionSetupComplete",
+            "Disconnect",
+            "AlarmDataLoaded",
+            "NotificationsEnabled",
+            "NotificationsDisabled",
+            "WatchInitializationCompleted",
+            "AllPermissionsAccepted",
+            "ButtonPressedInfoReceived",
+            "ConnectionFailed",
+            "SettingsLoaded",
+            "NeedToUpdateUI",
+            "CalendarUpdated",
+            "HomeTimeUpdated",
+            "ApiError",
+        )
 
     private data class State(
         val subscribers: Set<String> = emptySet(),
@@ -105,7 +105,10 @@ object ProgressEvents {
     }
 
     /** Pure: derive a new State with one additional event registered. */
-    private fun stateWithEvent(current: State, eventName: String): State {
+    private fun stateWithEvent(
+        current: State,
+        eventName: String,
+    ): State {
         if (current.eventMap.containsKey(eventName)) return current
         val newEvent = Events()
         return current.copy(
@@ -115,16 +118,23 @@ object ProgressEvents {
     }
 
     /** Pure: derive a new State with a subscriber added. */
-    private fun stateWithSubscriber(current: State, name: String): State =
-        current.copy(subscribers = current.subscribers + name)
+    private fun stateWithSubscriber(
+        current: State,
+        name: String,
+    ): State = current.copy(subscribers = current.subscribers + name)
 
     /** Pure: derive a new State with a subscriber removed. */
-    private fun stateWithoutSubscriber(current: State, name: String): State =
-        current.copy(subscribers = current.subscribers - name)
+    private fun stateWithoutSubscriber(
+        current: State,
+        name: String,
+    ): State = current.copy(subscribers = current.subscribers - name)
 
     /** Pure: derive a new State with a payload set for a given event name. */
-    private fun stateWithPayload(current: State, eventName: String, payload: Any?): State =
-        current.copy(payloadMap = current.payloadMap + (eventName to payload))
+    private fun stateWithPayload(
+        current: State,
+        eventName: String,
+        payload: Any?,
+    ): State = current.copy(payloadMap = current.payloadMap + (eventName to payload))
 
     // =========================================================================
     // Subscriber
@@ -139,7 +149,10 @@ object ProgressEvents {
          * @param name    Unique identifier for this subscription.
          * @param eventActions Actions to invoke per event name.
          */
-        fun runEventActions(name: String, eventActions: Array<EventAction>) {
+        fun runEventActions(
+            name: String,
+            eventActions: Array<EventAction>,
+        ) {
             if (state.subscribers.contains(name)) return
             state = stateWithSubscriber(state, name)
 
@@ -178,7 +191,10 @@ object ProgressEvents {
     /**
      * Convenience wrapper — delegates to [Subscriber.runEventActions].
      */
-    fun runEventActions(name: String, eventActions: Array<EventAction>) {
+    fun runEventActions(
+        name: String,
+        eventActions: Array<EventAction>,
+    ) {
         subscriber.runEventActions(name, eventActions)
     }
 
@@ -186,7 +202,10 @@ object ProgressEvents {
      * Broadcast an event, optionally with a payload.
      * Custom event names are registered automatically on first use.
      */
-    fun onNext(eventName: String, payload: Any? = null) {
+    fun onNext(
+        eventName: String,
+        payload: Any? = null,
+    ) {
         if (!state.eventMap.containsKey(eventName)) {
             state = stateWithEvent(state, eventName)
         }
@@ -209,7 +228,10 @@ object ProgressEvents {
      * Store a payload for an event without broadcasting it.
      * Useful for pre-seeding payload before the event fires.
      */
-    fun addPayload(eventName: String, payload: Any?) {
+    fun addPayload(
+        eventName: String,
+        payload: Any?,
+    ) {
         state = stateWithPayload(state, eventName, payload)
     }
 }

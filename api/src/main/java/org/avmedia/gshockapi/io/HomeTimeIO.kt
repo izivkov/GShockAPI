@@ -12,7 +12,7 @@ import org.avmedia.gshockapi.utils.Utils
 
 /**
  * Pure functional core for home time processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles home city data transformations.
  */
@@ -20,11 +20,14 @@ import org.avmedia.gshockapi.utils.Utils
 object HomeTimeIOFunctional {
     /**
      * Pure parser: Extracts home city name from world cities data.
-     * 
+     *
      * Converts raw city data to ASCII string using the provided offset.
      * No side effects - pure string transformation.
      */
-    fun parseHomeCity(data: String, offset: Int): String {
+    fun parseHomeCity(
+        data: String,
+        offset: Int,
+    ): String {
         if (data.isBlank()) return "N/A"
         val name = Utils.toAsciiString(data, offset)
         return if (name.isBlank() || name.all { it == 'ÿ' }) "N/A" else name
@@ -37,14 +40,14 @@ object HomeTimeIOFunctional {
 
 /**
  * Home Time IO handler with state management.
- * 
+ *
  * Provides access to the primary home city timezone (Register 0x24).
  * Uses pure functional core for data parsing.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object HomeTimeIO {
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null
+        val deferredResult: CompletableDeferred<String>? = null,
     )
 
     private var state = State()
@@ -55,7 +58,7 @@ object HomeTimeIO {
 
     suspend fun requestRaw(slot: Int): String {
         val key = "240$slot"
-        
+
         return CachedIO.request(key) { k ->
             val deferred = CompletableDeferred<String>()
             synchronized(this) {

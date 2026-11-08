@@ -24,6 +24,7 @@ object Connection {
     private var bleManager: IGShockManager? = null
     private lateinit var appContext: Context
     private val scope = CoroutineScope(Dispatchers.IO)
+
     fun isInitialized(): Boolean = bleManager != null
 
     @Synchronized
@@ -47,23 +48,25 @@ object Connection {
         }
 
     private fun releaseBleManager() {
-        val manager = synchronized(this) {
-            bleManager.also { bleManager = null }
-        }
+        val manager =
+            synchronized(this) {
+                bleManager.also { bleManager = null }
+            }
         if (manager != null) Timber.i("Releasing BLE manager; next connection will create a fresh manager")
         manager?.release()
     }
 
-    private suspend fun connectToDevice(device: BluetoothDevice): ConnectionResult = try {
-        requireBleManager().connect(device) { name, address ->
-            WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
-            WatchInfo.setAddress(address)
-            Timber.i("onConnected() end")
+    private suspend fun connectToDevice(device: BluetoothDevice): ConnectionResult =
+        try {
+            requireBleManager().connect(device) { name, address ->
+                WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
+                WatchInfo.setAddress(address)
+                Timber.i("onConnected() end")
+            }
+            ConnectionResult.Success
+        } catch (e: Exception) {
+            ConnectionResult.Error(e.message ?: "Unknown error")
         }
-        ConnectionResult.Success
-    } catch (e: Exception) {
-        ConnectionResult.Error(e.message ?: "Unknown error")
-    }
 
     fun disconnect() {
         releaseBleManager()
@@ -115,8 +118,7 @@ object Connection {
         releaseBleManager()
     }
 
-    fun validateAddress(address: String?): Boolean =
-        address != null && BluetoothAdapter.checkBluetoothAddress(address)
+    fun validateAddress(address: String?): Boolean = address != null && BluetoothAdapter.checkBluetoothAddress(address)
 
     @SuppressLint("NewApi")
     fun sendMessage(message: String) {
@@ -127,7 +129,10 @@ object Connection {
         requireBleManager().setDataCallback(dataCallback)
     }
 
-    fun write(handle: GetSetMode, data: ByteArray) {
+    fun write(
+        handle: GetSetMode,
+        data: ByteArray,
+    ) {
         scope.launch {
             val manager = bleManager
             if (manager == null) {
@@ -138,10 +143,12 @@ object Connection {
         }
     }
 
-    fun isServiceSupported(handle: GetSetMode): Boolean =
-        bleManager?.isServiceSupported(handle) == true
+    fun isServiceSupported(handle: GetSetMode): Boolean = bleManager?.isServiceSupported(handle) == true
 
-    fun startConnection(context: Context, deviceId: String?) {
+    fun startConnection(
+        context: Context,
+        deviceId: String?,
+    ) {
         ProgressEvents.onNext("ConnectionStarted")
         scope.launch {
             if (deviceId.isNullOrEmpty()) {
@@ -183,7 +190,7 @@ object Connection {
         context: Context,
         isBluetoothOn: () -> Boolean,
         filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
+        onDeviceFound: (DeviceInfo) -> Unit,
     ) {
         GShockScanner.startScan(context, isBluetoothOn, filter, onDeviceFound)
     }
@@ -195,7 +202,7 @@ object Connection {
     fun startFallbackScan(
         context: Context,
         addresses: List<String>,
-        pendingIntent: android.app.PendingIntent
+        pendingIntent: android.app.PendingIntent,
     ) {
         GShockScanner.startFallbackScan(context, addresses, pendingIntent)
     }
@@ -203,5 +210,6 @@ object Connection {
 
 sealed class ConnectionResult {
     object Success : ConnectionResult()
+
     data class Error(val message: String) : ConnectionResult()
 }

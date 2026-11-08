@@ -2,7 +2,6 @@ package org.avmedia.gshockapi.io
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import timber.log.Timber
 
@@ -36,10 +35,9 @@ import timber.log.Timber
  */
 
 object MtgB1000TimeIO {
-
     // ResetSequence commands confirmed from log [1758] and [1793]
     private val RESET_SEQUENCE_START = byteArrayOf(0x21, 0x00, 0x01) // dial 0
-    private val RESET_SEQUENCE_END = byteArrayOf(0x21, 0x01, 0x01)   // dial 1
+    private val RESET_SEQUENCE_END = byteArrayOf(0x21, 0x01, 0x01) // dial 1
 
     /**
      * Run the second-dial sequence after the main time has been set.

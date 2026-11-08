@@ -11,7 +11,7 @@ data class ActivityPeriod(
     val index: Int,
     val steps: Int?,
     val intensity: IntArray,
-    val distanceMeters: Int? = null
+    val distanceMeters: Int? = null,
 )
 
 /**
@@ -36,35 +36,33 @@ data class StepCounterData(
     val pendingDistanceMeters: Int? = null,
     val totalDistanceMeters: Int? = null,
     val bcdTotalSteps: Int? = null,
-
     // Detailed ABL-100 lifelog data
     val hourlyIntensities: List<IntArray> = emptyList(),
     val pendingIntensity: IntArray = intArrayOf(),
     val committedDistances: List<Int> = emptyList(),
-
     // Friendly representations
     val hourlyIntervals: List<ActivityPeriod> = emptyList(),
     val hourlyByHour: List<Int?> = emptyList(),
-
     val raw: ByteArray? = null,
     val warnings: List<String> = emptyList(),
 ) {
     companion object {
-        fun unavailable() = StepCounterData(
-            timestamp = null,
-            dayOfWeek = 0,
-            month = 0,
-            dayOfMonth = 0,
-            hourlySteps = emptyList(),
-            dailyHistory = emptyList(),
-            dailyDistances = emptyList(),
-            currentDaySteps = null,
-            distanceMeters = null,
-            pendingDistanceMeters = null,
-            totalDistanceMeters = null,
-            bcdTotalSteps = null,
-            raw = null,
-            warnings = listOf("step counter unavailable")
-        )
+        fun unavailable() =
+            StepCounterData(
+                timestamp = null,
+                dayOfWeek = 0,
+                month = 0,
+                dayOfMonth = 0,
+                hourlySteps = emptyList(),
+                dailyHistory = emptyList(),
+                dailyDistances = emptyList(),
+                currentDaySteps = null,
+                distanceMeters = null,
+                pendingDistanceMeters = null,
+                totalDistanceMeters = null,
+                bcdTotalSteps = null,
+                raw = null,
+                warnings = listOf("step counter unavailable"),
+            )
     }
 }

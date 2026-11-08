@@ -4,10 +4,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
-import org.avmedia.gshockapi.model.StepCounterData
-import org.avmedia.gshockapi.model.ActivityPeriod
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.GetSetMode
+import org.avmedia.gshockapi.model.ActivityPeriod
+import org.avmedia.gshockapi.model.StepCounterData
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -62,9 +62,10 @@ object StepCounterIOFunctional {
             }
         }
 
-        val currentDaySteps = readUnsignedIntOrNull(payload, CURRENT_STEPS_OFFSET).let {
-            if (it == SENTINEL_DAILY_VALUE) null else it
-        }
+        val currentDaySteps =
+            readUnsignedIntOrNull(payload, CURRENT_STEPS_OFFSET).let {
+                if (it == SENTINEL_DAILY_VALUE) null else it
+            }
 
         var pendingSteps = 0
         val pendingIntensity = IntArray(3)
@@ -118,11 +119,13 @@ object StepCounterIOFunctional {
             val stepsOrNull = if (steps > 0) steps else null
             activitySteps.add(stepsOrNull)
             hourlyIntensities.add(buckets)
-            hourlyIntervals.add(ActivityPeriod(
-                index = (offset - HEADER_SIZE) / ACTIVITY_RECORD_SIZE,
-                steps = stepsOrNull,
-                intensity = buckets
-            ))
+            hourlyIntervals.add(
+                ActivityPeriod(
+                    index = (offset - HEADER_SIZE) / ACTIVITY_RECORD_SIZE,
+                    steps = stepsOrNull,
+                    intensity = buckets,
+                ),
+            )
         }
 
         val distanceMeters = readUnsignedIntOrNull(payload, CURRENT_DISTANCE_OFFSET)
@@ -210,15 +213,13 @@ object StepCounterIOFunctional {
             pendingDistanceMeters = pendingDistanceMeters,
             totalDistanceMeters = distanceMeters,
             bcdTotalSteps = bcdTotalSteps,
-
             hourlyIntensities = hourlyIntensities,
             pendingIntensity = pendingIntensity,
             committedDistances = committedDistances,
             hourlyIntervals = hourlyIntervals,
             hourlyByHour = hourlyByHour,
-
             raw = payload,
-            warnings = warnings
+            warnings = warnings,
         )
     }
 
@@ -229,18 +230,24 @@ object StepCounterIOFunctional {
         return high * 10 + low
     }
 
-    private fun readUnsignedShortOrNull(payload: ByteArray, offset: Int): Int? {
+    private fun readUnsignedShortOrNull(
+        payload: ByteArray,
+        offset: Int,
+    ): Int? {
         if (offset + 2 > payload.size) return null
         val value = (payload[offset].toInt() and 0xFF) or ((payload[offset + 1].toInt() and 0xFF) shl 8)
         return if (value == 0xFFFF) null else value
     }
 
-    private fun readUnsignedIntOrNull(payload: ByteArray, offset: Int): Int? {
+    private fun readUnsignedIntOrNull(
+        payload: ByteArray,
+        offset: Int,
+    ): Int? {
         if (offset + 4 > payload.size) return null
         return (payload[offset].toInt() and 0xFF) or
-                ((payload[offset + 1].toInt() and 0xFF) shl 8) or
-                ((payload[offset + 2].toInt() and 0xFF) shl 16) or
-                ((payload[offset + 3].toInt() and 0xFF) shl 24)
+            ((payload[offset + 1].toInt() and 0xFF) shl 8) or
+            ((payload[offset + 2].toInt() and 0xFF) shl 16) or
+            ((payload[offset + 3].toInt() and 0xFF) shl 24)
     }
 }
 
@@ -308,7 +315,8 @@ object StepCounterIO {
         if (category != DRSP_CATEGORY_EXERCISE) return
 
         if (command == 0x00) {
-            val length = (data[2].toInt() and 0xFF) or
+            val length =
+                (data[2].toInt() and 0xFF) or
                     ((data[3].toInt() and 0xFF) shl 8) or
                     ((data[4].toInt() and 0xFF) shl 16)
             synchronized(this) {
@@ -327,10 +335,11 @@ object StepCounterIO {
             val intArr = Utils.toIntArray(data)
             val bytes = Utils.byteArrayOfIntArray(intArr.toIntArray())
 
-            val accumulated = synchronized(this) {
-                accumulator += bytes
-                accumulator.size
-            }
+            val accumulated =
+                synchronized(this) {
+                    accumulator += bytes
+                    accumulator.size
+                }
 
             Timber.d("StepCounterIO.onReceived: accumulated=${accumulated}B / expected=${expectedLength}B")
 

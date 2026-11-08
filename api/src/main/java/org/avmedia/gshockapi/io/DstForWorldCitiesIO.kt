@@ -13,7 +13,7 @@ import org.avmedia.gshockapi.utils.Utils
 
 /**
  * Pure functional core for DST world cities processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles DST value updates for world city timezones.
  */
@@ -21,15 +21,18 @@ import org.avmedia.gshockapi.utils.Utils
 object DstForWorldCitiesIOFunctional {
     /**
      * Pure transformer: Updates timezone data for world city.
-     * 
+     *
      * Takes DST string and CasioTimeZone, updates timezone offset and DST offset values.
      * No side effects - pure data transformation.
-     * 
+     *
      * Protocol format (7 bytes):
      * 0x1e 0-5 TZ_A TZ_B TZ_OFF TZ_DSTOFF TZ_DSTRULES
      * Updates indices [4] (offset), [5] (DST offset), [6] (DST rules).
      */
-    fun setDST(dst: String, casioTimeZone: CasioTimeZoneHelper.CasioTimeZone): String =
+    fun setDST(
+        dst: String,
+        casioTimeZone: CasioTimeZoneHelper.CasioTimeZone,
+    ): String =
         Utils.toIntArray(dst)
             .takeIf { it.size == 7 }
             ?.apply {
@@ -46,9 +49,8 @@ object DstForWorldCitiesIOFunctional {
 
 @RequiresApi(Build.VERSION_CODES.O)
 object DstForWorldCitiesIO {
-
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null
+        val deferredResult: CompletableDeferred<String>? = null,
     )
 
     private var state = State()
@@ -80,8 +82,10 @@ object DstForWorldCitiesIO {
     ...
      */
 
-    fun setDST(dst: String, casioTimeZone: CasioTimeZoneHelper.CasioTimeZone): String =
-        DstForWorldCitiesIOFunctional.setDST(dst, casioTimeZone)
+    fun setDST(
+        dst: String,
+        casioTimeZone: CasioTimeZoneHelper.CasioTimeZone,
+    ): String = DstForWorldCitiesIOFunctional.setDST(dst, casioTimeZone)
 
     fun onReceived(data: String) {
         synchronized(this) {

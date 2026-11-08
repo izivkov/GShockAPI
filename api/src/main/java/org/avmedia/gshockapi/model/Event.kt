@@ -1,8 +1,8 @@
 package org.avmedia.gshockapi.model
 
-import androidx.annotation.Keep
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.util.Preconditions
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
@@ -33,7 +33,13 @@ data class Event(
 
     @RequiresApi(Build.VERSION_CODES.O)
     constructor(json: JSONObject) : this(
-        "", null, null, RepeatPeriod.NEVER, null, false, false
+        "",
+        null,
+        null,
+        RepeatPeriod.NEVER,
+        null,
+        false,
+        false,
     ) {
         val event = createEvent(json)
 
@@ -48,7 +54,6 @@ data class Event(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createEvent(eventJsn: JSONObject): Event {
-
         @RequiresApi(Build.VERSION_CODES.O)
         fun getArrayListFromJSONArray(jsonArray: JSONArray): ArrayList<DayOfWeek> {
             val list = ArrayList<DayOfWeek>()
@@ -117,12 +122,12 @@ data class Event(
             EventDate(
                 startDate.getInt("year"),
                 stringToMonth(startDate.getString("month")),
-                startDate.getInt("day")
+                startDate.getInt("day"),
             ),
             EventDate(
                 endDate.getInt("year"),
                 stringToMonth(endDate.getString("month")),
-                endDate.getInt("day")
+                endDate.getInt("day"),
             ),
             repeatPeriod,
             getArrayListFromJSONArray(weekDays),
@@ -140,7 +145,7 @@ data class Event(
             period += "${
                 capitalizeFirstAndTrim(
                     startDate!!.month.toString(),
-                    3
+                    3,
                 )
             }-${startDate!!.day}"
             if (thisYear != startDate!!.year) {
@@ -151,7 +156,7 @@ data class Event(
             period += " to ${
                 capitalizeFirstAndTrim(
                     endDate!!.month.toString(),
-                    3
+                    3,
                 )
             }-${endDate!!.day}"
             if (thisYear != endDate!!.year) {
@@ -185,7 +190,7 @@ data class Event(
                 formattedFreq = "${
                     capitalizeFirstAndTrim(
                         startDate?.month.toString(),
-                        3
+                        3,
                     )
                 }-${startDate?.day}${getDayOfMonthSuffix(startDate?.day!!)} each year"
             }
@@ -206,7 +211,10 @@ data class Event(
         return formattedFreq
     }
 
-    private fun capitalizeFirstAndTrim(inStr: String, len: Int): String {
+    private fun capitalizeFirstAndTrim(
+        inStr: String,
+        len: Int,
+    ): String {
         return inStr.lowercase(Locale.getDefault())
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
             .substring(0, len)
@@ -217,11 +225,13 @@ data class Event(
         Preconditions.checkArgument(n in 1..31, "illegal day of month: $n")
         return if (n in 11..13) {
             "th"
-        } else when (n % 10) {
-            1 -> "st"
-            2 -> "nd"
-            3 -> "rd"
-            else -> "th"
+        } else {
+            when (n % 10) {
+                1 -> "st"
+                2 -> "nd"
+                3 -> "rd"
+                else -> "th"
+            }
         }
     }
 

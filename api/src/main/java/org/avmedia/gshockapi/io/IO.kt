@@ -19,14 +19,14 @@ import java.util.UUID
 
 /**
  * Pure functional core for IO command processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles protocol-level command conversion and formatting.
  */
 object IOFunctional {
     /**
      * Pure converter: Converts hex string to Casio command byte array.
-     * 
+     *
      * Takes a hex string (e.g., "1e05"), splits into pairs, converts each pair
      * to a byte. Uses getOrDefault to handle invalid hex gracefully.
      * No side effects - pure transformation.
@@ -44,17 +44,26 @@ object IOFunctional {
 object IO {
     private data class State(
         val availableCharacteristics: Map<UUID, BluetoothGattCharacteristic>? = null,
-        var writer: ((BluetoothDevice, BluetoothGattCharacteristic, ByteArray) -> Unit)? = null
+        var writer: ((BluetoothDevice, BluetoothGattCharacteristic, ByteArray) -> Unit)? = null,
     )
 
     private var state = State()
 
     enum class WatchButton {
-        UPPER_LEFT, LOWER_LEFT, UPPER_RIGHT, LOWER_RIGHT, NO_BUTTON, FIND_PHONE, ALLAYS_CONNECTED_CONNECTION, INVALID
+        UPPER_LEFT,
+        LOWER_LEFT,
+        UPPER_RIGHT,
+        LOWER_RIGHT,
+        NO_BUTTON,
+        FIND_PHONE,
+        ALLAYS_CONNECTED_CONNECTION,
+        INVALID,
     }
 
     enum class DstState(val state: Int) {
-        ZERO(0), TWO(2), FOUR(4)
+        ZERO(0),
+        TWO(2),
+        FOUR(4),
     }
 
     fun request(request: String) {
@@ -65,15 +74,24 @@ object IO {
         // NO-OP
     }
 
-    fun writeCmd(handle: GetSetMode, bytesArray: ByteArray) {
+    fun writeCmd(
+        handle: GetSetMode,
+        bytesArray: ByteArray,
+    ) {
         Connection.write(handle, bytesArray)
     }
 
-    fun writeCmd(handle: GetSetMode, cmd: String) {
+    fun writeCmd(
+        handle: GetSetMode,
+        cmd: String,
+    ) {
         writeCmdFromString(handle, cmd)
     }
 
-    private fun writeCmdFromString(handle: GetSetMode, bytesStr: String) {
+    private fun writeCmdFromString(
+        handle: GetSetMode,
+        bytesStr: String,
+    ) {
         Connection.write(handle, IOFunctional.toCasioCmd(bytesStr))
     }
 

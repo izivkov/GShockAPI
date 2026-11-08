@@ -68,13 +68,12 @@ If the timezone has no DST, we set the flag to 0
 
 /**
  * Pure functional core for time and DST operations.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles DST calculations, timezone conversions, and time encoding.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeIOFunctional {
-
     enum class DtsMask(val mask: Int) {
         OFF(0b00),
         ON(0b01),
@@ -83,23 +82,23 @@ object TimeIOFunctional {
 
     /**
      * Pure calculator: Computes DST value based on timezone information.
-     * 
+     *
      * Returns an OR combination of DST flags:
      * - ON flag if timezone is currently in DST
      * - AUTO flag if timezone has DST rules
-     * 
+     *
      * No side effects - pure calculation from timezone data.
      */
     fun calculateDSTValue(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Int =
         (if (casioTimezone.isInDST()) DtsMask.ON.ordinal else DtsMask.OFF.ordinal) or
-                (if (casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
+            (if (casioTimezone.hasRules()) DtsMask.AUTO.ordinal else 0)
 
     /**
      * Pure calculator: Computes DST duration in milliseconds for timezone.
-     * 
+     *
      * Returns the DST offset converted to milliseconds, or 0 if not in DST.
      * Formula: dstOffset (in 15-minute units) * 60 * 15 (milliseconds conversion)
-     * 
+     *
      * No side effects - pure calculation.
      */
     fun calculateDSTDurationMs(casioTimezone: CasioTimeZoneHelper.CasioTimeZone): Long =
@@ -107,15 +106,15 @@ object TimeIOFunctional {
 
     /**
      * Pure transformer: Adjusts time for DST and converts to LocalDateTime.
-     * 
+     *
      * Takes milliseconds since epoch and adjusts for DST if applicable,
      * then converts to LocalDateTime in the given timezone.
-     * 
+     *
      * No side effects - pure transformation.
      */
     fun adjustTimeForDSTAndConvert(
         timeMs: Long,
-        casioTimezone: CasioTimeZoneHelper.CasioTimeZone
+        casioTimezone: CasioTimeZoneHelper.CasioTimeZone,
     ): LocalDateTime {
         val dstDurationToAdd = calculateDSTDurationMs(casioTimezone)
         val msAdjustedForDST = timeMs + dstDurationToAdd
@@ -125,11 +124,11 @@ object TimeIOFunctional {
 
     /**
      * Pure encoder: Converts LocalDateTime to Casio time byte format.
-     * 
+     *
      * Returns 10-byte array matching Casio CASIO_CURRENT_TIME characteristic:
      * [0-1] Year (little-endian), [2] Month, [3] Day, [4] Hour, [5] Minute,
      * [6] Second, [7] Day of week, [8] Nano-second fraction, [9] Reserved
-     * 
+     *
      * No side effects - pure encoding.
      */
     fun prepareCurrentTime(date: LocalDateTime): ByteArray {
@@ -152,7 +151,7 @@ object TimeIOFunctional {
 
     /**
      * Pure builder: Creates watch time command from adjusted datetime.
-     * 
+     *
      * Combines Casio time characteristic code with encoded time data.
      * No side effects - pure command building.
      */
@@ -164,21 +163,22 @@ object TimeIOFunctional {
 
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeIO {
-
     private data class State(
         val timeZone: String = TimeZone.getDefault().id,
-        val casioTimezone: CasioTimeZoneHelper.CasioTimeZone = CasioTimeZoneHelper.findTimeZone(
-            TimeZone.getDefault().id
-        ),
+        val casioTimezone: CasioTimeZoneHelper.CasioTimeZone =
+            CasioTimeZoneHelper.findTimeZone(
+                TimeZone.getDefault().id,
+            ),
     )
 
     private var state = State()
 
     fun setTimezone(timeZone: String) {
-        state = state.copy(
-            timeZone = timeZone,
-            casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone)
-        )
+        state =
+            state.copy(
+                timeZone = timeZone,
+                casioTimezone = CasioTimeZoneHelper.findTimeZone(timeZone),
+            )
     }
 
     /**
@@ -189,17 +189,19 @@ object TimeIO {
      */
     fun getCasioTimezone(): CasioTimeZoneHelper.CasioTimeZone = state.casioTimezone
 
-    suspend fun set(timeMs: Long? = null, offset: Long? = null) {
+    suspend fun set(
+        timeMs: Long? = null,
+        offset: Long? = null,
+    ) {
         initializeForSettingTime()
         val timeToSet = timeMs ?: (Clock.systemDefaultZone().millis() + (offset ?: 0L))
 
         Connection.sendMessage(
-            "{action: \"SET_TIME\", value: ${timeToSet}}"
+            "{action: \"SET_TIME\", value: $timeToSet}",
         )
     }
 
-    private suspend fun getDSTWatchState(dstState: IO.DstState): String =
-        DstWatchStateIO.request(dstState)
+    private suspend fun getDSTWatchState(dstState: IO.DstState): String = DstWatchStateIO.request(dstState)
 
     private suspend fun getDSTWatchStateWithTZ(dstState: IO.DstState): String {
         val origDTS = getDSTWatchState(dstState)
@@ -207,16 +209,14 @@ object TimeIO {
         return DstWatchStateIO.setDST(origDTS, dstValue)
     }
 
-    private suspend fun getDSTForWorldCities(cityNum: Int): String =
-        DstForWorldCitiesIO.request(cityNum)
+    private suspend fun getDSTForWorldCities(cityNum: Int): String = DstForWorldCitiesIO.request(cityNum)
 
     private suspend fun getDSTForWorldCitiesWithTZ(cityNum: Int): String {
         val origDSTForCity = getDSTForWorldCities(cityNum)
         return DstForWorldCitiesIO.setDST(origDSTForCity, state.casioTimezone)
     }
 
-    private suspend fun getWorldCities(cityNum: Int): String =
-        WorldCitiesIO.request(cityNum)
+    private suspend fun getWorldCities(cityNum: Int): String = WorldCitiesIO.request(cityNum)
 
     private suspend fun getWorldCitiesWithTZ(cityNum: Int): String {
         val newCity = WorldCitiesIO.parseCity(state.timeZone)
@@ -247,7 +247,7 @@ object TimeIO {
 
     suspend fun <T> readAndWrite(
         function: suspend (T) -> String,
-        param: T
+        param: T,
     ) {
         val ret: String = function(param)
         val shortStr = Utils.toCompactString(ret)
@@ -260,11 +260,12 @@ object TimeIO {
             val function: suspend (IO.DstState) -> String,
         )
 
-        val dtsStates = arrayOf(
-            Dts(IO.DstState.ZERO) { dstState -> getDSTWatchStateWithTZ(dstState) },
-            Dts(IO.DstState.TWO) { dstState -> getDSTWatchState(dstState) },
-            Dts(IO.DstState.FOUR) { dstState -> getDSTWatchState(dstState) }
-        )
+        val dtsStates =
+            arrayOf(
+                Dts(IO.DstState.ZERO) { dstState -> getDSTWatchStateWithTZ(dstState) },
+                Dts(IO.DstState.TWO) { dstState -> getDSTWatchState(dstState) },
+                Dts(IO.DstState.FOUR) { dstState -> getDSTWatchState(dstState) },
+            )
 
         for (i in 0 until WatchInfo.dstCount) {
             readAndWrite(dtsStates[i].function, dtsStates[i].param)
@@ -277,14 +278,15 @@ object TimeIO {
             val function: suspend (Int) -> String,
         )
 
-        val dstForWorldCities = arrayOf(
-            DstForWorldCities(0) { cityNumber: Int -> getDSTForWorldCitiesWithTZ(cityNumber) },
-            DstForWorldCities(1) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
-            DstForWorldCities(2) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
-            DstForWorldCities(3) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
-            DstForWorldCities(4) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
-            DstForWorldCities(5) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
-        )
+        val dstForWorldCities =
+            arrayOf(
+                DstForWorldCities(0) { cityNumber: Int -> getDSTForWorldCitiesWithTZ(cityNumber) },
+                DstForWorldCities(1) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+                DstForWorldCities(2) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+                DstForWorldCities(3) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+                DstForWorldCities(4) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+                DstForWorldCities(5) { cityNumber: Int -> getDSTForWorldCities(cityNumber) },
+            )
 
         for (i in 0 until WatchInfo.worldCitiesCount) {
             readAndWrite(dstForWorldCities[i].function, dstForWorldCities[i].param)
@@ -298,14 +300,15 @@ object TimeIO {
             val function: suspend (Int) -> String,
         )
 
-        val worldCities = arrayOf(
-            WorldCities(0) { cityNumber: Int -> getWorldCitiesWithTZ(cityNumber) },
-            WorldCities(1) { cityNumber: Int -> getWorldCities(cityNumber) },
-            WorldCities(2) { cityNumber: Int -> getWorldCities(cityNumber) },
-            WorldCities(3) { cityNumber: Int -> getWorldCities(cityNumber) },
-            WorldCities(4) { cityNumber: Int -> getWorldCities(cityNumber) },
-            WorldCities(5) { cityNumber: Int -> getWorldCities(cityNumber) },
-        )
+        val worldCities =
+            arrayOf(
+                WorldCities(0) { cityNumber: Int -> getWorldCitiesWithTZ(cityNumber) },
+                WorldCities(1) { cityNumber: Int -> getWorldCities(cityNumber) },
+                WorldCities(2) { cityNumber: Int -> getWorldCities(cityNumber) },
+                WorldCities(3) { cityNumber: Int -> getWorldCities(cityNumber) },
+                WorldCities(4) { cityNumber: Int -> getWorldCities(cityNumber) },
+                WorldCities(5) { cityNumber: Int -> getWorldCities(cityNumber) },
+            )
 
         for (i in 0 until WatchInfo.worldCitiesCount) {
             readAndWrite(worldCities[i].function, worldCities[i].param)

@@ -10,14 +10,14 @@ import timber.log.Timber
 
 /**
  * Pure functional core for error state operations.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles error message validation and retrieval.
  */
 object ErrorIOFunctional {
     /**
      * Pure validator: Returns the error message or default.
-     * 
+     *
      * No side effects - simple data accessor.
      */
     fun getErrorOrDefault(error: String): String = error.ifEmpty { "ERROR" }
@@ -26,7 +26,7 @@ object ErrorIOFunctional {
 @RequiresApi(Build.VERSION_CODES.O)
 object ErrorIO {
     private data class State(
-        val error: String = ""
+        val error: String = "",
     )
 
     private var state = State()

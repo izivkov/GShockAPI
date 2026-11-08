@@ -22,7 +22,7 @@ import timber.log.Timber
 
 /**
  * Pure functional core for connection state evaluation.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles connection status checks and response generation.
  */
@@ -30,17 +30,16 @@ import timber.log.Timber
 object WaitForConnectionIOFunctional {
     /**
      * Pure validator: Determines if connection is already established.
-     * 
+     *
      * Returns success response if connected, otherwise indicates waiting state.
      * No side effects - pure evaluation using Connection state.
      */
 
-    fun checkConnectionAlreadyEstablished(): String? =
-        if (Connection.isConnected()) "OK" else null
+    fun checkConnectionAlreadyEstablished(): String? = if (Connection.isConnected()) "OK" else null
 
     /**
      * Pure validator: Determines if connection attempt is already in progress.
-     * 
+     *
      * Returns true if Connection is already connecting to avoid duplicate attempts.
      * No side effects - pure state check.
      */
@@ -48,7 +47,7 @@ object WaitForConnectionIOFunctional {
 
     /**
      * Pure builder: Creates success response.
-     * 
+     *
      * No side effects - returns constant value.
      */
     fun getSuccessResponse(): String = "OK"
@@ -56,11 +55,10 @@ object WaitForConnectionIOFunctional {
 
 @RequiresApi(Build.VERSION_CODES.O)
 object WaitForConnectionIO {
-
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null
+        val deferredResult: CompletableDeferred<String>? = null,
     )
 
     private var state = State()
@@ -81,7 +79,7 @@ object WaitForConnectionIO {
             state = state.copy(deferredResult = deferred)
         }
 
-        setupConnectionListener()  // MUST be before startConnection to avoid race
+        setupConnectionListener() // MUST be before startConnection to avoid race
 
         if (!WaitForConnectionIOFunctional.isConnectionAlreadyInProgress()) {
             WatchDataListener.init()
@@ -105,30 +103,36 @@ object WaitForConnectionIO {
     }
 
     private fun setupConnectionListener() {
-        val eventActions = arrayOf(
-            EventAction("ConnectionSetupComplete") {
-                CachedIO.clearCache()
-                completeCurrentWait(WaitForConnectionIOFunctional.getSuccessResponse())
-            },
-            EventAction("ConnectionFailed") {
-                completeCurrentWait(error = IllegalStateException("Failed to connect to watch"))
-            },
-            EventAction("ApiError") {
-                val message = ProgressEvents.getPayload("ApiError")?.toString()
-                    ?: "An error occurred while connecting to the watch"
-                completeCurrentWait(error = IllegalStateException(message))
-            },
-            EventAction("Disconnect") {
-                completeCurrentWait(error = IllegalStateException("Watch disconnected before setup completed"))
-            }
-        )
+        val eventActions =
+            arrayOf(
+                EventAction("ConnectionSetupComplete") {
+                    CachedIO.clearCache()
+                    completeCurrentWait(WaitForConnectionIOFunctional.getSuccessResponse())
+                },
+                EventAction("ConnectionFailed") {
+                    completeCurrentWait(error = IllegalStateException("Failed to connect to watch"))
+                },
+                EventAction("ApiError") {
+                    val message =
+                        ProgressEvents.getPayload("ApiError")?.toString()
+                            ?: "An error occurred while connecting to the watch"
+                    completeCurrentWait(error = IllegalStateException(message))
+                },
+                EventAction("Disconnect") {
+                    completeCurrentWait(error = IllegalStateException("Watch disconnected before setup completed"))
+                },
+            )
         ProgressEvents.subscriber.runEventActions(this.javaClass.name, eventActions)
     }
 
-    private fun completeCurrentWait(result: String? = null, error: Throwable? = null) {
-        val deferred = synchronized(this) {
-            state.deferredResult.also { state = state.copy(deferredResult = null) }
-        } ?: return
+    private fun completeCurrentWait(
+        result: String? = null,
+        error: Throwable? = null,
+    ) {
+        val deferred =
+            synchronized(this) {
+                state.deferredResult.also { state = state.copy(deferredResult = null) }
+            } ?: return
 
         if (error == null) {
             deferred.complete(result ?: WaitForConnectionIOFunctional.getSuccessResponse())

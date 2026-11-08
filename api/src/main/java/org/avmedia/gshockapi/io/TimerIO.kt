@@ -18,7 +18,7 @@ import timber.log.Timber
 
 /**
  * Pure functional core for timer processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Input -> Deterministic Output transformation.
  */
@@ -28,14 +28,14 @@ object TimerIOFunctional {
         val hours: Int,
         val minutes: Int,
         val seconds: Int,
-        val totalSeconds: Int
+        val totalSeconds: Int,
     )
 
     /**
      * Pure function: Convert total seconds to timer state components.
-     * 
+     *
      * No side effects - simple arithmetic transformation.
-     * 
+     *
      * @param totalSeconds Total seconds (0 to 23:59:59 = 86399)
      * @return TimerState with hours, minutes, seconds, and total
      */
@@ -50,12 +50,15 @@ object TimerIOFunctional {
     /**
      * Pure function: Convert timer components to total seconds.
      */
-    fun componentsToSeconds(hours: Int, minutes: Int, seconds: Int): Int =
-        hours * 3600 + minutes * 60 + seconds
+    fun componentsToSeconds(
+        hours: Int,
+        minutes: Int,
+        seconds: Int,
+    ): Int = hours * 3600 + minutes * 60 + seconds
 
     /**
      * Pure decoder: Decodes hex string to timer state.
-     * 
+     *
      * No side effects - returns Result for error handling.
      * Buffer structure:
      * [0] - Command code (0x18)
@@ -63,22 +66,24 @@ object TimerIOFunctional {
      * [2] - Minutes
      * [3] - Seconds
      */
-    fun decode(data: String): Result<TimerState> = runCatching {
-        val timerIntArray = Utils.toIntArray(data)
-        if (timerIntArray.size < 4) {
-            throw IllegalArgumentException("Timer data too short: ${timerIntArray.size} bytes")
+    fun decode(data: String): Result<TimerState> =
+        runCatching {
+            val timerIntArray = Utils.toIntArray(data)
+            if (timerIntArray.size < 4) {
+                throw IllegalArgumentException("Timer data too short: ${timerIntArray.size} bytes")
+            }
+            val totalSeconds =
+                componentsToSeconds(
+                    timerIntArray[1],
+                    timerIntArray[2],
+                    timerIntArray[3],
+                )
+            secondsToTimerState(totalSeconds)
         }
-        val totalSeconds = componentsToSeconds(
-            timerIntArray[1],
-            timerIntArray[2],
-            timerIntArray[3]
-        )
-        secondsToTimerState(totalSeconds)
-    }
 
     /**
      * Pure encoder: Encodes timer state to byte array.
-     * 
+     *
      * No side effects - pure transformation.
      * Returns byte array of specified size:
      * [0] = 0x18 (command)
@@ -87,7 +92,10 @@ object TimerIOFunctional {
      * [3] = seconds
      * [4..] = padding
      */
-    fun encode(timerState: TimerState, size: Int): ByteArray {
+    fun encode(
+        timerState: TimerState,
+        size: Int,
+    ): ByteArray {
         return ByteArray(size).apply {
             this[0] = 0x18
             this[1] = timerState.hours.toByte()
@@ -99,19 +107,22 @@ object TimerIOFunctional {
     /**
      * Pure command builder: Creates command to fetch timer from watch.
      */
-    fun buildFetchCommand(): ByteArray =
-        Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
+    fun buildFetchCommand(): ByteArray = Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_TIMER.code.toByte())
 
     /**
      * Pure command builder: Creates command to set timer from JSON message.
-     * 
+     *
      * Parses and validates input without side effects.
      */
-    fun buildSetCommand(message: String, size: Int): Result<ByteArray> = runCatching {
-        JSONObject(message).get("value").toString().toInt()
-            .let { secondsToTimerState(it) }
-            .let { encode(it, size) }
-    }
+    fun buildSetCommand(
+        message: String,
+        size: Int,
+    ): Result<ByteArray> =
+        runCatching {
+            JSONObject(message).get("value").toString().toInt()
+                .let { secondsToTimerState(it) }
+                .let { encode(it, size) }
+        }
 }
 
 // ============================================================================
@@ -120,20 +131,19 @@ object TimerIOFunctional {
 
 /**
  * Timer IO handler with state management.
- * 
+ *
  * Manages the asynchronous request/response cycle for timer data.
  * Uses pure functional core for all transformations.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object TimerIO {
     private data class State(
-        val deferredResult: CompletableDeferred<Int>? = null
+        val deferredResult: CompletableDeferred<Int>? = null,
     )
 
     private var state = State()
 
-    suspend fun request(requestString: String = "18"): Int =
-        CachedIO.request(requestString) { key -> getTimer(key) }
+    suspend fun request(requestString: String = "18"): Int = CachedIO.request(requestString) { key -> getTimer(key) }
 
     private suspend fun getTimer(key: String): Int {
         val deferred = CompletableDeferred<Int>()
@@ -172,7 +182,7 @@ object TimerIO {
                         state.deferredResult?.completeExceptionally(error)
                         state = state.copy(deferredResult = null)
                     }
-                }
+                },
             )
     }
 
@@ -181,7 +191,7 @@ object TimerIO {
         // Use pure function to build command, then execute
         IO.writeCmd(
             GetSetMode.GET,
-            TimerIOFunctional.buildFetchCommand()
+            TimerIOFunctional.buildFetchCommand(),
         )
     }
 
@@ -195,7 +205,7 @@ object TimerIO {
                 },
                 onFailure = { error ->
                     Timber.e("Failed to set timer: ${error.message}")
-                }
+                },
             )
     }
 }

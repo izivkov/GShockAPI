@@ -9,7 +9,7 @@ data class Alarm(
     val enabled: Boolean,
     val hasHourlyChime: Boolean = false,
     val oneTime: Boolean = false,
-    val name: String? = null
+    val name: String? = null,
 ) {
     override fun toString(): String =
         "Alarm(hour=$hour, minute=$minute, enabled=$enabled, hasHourlyChime=$hasHourlyChime, oneTime=$oneTime, name=$name)"

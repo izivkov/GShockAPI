@@ -8,7 +8,6 @@ package org.avmedia.gshockapi.casio
 import java.util.UUID
 
 object CasioConstants {
-
     val WATCH_FEATURES_SERVICE_UUID: UUID =
         UUID.fromString("26eb000d-b012-49a8-b1f8-394fb2032b0f")
 
@@ -31,7 +30,6 @@ object CasioConstants {
 
     val CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb002f-b012-49a8-b1f8-394fb2032b0f")
-
 
     /* Others:
     CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID = UUID.fromString("26eb002c-b012-49a8-b1f8-394fb2032b0f");

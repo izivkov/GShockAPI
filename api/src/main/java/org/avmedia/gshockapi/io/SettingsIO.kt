@@ -5,11 +5,11 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import timber.log.Timber
@@ -22,7 +22,7 @@ import kotlin.experimental.or
 
 /**
  * Pure functional core for settings processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles all bitwise operations and transformations deterministically.
  */
@@ -49,15 +49,15 @@ object SettingsIOFunctional {
 
     enum class SettingType {
         SHORT,
-        EXTENDED
+        EXTENDED,
     }
 
     /**
      * Pure decoder: Converts hex array to Settings model.
-     * 
+     *
      * Extracts all settings from the raw byte array using bit masks.
      * No side effects - pure transformation.
-     * 
+     *
      * Protocol format (17 bytes total for extended, 12 for short):
      * [0] - Command code (0x13)
      * [1] - Byte 1 (contains multiple flags)
@@ -67,74 +67,76 @@ object SettingsIOFunctional {
      * [8] - Font flags (0x20 = Classic)
      * [12] - Sound/vibration settings (DW-H5600 specific)
      */
-    fun decode(settingString: String): Result<Settings> = runCatching {
-        val settings = Settings()
-        val settingArray = Utils.toIntArray(settingString)
-        val settingType = if (settingArray.size == 17) SettingType.EXTENDED else SettingType.SHORT
+    fun decode(settingString: String): Result<Settings> =
+        runCatching {
+            val settings = Settings()
+            val settingArray = Utils.toIntArray(settingString)
+            val settingType = if (settingArray.size == 17) SettingType.EXTENDED else SettingType.SHORT
 
-        // Time format (bit 0 of byte 1)
-        if (WatchInfo.hasTimeFormat) {
-            settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
-        } else {
-            settings.timeFormat = "24h" // Default
-        }
-
-        // Button tone and vibration
-        if (!WatchInfo.vibrate) {
-            settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
-        } else if (settingType == SettingType.SHORT) {
-            settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
-        } else {
-            settings.buttonTone = settingArray[12] and SOUND_ONLY != 0
-            settings.keyVibration = settingArray[12] and VIBRATION_ONLY != 0
-            settings.hourlyChime = settingArray[12] and CHIME != 0
-        }
-
-        // Flags from byte 1
-        if (WatchInfo.hasAutoLight) {
-            settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
-        }
-        settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
-        if (WatchInfo.findButtonUserDefined) { // DnD is usually on watches with user defined buttons
-            settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
-        }
-
-        // Date format (byte 4)
-        if (WatchInfo.hasDateFormat) {
-            settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
-        }
-
-        // Language (byte 5)
-        if (WatchInfo.weekLanguageSupported) {
-            settings.language = when (settingArray[5]) {
-                0 -> "English"
-                1 -> "Spanish"
-                2 -> "French"
-                3 -> "German"
-                4 -> "Italian"
-                5 -> "Russian"
-                else -> "English"
+            // Time format (bit 0 of byte 1)
+            if (WatchInfo.hasTimeFormat) {
+                settings.timeFormat = if (settingArray[1] and MASK_24_HOURS != 0) "24h" else "12h"
+            } else {
+                settings.timeFormat = "24h" // Default
             }
+
+            // Button tone and vibration
+            if (!WatchInfo.vibrate) {
+                settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
+            } else if (settingType == SettingType.SHORT) {
+                settings.buttonTone = settingArray[1] and MASK_BUTTON_TONE_OFF == 0
+            } else {
+                settings.buttonTone = settingArray[12] and SOUND_ONLY != 0
+                settings.keyVibration = settingArray[12] and VIBRATION_ONLY != 0
+                settings.hourlyChime = settingArray[12] and CHIME != 0
+            }
+
+            // Flags from byte 1
+            if (WatchInfo.hasAutoLight) {
+                settings.autoLight = settingArray[1] and MASK_AUTO_LIGHT_OFF == 0
+            }
+            settings.powerSavingMode = settingArray[1] and POWER_SAVING_MODE == 0
+            if (WatchInfo.findButtonUserDefined) { // DnD is usually on watches with user defined buttons
+                settings.DnD = settingArray[1] and DO_NOT_DISTURB_OFF == 0
+            }
+
+            // Date format (byte 4)
+            if (WatchInfo.hasDateFormat) {
+                settings.dateFormat = if (settingArray[4] == 1) "DD:MM" else "MM:DD"
+            }
+
+            // Language (byte 5)
+            if (WatchInfo.weekLanguageSupported) {
+                settings.language =
+                    when (settingArray[5]) {
+                        0 -> "English"
+                        1 -> "Spanish"
+                        2 -> "French"
+                        3 -> "German"
+                        4 -> "Italian"
+                        5 -> "Russian"
+                        else -> "English"
+                    }
+            }
+
+            // Light duration (bit 0 of byte 2)
+            val flags = settingArray[2]
+            settings.lightDuration = if ((flags and LIGHT_DURATION_LONG) != 0) "4s" else "2s"
+
+            // Font (byte 8)
+            if (WatchInfo.hasMultipleFonts) {
+                settings.font = if (settingArray[8] and FONT_CLASSIC_MASK != 0) "Classic" else "Standard"
+            }
+
+            settings
         }
-
-        // Light duration (bit 0 of byte 2)
-        val flags = settingArray[2]
-        settings.lightDuration = if ((flags and LIGHT_DURATION_LONG) != 0) "4s" else "2s"
-
-        // Font (byte 8)
-        if (WatchInfo.hasMultipleFonts) {
-            settings.font = if (settingArray[8] and FONT_CLASSIC_MASK != 0) "Classic" else "Standard"
-        }
-
-        settings
-    }
 
     /**
      * Pure encoder: Converts Settings model to byte array.
-     * 
+     *
      * Constructs the raw byte array with all necessary bit flags.
      * No side effects - pure transformation.
-     * 
+     *
      * Returns 17-byte array (or 12-byte for shorter modules) containing all settings encoded per protocol.
      */
     fun encode(settings: JSONObject): ByteArray {
@@ -213,15 +215,16 @@ object SettingsIOFunctional {
 
         // Byte 5 - Language
         if (WatchInfo.weekLanguageSupported) {
-            arr[5] = when (settings.get("language")) {
-                "English" -> 0
-                "Spanish" -> 1
-                "French" -> 2
-                "German" -> 3
-                "Italian" -> 4
-                "Russian" -> 5
-                else -> 0
-            }.toByte()
+            arr[5] =
+                when (settings.get("language")) {
+                    "English" -> 0
+                    "Spanish" -> 1
+                    "French" -> 2
+                    "German" -> 3
+                    "Italian" -> 4
+                    "Russian" -> 5
+                    else -> 0
+                }.toByte()
         }
 
         return arr
@@ -232,7 +235,7 @@ object SettingsIOFunctional {
      */
     fun buildFetchCommand(): ByteArray =
         Utils.byteArray(
-            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
+            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte(),
         )
 }
 
@@ -242,7 +245,7 @@ object SettingsIOFunctional {
 
 /**
  * Settings IO handler with state management.
- * 
+ *
  * Manages the asynchronous request/response cycle for settings data.
  * Uses pure functional core for all transformations.
  */
@@ -253,8 +256,7 @@ object SettingsIO {
     private var state = State()
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun request(): Settings =
-        CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
+    suspend fun request(): Settings = CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
@@ -291,7 +293,7 @@ object SettingsIO {
                         state.deferredResult?.completeExceptionally(error)
                         state = state.copy(deferredResult = null)
                     }
-                }
+                },
             )
     }
 
@@ -307,7 +309,7 @@ object SettingsIO {
         // Use pure function to build command, then execute
         IO.writeCmd(
             GetSetMode.GET,
-            SettingsIOFunctional.buildFetchCommand()
+            SettingsIOFunctional.buildFetchCommand(),
         )
     }
 

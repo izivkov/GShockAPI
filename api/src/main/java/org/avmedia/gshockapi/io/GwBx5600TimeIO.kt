@@ -35,7 +35,6 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object GwBx5600TimeIO {
-
     // Default constants for empty/unpopulated world city slots (Slots 1 & 2)
     private const val CITY_RECORD_FLAG: Byte = 0x01
     private const val EMPTY_SLOT_TRAILING: Byte = 0x00
@@ -161,7 +160,12 @@ object GwBx5600TimeIO {
      * - `[lon]`: 64-bit Double (Big Endian)
      * - `[trailing]`: DST boolean byte (0x01 or 0x00)
      */
-    private fun cityRecord(slotIndex: Int, lat: Double, lon: Double, trailing: Byte): ByteArray {
+    private fun cityRecord(
+        slotIndex: Int,
+        lat: Double,
+        lon: Double,
+        trailing: Byte,
+    ): ByteArray {
         val buf = ByteBuffer.allocate(22).order(ByteOrder.BIG_ENDIAN)
         buf.put(0x14) // Length low byte
         buf.put(0x00) // Length high byte
@@ -177,7 +181,11 @@ object GwBx5600TimeIO {
     /**
      * Issues a request over `SP_REQUEST` and suspends until the target byte count is received.
      */
-    private suspend fun request(channel: StepChannel, reqPayload: ByteArray, expected: Int): ByteArray? {
+    private suspend fun request(
+        channel: StepChannel,
+        reqPayload: ByteArray,
+        expected: Int,
+    ): ByteArray? {
         val deferred = CompletableDeferred<ByteArray>()
         synchronized(channel) {
             channel.expectedBytes = expected
@@ -216,19 +224,20 @@ object GwBx5600TimeIO {
         val casioDow = if (now.dayOfWeek == DayOfWeek.SUNDAY) 7 else now.dayOfWeek.value
         val subSecondByte = ((now.nano.toLong() * 256) / 1_000_000_000).toByte()
 
-        val timeCmd = byteArrayOf(
-            0x09, // CLASS_C_TIME_CURRENT_TIME multiplexer header
-            (now.year and 0xFF).toByte(),
-            ((now.year shr 8) and 0xFF).toByte(),
-            now.monthValue.toByte(),
-            now.dayOfMonth.toByte(),
-            now.hour.toByte(),
-            now.minute.toByte(),
-            now.second.toByte(),
-            casioDow.toByte(),
-            subSecondByte,
-            0x01 // Adjust Reason: Manual Update (App)
-        )
+        val timeCmd =
+            byteArrayOf(
+                0x09, // CLASS_C_TIME_CURRENT_TIME multiplexer header
+                (now.year and 0xFF).toByte(),
+                ((now.year shr 8) and 0xFF).toByte(),
+                now.monthValue.toByte(),
+                now.dayOfMonth.toByte(),
+                now.hour.toByte(),
+                now.minute.toByte(),
+                now.second.toByte(),
+                casioDow.toByte(),
+                subSecondByte,
+                0x01, // Adjust Reason: Manual Update (App)
+            )
         val hexStr = timeCmd.toHexString()
         Timber.i("Step 4/4: time command: $hexStr")
         Connection.write(GetSetMode.SET, timeCmd)
@@ -237,16 +246,21 @@ object GwBx5600TimeIO {
     /**
      * Receives notification fragments, accumulates incoming bytes, and triggers channel completion.
      */
-    private fun onReceivedFor(channel: StepChannel, label: String, data: String) {
+    private fun onReceivedFor(
+        channel: StepChannel,
+        label: String,
+        data: String,
+    ) {
         val deferred = synchronized(channel) { channel.result } ?: return
 
         val ints = org.avmedia.gshockapi.utils.Utils.toIntArray(data)
         val bytes = ByteArray(ints.size) { i -> ints[i].toByte() }
 
-        val (accumulated, expected) = synchronized(channel) {
-            channel.accumulator += bytes
-            channel.accumulator.size to channel.expectedBytes
-        }
+        val (accumulated, expected) =
+            synchronized(channel) {
+                channel.accumulator += bytes
+                channel.accumulator.size to channel.expectedBytes
+            }
 
         Timber.d("GwBx5600TimeIO.onReceived[$label]: accumulated=${accumulated}B / expected=${expected}B")
 
@@ -258,6 +272,8 @@ object GwBx5600TimeIO {
     }
 
     fun onReceivedStep1(data: String) = onReceivedFor(step1Channel, "step1", data)
+
     fun onReceivedStep2(data: String) = onReceivedFor(step2Channel, "step2", data)
+
     fun onReceivedStep3(data: String) = onReceivedFor(step3Channel, "step3", data)
 }

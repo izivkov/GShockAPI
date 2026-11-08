@@ -6,11 +6,11 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.ReminderMasks
+import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.getBooleanSafe
 import org.avmedia.gshockapi.utils.Utils.getJSONArraySafe
@@ -54,35 +54,36 @@ object EventsIOFunctional {
      *
      * 0xFF in position [3] indicates end of reminders.
      */
-    fun reminderTimeToJson(reminderStr: String): Result<JSONObject> = runCatching {
-        val intArr = Utils.toIntArray(reminderStr).toIntArray()
+    fun reminderTimeToJson(reminderStr: String): Result<JSONObject> =
+        runCatching {
+            val intArr = Utils.toIntArray(reminderStr).toIntArray()
 
-        if (intArr.getOrNull(3) == 0xFF) {
-            // 0xFF indicates end of reminders
-            return@runCatching JSONObject("{\"end\": \"\"}")
+            if (intArr.getOrNull(3) == 0xFF) {
+                // 0xFF indicates end of reminders
+                return@runCatching JSONObject("{\"end\": \"\"}")
+            }
+
+            val reminder = intArr.drop(2).toIntArray()
+            val reminderJson = JSONObject()
+
+            // Decode the time period byte (enable + repeat type)
+            val timePeriod = decodeTimePeriod(reminder[0])
+            reminderJson.put("enabled", timePeriod.first)
+            reminderJson.put("repeatPeriod", timePeriod.second)
+
+            // Decode date and day-of-week information
+            val timeDetailMap = decodeTimeDetail(reminder)
+            reminderJson.put("startDate", timeDetailMap["startDate"])
+            reminderJson.put("endDate", timeDetailMap["endDate"])
+
+            @Suppress("UNCHECKED_CAST")
+            reminderJson.put(
+                "daysOfWeek",
+                convertArrayListToJSONArray(timeDetailMap["daysOfWeek"] as ArrayList<String>),
+            )
+
+            JSONObject("{\"time\": $reminderJson}")
         }
-
-        val reminder = intArr.drop(2).toIntArray()
-        val reminderJson = JSONObject()
-
-        // Decode the time period byte (enable + repeat type)
-        val timePeriod = decodeTimePeriod(reminder[0])
-        reminderJson.put("enabled", timePeriod.first)
-        reminderJson.put("repeatPeriod", timePeriod.second)
-
-        // Decode date and day-of-week information
-        val timeDetailMap = decodeTimeDetail(reminder)
-        reminderJson.put("startDate", timeDetailMap["startDate"])
-        reminderJson.put("endDate", timeDetailMap["endDate"])
-
-        @Suppress("UNCHECKED_CAST")
-        reminderJson.put(
-            "daysOfWeek",
-            convertArrayListToJSONArray(timeDetailMap["daysOfWeek"] as ArrayList<String>)
-        )
-
-        JSONObject("{\"time\": $reminderJson}")
-    }
 
     /**
      * Pure decoder: Extracts reminder title data into JSON format.
@@ -96,19 +97,20 @@ object EventsIOFunctional {
      *
      * Example: "30 01 4A 61 6E 75 61 72 79..." decodes to "January"
      */
-    fun reminderTitleToJson(titleByte: String): Result<JSONObject> = runCatching {
-        val intArr = Utils.toIntArray(titleByte)
+    fun reminderTitleToJson(titleByte: String): Result<JSONObject> =
+        runCatching {
+            val intArr = Utils.toIntArray(titleByte)
 
-        if (intArr.getOrNull(2) == 0xFF) {
-            // 0xFF indicates end of reminders
-            return@runCatching JSONObject("{\"end\": \"\"}")
+            if (intArr.getOrNull(2) == 0xFF) {
+                // 0xFF indicates end of reminders
+                return@runCatching JSONObject("{\"end\": \"\"}")
+            }
+
+            val reminderJson = JSONObject()
+            reminderJson.put("title", Utils.toAsciiString(titleByte, 2))
+
+            JSONObject().put("title", reminderJson.getString("title"))
         }
-
-        val reminderJson = JSONObject()
-        reminderJson.put("title", Utils.toAsciiString(titleByte, 2))
-
-        JSONObject().put("title", reminderJson.getString("title"))
-    }
 
     /**
      * Pure encoder: Converts JSON reminder time data to protocol bytes.
@@ -117,20 +119,21 @@ object EventsIOFunctional {
      * Handles all repeat types: NEVER, WEEKLY, MONTHLY, YEARLY.
      * Encodes dates in hex-decimal format (e.g., year 22 = 0x22 = 2022).
      */
-    fun reminderTimeFromJson(reminderJson: JSONObject): Result<IntArray> = runCatching {
-        val enabled = reminderJson.getBooleanSafe("enabled")
-        val repeatPeriod = reminderJson.getStringSafe("repeatPeriod")
-        val startDate = reminderJson.getJSONObjectSafe("startDate")
-        val endDate = reminderJson.getJSONObjectSafe("endDate")
-        val daysOfWeek = reminderJson.getJSONArraySafe("daysOfWeek")
+    fun reminderTimeFromJson(reminderJson: JSONObject): Result<IntArray> =
+        runCatching {
+            val enabled = reminderJson.getBooleanSafe("enabled")
+            val repeatPeriod = reminderJson.getStringSafe("repeatPeriod")
+            val startDate = reminderJson.getJSONObjectSafe("startDate")
+            val endDate = reminderJson.getJSONObjectSafe("endDate")
+            val daysOfWeek = reminderJson.getJSONArraySafe("daysOfWeek")
 
-        var reminderCmd: IntArray = IntArray(0)
+            var reminderCmd: IntArray = IntArray(0)
 
-        reminderCmd += createTimePeriod(enabled, repeatPeriod)
-        reminderCmd += createTimeDetail(repeatPeriod, startDate, endDate, daysOfWeek)
+            reminderCmd += createTimePeriod(enabled, repeatPeriod)
+            reminderCmd += createTimeDetail(repeatPeriod, startDate, endDate, daysOfWeek)
 
-        reminderCmd
-    }
+            reminderCmd
+        }
 
     private fun String.sanitizeEventTitle(): String {
         fun String.filterAllowedCharacters(): String {
@@ -162,10 +165,11 @@ object EventsIOFunctional {
      * Pads title string to 18 bytes (standard title field size in watch protocol).
      * Shorter titles are null-padded; longer titles are truncated.
      */
-    fun reminderTitleFromJson(reminderJson: JSONObject): Result<ByteArray> = runCatching {
-        val titleStr: String = (reminderJson.get("title") as String).sanitizeEventTitle()
-        Utils.toByteArray(titleStr, 18)
-    }
+    fun reminderTitleFromJson(reminderJson: JSONObject): Result<ByteArray> =
+        runCatching {
+            val titleStr: String = (reminderJson.get("title") as String).sanitizeEventTitle()
+            Utils.toByteArray(titleStr, 18)
+        }
 
     // ========================================================================
     // Pure Helper Functions for Time Period Decoding
@@ -178,12 +182,13 @@ object EventsIOFunctional {
     private fun decodeTimePeriod(timePeriod: Int): Pair<Boolean, String> {
         val enabled = timePeriod and ReminderMasks.ENABLED_MASK == ReminderMasks.ENABLED_MASK
 
-        val repeatPeriod = when {
-            timePeriod and ReminderMasks.WEEKLY_MASK == ReminderMasks.WEEKLY_MASK -> "WEEKLY"
-            timePeriod and ReminderMasks.MONTHLY_MASK == ReminderMasks.MONTHLY_MASK -> "MONTHLY"
-            timePeriod and ReminderMasks.YEARLY_MASK == ReminderMasks.YEARLY_MASK -> "YEARLY"
-            else -> "NEVER"
-        }
+        val repeatPeriod =
+            when {
+                timePeriod and ReminderMasks.WEEKLY_MASK == ReminderMasks.WEEKLY_MASK -> "WEEKLY"
+                timePeriod and ReminderMasks.MONTHLY_MASK == ReminderMasks.MONTHLY_MASK -> "MONTHLY"
+                timePeriod and ReminderMasks.YEARLY_MASK == ReminderMasks.YEARLY_MASK -> "YEARLY"
+                else -> "NEVER"
+            }
         return Pair(enabled, repeatPeriod)
     }
 
@@ -314,7 +319,10 @@ object EventsIOFunctional {
      * Encodes enabled flag and repeat period into a single time period byte.
      * Uses bit-OR operations with ReminderMasks constants.
      */
-    private fun createTimePeriod(enabled: Boolean?, repeatPeriod: String?): Int {
+    private fun createTimePeriod(
+        enabled: Boolean?,
+        repeatPeriod: String?,
+    ): Int {
         var timePeriod: Int = 0
 
         if (enabled == true) {
@@ -344,7 +352,7 @@ object EventsIOFunctional {
         repeatPeriod: String?,
         startDate: JSONObject?,
         endDate: JSONObject?,
-        daysOfWeek: JSONArray?
+        daysOfWeek: JSONArray?,
     ): IntArray {
         val timeDetail = IntArray(8)
 
@@ -381,7 +389,11 @@ object EventsIOFunctional {
      *
      * Example: year 2022 -> rem(2000) = 22 -> hexToDec(22) -> "22".toInt(16) = 0x22 = 34
      */
-    private fun encodeDate(timeDetail: IntArray, startDate: JSONObject?, endDate: JSONObject?) {
+    private fun encodeDate(
+        timeDetail: IntArray,
+        startDate: JSONObject?,
+        endDate: JSONObject?,
+    ) {
         // Encode start date (positions 0-2)
         timeDetail[0] = hexToDec(startDate?.getInt("year")?.rem(2000) ?: 0)
         timeDetail[1] = hexToDec(monthStrToInt(startDate?.getString("month") ?: "JANUARY"))
@@ -462,7 +474,7 @@ object EventsIO {
     private data class State(
         val deferredResult: CompletableDeferred<Event>? = null,
         val deferredResultTitle: CompletableDeferred<JSONObject>? = null,
-        val deferredResultTime: CompletableDeferred<JSONObject>? = null
+        val deferredResultTime: CompletableDeferred<JSONObject>? = null,
     )
 
     private var state = State()
@@ -474,11 +486,12 @@ object EventsIO {
         val deferredTime = CompletableDeferred<JSONObject>()
 
         synchronized(this) {
-            state = state.copy(
-                deferredResult = deferred,
-                deferredResultTitle = deferredTitle,
-                deferredResultTime = deferredTime
-            )
+            state =
+                state.copy(
+                    deferredResult = deferred,
+                    deferredResultTitle = deferredTitle,
+                    deferredResultTime = deferredTime,
+                )
         }
 
         suspend fun requestTitle(keyTitle: String): JSONObject {
@@ -491,18 +504,23 @@ object EventsIO {
             return deferredTime.await()
         }
 
-        fun combineJSONObjects(obj1: JSONObject, obj2: JSONObject): JSONObject =
+        fun combineJSONObjects(
+            obj1: JSONObject,
+            obj2: JSONObject,
+        ): JSONObject =
             JSONObject(obj1.toString()).apply {
                 obj2.keys().forEach { key -> put(key, obj2.get(key)) }
             }
 
         suspend fun waitForEvent(eventNumber: Int) {
-            val titleVal = CachedIO.request("30$eventNumber") { key ->
-                requestTitle(key)
-            }
-            val timeVal = CachedIO.request("31$eventNumber") { key ->
-                requestTime(key)
-            }
+            val titleVal =
+                CachedIO.request("30$eventNumber") { key ->
+                    requestTitle(key)
+                }
+            val timeVal =
+                CachedIO.request("31$eventNumber") { key ->
+                    requestTime(key)
+                }
 
             val eventJson = combineJSONObjects(titleVal, timeVal)
             deferred.complete(Event(eventJson))
@@ -518,13 +536,12 @@ object EventsIO {
             return
         }
 
-        fun toJson(events: ArrayList<Event>): String =
-            Gson().toJson(events)
+        fun toJson(events: ArrayList<Event>): String = Gson().toJson(events)
 
         fun <T> appendAndTruncate(
             arr1: ArrayList<T>,
             arr2: ArrayList<T>,
-            maxSize: Int
+            maxSize: Int,
         ): ArrayList<T> =
             ArrayList<T>().apply {
                 addAll(arr1)
@@ -532,10 +549,12 @@ object EventsIO {
                 while (size > maxSize) removeAt(size - 1)
             }
 
-        fun getEnabledEvents(events: ArrayList<Event>): ArrayList<Event> =
-            events.filter { it.enabled } as ArrayList<Event>
+        fun getEnabledEvents(events: ArrayList<Event>): ArrayList<Event> = events.filter { it.enabled } as ArrayList<Event>
 
-        fun padToMax(currentEvents: ArrayList<Event>, maxReminders: Int): ArrayList<Event> =
+        fun padToMax(
+            currentEvents: ArrayList<Event>,
+            maxReminders: Int,
+        ): ArrayList<Event> =
             if (currentEvents.size >= maxReminders) {
                 currentEvents
             } else {
@@ -552,9 +571,9 @@ object EventsIO {
                 appendAndTruncate(
                     getEnabledEvents(events),
                     events.filter { !it.enabled } as ArrayList<Event>,
-                    MAX_REMINDERS
+                    MAX_REMINDERS,
                 ),
-                MAX_REMINDERS
+                MAX_REMINDERS,
             )
 
         Connection.sendMessage("{action: \"SET_REMINDERS\", value: ${toJson(getEventsToSend())} }")
@@ -574,7 +593,7 @@ object EventsIO {
                     synchronized(this) {
                         state.deferredResultTime?.complete(JSONObject())
                     }
-                }
+                },
             )
     }
 
@@ -592,7 +611,7 @@ object EventsIO {
                     synchronized(this) {
                         state.deferredResultTitle?.complete(JSONObject())
                     }
-                }
+                },
             )
     }
 
@@ -613,19 +632,22 @@ object EventsIO {
             }
     }
 
-    private fun processReminderTitle(reminderNumber: Int, reminderJson: JSONObject) {
+    private fun processReminderTitle(
+        reminderNumber: Int,
+        reminderJson: JSONObject,
+    ) {
         EventsIOFunctional.reminderTitleFromJson(reminderJson)
             .fold(
                 onSuccess = { titleBytes ->
                     Utils.byteArrayOfInts(
                         CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code,
-                        reminderNumber
+                        reminderNumber,
                     ) + titleBytes
                 },
                 onFailure = { error ->
                     Timber.e("Failed to encode reminder title: ${error.message}")
                     byteArrayOf()
-                }
+                },
             )
             .let { titleCmd ->
                 if (titleCmd.isNotEmpty()) {
@@ -634,7 +656,10 @@ object EventsIO {
             }
     }
 
-    private fun processReminderTime(reminderNumber: Int, reminderJson: JSONObject) {
+    private fun processReminderTime(
+        reminderNumber: Int,
+        reminderJson: JSONObject,
+    ) {
         EventsIOFunctional.reminderTimeFromJson(reminderJson)
             .fold(
                 onSuccess = { timeBytes ->
@@ -647,7 +672,7 @@ object EventsIO {
                 onFailure = { error ->
                     Timber.e("Failed to encode reminder time: ${error.message}")
                     byteArrayOf()
-                }
+                },
             )
             .let { timeCmd ->
                 if (timeCmd.isNotEmpty()) {
@@ -662,8 +687,8 @@ object EventsIO {
                 GetSetMode.SET,
                 Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TITLE.code,
-                    index
-                ) + ByteArray(18)
+                    index,
+                ) + ByteArray(18),
             )
             CachedIO.remove("30$index")
 
@@ -671,8 +696,8 @@ object EventsIO {
                 GetSetMode.SET,
                 Utils.byteArrayOfInts(
                     CasioConstants.CHARACTERISTICS.CASIO_REMINDER_TIME.code,
-                    index
-                ) + ByteArray(9)
+                    index,
+                ) + ByteArray(9),
             )
             CachedIO.remove("31$index")
         }

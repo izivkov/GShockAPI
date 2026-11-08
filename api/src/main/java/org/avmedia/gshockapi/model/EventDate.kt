@@ -7,12 +7,12 @@ import java.time.Month
 data class EventDate(
     var year: Int, // keeping var for compatibility
     val month: Month,
-    val day: Int
+    val day: Int,
 ) {
     fun equals(eventDate: EventDate): Boolean {
         return eventDate.year == year &&
-                eventDate.month == month &&
-                eventDate.day == day
+            eventDate.month == month &&
+            eventDate.day == day
     }
 
     // Using copy to modify year instead of direct mutation

@@ -19,9 +19,10 @@ From there, the appropriate onReceived() method is called for the corresponding 
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object WatchDataListener {
-    private val dataCallback = IDataReceived { data ->
-        data?.let { MessageDispatcher.onReceived(it, WatchInfo.protocol) }
-    }
+    private val dataCallback =
+        IDataReceived { data ->
+            data?.let { MessageDispatcher.onReceived(it, WatchInfo.protocol) }
+        }
 
     fun init() {
         Connection.setDataCallback(dataCallback)

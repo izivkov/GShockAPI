@@ -22,7 +22,6 @@ import timber.log.Timber
 
 @RequiresApi(Build.VERSION_CODES.O)
 object MessageDispatcher {
-
     // =========================================================================
     // Pure Functional Core: dispatch tables
     // =========================================================================
@@ -31,20 +30,21 @@ object MessageDispatcher {
      * Maps outbound action strings to their handler functions.
      * Pure data — no side effects, no mutable state.
      */
-    private val watchSenders: Map<String, (String) -> Unit> = mapOf(
-        "GET_ALARMS"          to { AlarmsIO.sendToWatch(it) },
-        "SET_ALARMS"          to { AlarmsIO.sendToWatchSet(it) },
-        "GET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatch(it) },
-        "SET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatchSet(it) },
-        "SET_REMINDERS"       to { EventsIO.sendToWatchSet(it) },
-        "GET_SETTINGS"        to { SettingsIO.sendToWatch(it) },
-        "SET_SETTINGS"        to { SettingsIO.sendToWatchSet(it) },
-        "GET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatch(it) },
-        "SET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatchSet(it) },
-        "GET_TIMER"           to { TimerIO.sendToWatch(it) },
-        "SET_TIMER"           to { TimerIO.sendToWatchSet(it) },
-        "SET_TIME"            to { TimeIO.sendToWatchSet(it) },
-    )
+    private val watchSenders: Map<String, (String) -> Unit> =
+        mapOf(
+            "GET_ALARMS" to { AlarmsIO.sendToWatch(it) },
+            "SET_ALARMS" to { AlarmsIO.sendToWatchSet(it) },
+            "GET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatch(it) },
+            "SET_EXERCISE_PROFILE" to { ExerciseIO.sendToWatchSet(it) },
+            "SET_REMINDERS" to { EventsIO.sendToWatchSet(it) },
+            "GET_SETTINGS" to { SettingsIO.sendToWatch(it) },
+            "SET_SETTINGS" to { SettingsIO.sendToWatchSet(it) },
+            "GET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatch(it) },
+            "SET_TIME_ADJUSTMENT" to { TimeAdjustmentIO.sendToWatchSet(it) },
+            "GET_TIMER" to { TimerIO.sendToWatch(it) },
+            "SET_TIMER" to { TimerIO.sendToWatchSet(it) },
+            "SET_TIME" to { TimeIO.sendToWatchSet(it) },
+        )
 
     // =========================================================================
     // Pure helpers
@@ -70,7 +70,10 @@ object MessageDispatcher {
         handler(message)
     }
 
-    fun onReceived(data: String, protocol: WatchProtocol = StandardProtocol) {
+    fun onReceived(
+        data: String,
+        protocol: WatchProtocol = StandardProtocol,
+    ) {
         val key = protocol.extractKey(data) ?: return
         Timber.d("MessageDispatcher: onReceived key: $key, data: $data")
         if (key == 0x10) {

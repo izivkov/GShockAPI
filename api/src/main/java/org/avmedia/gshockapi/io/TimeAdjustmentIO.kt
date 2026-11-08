@@ -5,11 +5,11 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
-import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.utils.Utils
 import org.json.JSONObject
 import timber.log.Timber
@@ -17,7 +17,7 @@ import timber.log.Timber
 @androidx.annotation.Keep
 class TimeAdjustmentInfo(
     var isTimeAdjustmentSet: Boolean = false,
-    var adjustmentTimeMinutes: Int = 0
+    var adjustmentTimeMinutes: Int = 0,
 )
 
 // ============================================================================
@@ -40,8 +40,7 @@ object TimeAdjustmentIOFunctional {
      *     0x00 = syncing on  (time adjustment enabled)
      *     0x80 = syncing off (time adjustment disabled)
      */
-    fun parseIsTimeAdjustmentSet(data: String): Boolean =
-        Utils.toIntArray(data)[12] == 0
+    fun parseIsTimeAdjustmentSet(data: String): Boolean = Utils.toIntArray(data)[12] == 0
 
     /**
      * Pure parser: Extracts the time adjustment minutes.
@@ -60,12 +59,13 @@ object TimeAdjustmentIOFunctional {
      *
      * No side effects - pure extraction.
      */
-    fun decode(data: String): Result<TimeAdjustmentInfo> = runCatching {
-        TimeAdjustmentInfo(
-            isTimeAdjustmentSet = parseIsTimeAdjustmentSet(data),
-            adjustmentTimeMinutes = parseAdjustmentTimeMinutes(data)
-        )
-    }
+    fun decode(data: String): Result<TimeAdjustmentInfo> =
+        runCatching {
+            TimeAdjustmentInfo(
+                isTimeAdjustmentSet = parseIsTimeAdjustmentSet(data),
+                adjustmentTimeMinutes = parseAdjustmentTimeMinutes(data),
+            )
+        }
 
     /**
      * Pure encoder: Encodes time adjustment settings to byte array.
@@ -75,28 +75,32 @@ object TimeAdjustmentIOFunctional {
      * [12] - Time adjustment flag (0x00 = on, 0x80 = off)
      * [13] - Adjustment time minutes
      */
-    fun encode(originalData: String, settings: JSONObject): Result<ByteArray> = runCatching {
-        if (originalData.isEmpty()) {
-            throw IllegalArgumentException("Original data is empty")
-        }
+    fun encode(
+        originalData: String,
+        settings: JSONObject,
+    ): Result<ByteArray> =
+        runCatching {
+            if (originalData.isEmpty()) {
+                throw IllegalArgumentException("Original data is empty")
+            }
 
-        val intArr = Utils.toIntArray(originalData).apply {
-            // syncing off: 110f0f0f0600500004000100->80<-37d2
-            // syncing on:  110f0f0f0600500004000100->00<-37d2
-            this[12] = if (settings.get("timeAdjustment") == true) 0x00 else 0x80
-            this[13] = settings.getInt("adjustmentTimeMinutes")
+            val intArr =
+                Utils.toIntArray(originalData).apply {
+                    // syncing off: 110f0f0f0600500004000100->80<-37d2
+                    // syncing on:  110f0f0f0600500004000100->00<-37d2
+                    this[12] = if (settings.get("timeAdjustment") == true) 0x00 else 0x80
+                    this[13] = settings.getInt("adjustmentTimeMinutes")
+                }
+            val size = intArr.size
+            intArr.foldIndexed(ByteArray(size)) { i, array, value ->
+                array.apply { set(i, value.toByte()) }
+            }
         }
-        val size = intArr.size
-        intArr.foldIndexed(ByteArray(size)) { i, array, value ->
-            array.apply { set(i, value.toByte()) }
-        }
-    }
 
     /**
      * Pure command builder: Creates fetch command for time adjustment.
      */
-    fun buildFetchCommand(): ByteArray =
-        Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
+    fun buildFetchCommand(): ByteArray = Utils.byteArray(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BLE.code.toByte())
 }
 
 // ============================================================================
@@ -113,7 +117,7 @@ object TimeAdjustmentIOFunctional {
 @RequiresApi(Build.VERSION_CODES.O)
 object TimeAdjustmentIO {
     private data class State(
-        val deferredResult: CompletableDeferred<TimeAdjustmentInfo>? = null
+        val deferredResult: CompletableDeferred<TimeAdjustmentInfo>? = null,
     )
 
     private var state = State()
@@ -172,7 +176,7 @@ object TimeAdjustmentIO {
                         state.deferredResult?.completeExceptionally(error)
                         state = state.copy(deferredResult = null)
                     }
-                }
+                },
             )
     }
 
@@ -188,7 +192,7 @@ object TimeAdjustmentIO {
         // Use pure function to build command
         IO.writeCmd(
             GetSetMode.GET,
-            TimeAdjustmentIOFunctional.buildFetchCommand()
+            TimeAdjustmentIOFunctional.buildFetchCommand(),
         )
     }
 
@@ -204,7 +208,7 @@ object TimeAdjustmentIO {
                 },
                 onFailure = { error ->
                     Timber.e("Failed to encode time adjustment: ${error.message}")
-                }
+                },
             )
     }
 }

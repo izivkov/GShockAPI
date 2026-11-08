@@ -14,6 +14,7 @@ activityCompose = "1.13.0"
 composeBom = "2026.03.01"
 material3 = "1.4.0"
 timber = "5.0.1"
+ktlint = "12.1.2"
 
 [libraries]
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
@@ -44,5 +45,6 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 
 

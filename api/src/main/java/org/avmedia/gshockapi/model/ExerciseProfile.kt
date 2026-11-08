@@ -31,13 +31,10 @@ data class ExerciseProfile(
     val weightPounds: Double
         get() = weight / KG_PER_POUND
 
-    fun withHeightInches(inches: Double): ExerciseProfile =
-        copy(height = (inches * CM_PER_INCH).roundToInt())
+    fun withHeightInches(inches: Double): ExerciseProfile = copy(height = (inches * CM_PER_INCH).roundToInt())
 
-    fun withWeightPounds(pounds: Double): ExerciseProfile =
-        copy(weight = (pounds * KG_PER_POUND).roundToInt())
+    fun withWeightPounds(pounds: Double): ExerciseProfile = copy(weight = (pounds * KG_PER_POUND).roundToInt())
 
     /** The pounds value the watch will actually hold after saving these pounds. */
-    fun storedPoundsFor(pounds: Double): Double =
-        (pounds * KG_PER_POUND).roundToInt() / KG_PER_POUND
+    fun storedPoundsFor(pounds: Double): Double = (pounds * KG_PER_POUND).roundToInt() / KG_PER_POUND
 }

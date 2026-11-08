@@ -27,7 +27,7 @@ object GShockPairingManager {
     fun associate(
         context: Context,
         onChooserReady: (IntentSender) -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         val deviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
@@ -36,27 +36,30 @@ object GShockPairingManager {
                     return
                 }
 
-        val deviceFilter = BluetoothDeviceFilter.Builder()
-            .setNamePattern(Pattern.compile(DEVICE_NAME_PATTERN, Pattern.CASE_INSENSITIVE))
-            .build()
+        val deviceFilter =
+            BluetoothDeviceFilter.Builder()
+                .setNamePattern(Pattern.compile(DEVICE_NAME_PATTERN, Pattern.CASE_INSENSITIVE))
+                .build()
 
-        val builder = AssociationRequest.Builder()
-            .addDeviceFilter(deviceFilter)
-            .setSingleDevice(true)
+        val builder =
+            AssociationRequest.Builder()
+                .addDeviceFilter(deviceFilter)
+                .setSingleDevice(true)
 
         val pairingRequest = builder.build()
 
-        val callback = object : CompanionDeviceManager.Callback() {
-            @Deprecated("Deprecated in Java")
-            override fun onDeviceFound(chooserLauncher: IntentSender) {
-                onChooserReady(chooserLauncher)
-            }
+        val callback =
+            object : CompanionDeviceManager.Callback() {
+                @Deprecated("Deprecated in Java")
+                override fun onDeviceFound(chooserLauncher: IntentSender) {
+                    onChooserReady(chooserLauncher)
+                }
 
-            override fun onFailure(error: CharSequence?) {
-                val errorMessage: String = error?.toString() ?: "Companion device pairing failed"
-                onError(errorMessage)
+                override fun onFailure(error: CharSequence?) {
+                    val errorMessage: String = error?.toString() ?: "Companion device pairing failed"
+                    onError(errorMessage)
+                }
             }
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             deviceManager.associate(pairingRequest, context.mainExecutor, callback)
@@ -80,7 +83,7 @@ object GShockPairingManager {
             deviceManager.myAssociations.map { info ->
                 IGShockAPI.Association(
                     info.deviceMacAddress?.toString() ?: "",
-                    info.displayName?.toString()
+                    info.displayName?.toString(),
                 )
             }
         } else {
@@ -93,16 +96,20 @@ object GShockPairingManager {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun disassociate(context: Context, address: String) {
+    fun disassociate(
+        context: Context,
+        address: String,
+    ) {
         val deviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val association = deviceManager.myAssociations.find {
-                    it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
-                }
+                val association =
+                    deviceManager.myAssociations.find {
+                        it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
+                    }
                 if (association != null) {
                     deviceManager.disassociate(association.id)
                     return
@@ -119,7 +126,10 @@ object GShockPairingManager {
 
     @RequiresPermission(Manifest.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE)
     @RequiresApi(Build.VERSION_CODES.S)
-    fun startObservingDevicePresence(context: Context, address: String) {
+    fun startObservingDevicePresence(
+        context: Context,
+        address: String,
+    ) {
         val deviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
@@ -137,35 +147,42 @@ object GShockPairingManager {
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     private fun startObservingApi36(
         deviceManager: CompanionDeviceManager,
-        address: String
+        address: String,
     ) {
-        val association = deviceManager.myAssociations.firstOrNull {
-            it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
-        } ?: return
+        val association =
+            deviceManager.myAssociations.firstOrNull {
+                it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
+            } ?: return
 
-        val request = ObservingDevicePresenceRequest.Builder()
-            .setAssociationId(association.id)
-            .build()
+        val request =
+            ObservingDevicePresenceRequest.Builder()
+                .setAssociationId(association.id)
+                .build()
 
         deviceManager.startObservingDevicePresence(request)
     }
 
     @RequiresPermission(Manifest.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE)
     @RequiresApi(Build.VERSION_CODES.S)
-    fun stopObservingDevicePresence(context: Context, address: String) {
+    fun stopObservingDevicePresence(
+        context: Context,
+        address: String,
+    ) {
         val deviceManager: CompanionDeviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as? CompanionDeviceManager
                 ?: return
 
         // Sync with start logic: Use the modern Request-based API for Baklava+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-            val association = deviceManager.myAssociations.firstOrNull {
-                it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
-            } ?: return
+            val association =
+                deviceManager.myAssociations.firstOrNull {
+                    it.deviceMacAddress?.toString().equals(address, ignoreCase = true)
+                } ?: return
 
-            val request: ObservingDevicePresenceRequest = ObservingDevicePresenceRequest.Builder()
-                .setAssociationId(association.id)
-                .build()
+            val request: ObservingDevicePresenceRequest =
+                ObservingDevicePresenceRequest.Builder()
+                    .setAssociationId(association.id)
+                    .build()
 
             deviceManager.stopObservingDevicePresence(request)
         } else {

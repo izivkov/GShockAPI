@@ -7,7 +7,6 @@ import kotlinx.coroutines.CompletableDeferred
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
 import org.avmedia.gshockapi.utils.Utils.hexToBytes
-import timber.log.Timber
 
 // ============================================================================
 // Pure Functional Core: App Info Scratchpad Processing
@@ -15,7 +14,7 @@ import timber.log.Timber
 
 /**
  * Pure functional core for app info scratchpad operations.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles buffer initialization, validation, and data access.
  */
@@ -30,71 +29,82 @@ object AppInfoIOFunctional {
 
     /**
      * Pure validator: Checks if scratchpad has been initialized.
-     * 
+     *
      * Validates that the magic number is present at the expected index.
      * No side effects - simple inspection.
      */
-    fun isScratchpadInitialized(buffer: ByteArray): Boolean =
-        buffer.getOrNull(MAGIC_NUMBER_INDEX) == MAGIC_NUMBER.toByte()
+    fun isScratchpadInitialized(buffer: ByteArray): Boolean = buffer.getOrNull(MAGIC_NUMBER_INDEX) == MAGIC_NUMBER.toByte()
 
     /**
      * Pure validator: Checks if buffer needs reinitialization.
-     * 
+     *
      * Returns true if magic number is missing (watch was reset).
      * Protocol: Watch reset produces 0x22 FF FF FF FF FF FF FF FF FF FF 00
      */
-    fun needsReinit(buffer: ByteArray): Boolean =
-        !isScratchpadInitialized(buffer)
+    fun needsReinit(buffer: ByteArray): Boolean = !isScratchpadInitialized(buffer)
 
     /**
      * Pure builder: Creates an initialized scratchpad buffer.
-     * 
+     *
      * Initializes the buffer with command code and magic number.
      * No side effects - pure construction.
      */
-    fun createInitializedBuffer(): ByteArray = ByteArray(BUFFER_SIZE).apply {
-        this[CMD_BYTE_INDEX] = 0x22.toByte()
-        this[MAGIC_NUMBER_INDEX] = MAGIC_NUMBER.toByte()
-        // Rest remains 0x00
-    }
+    fun createInitializedBuffer(): ByteArray =
+        ByteArray(BUFFER_SIZE).apply {
+            this[CMD_BYTE_INDEX] = 0x22.toByte()
+            this[MAGIC_NUMBER_INDEX] = MAGIC_NUMBER.toByte()
+            // Rest remains 0x00
+        }
 
     /**
      * Pure validator: Checks if user data write is valid.
-     * 
+     *
      * Validates bounds before write operation.
      */
-    fun isValidWrite(startIndex: Int, dataSize: Int): Result<Unit> = runCatching {
-        val userDataSize = BUFFER_SIZE - USER_DATA_START_INDEX
-        if (startIndex < 0 || startIndex + dataSize > userDataSize) {
-            throw IllegalArgumentException(
-                "Data exceeds user data buffer size. Max size: $userDataSize bytes, " +
-                "requested: startIndex=$startIndex, size=$dataSize"
-            )
+    fun isValidWrite(
+        startIndex: Int,
+        dataSize: Int,
+    ): Result<Unit> =
+        runCatching {
+            val userDataSize = BUFFER_SIZE - USER_DATA_START_INDEX
+            if (startIndex < 0 || startIndex + dataSize > userDataSize) {
+                throw IllegalArgumentException(
+                    "Data exceeds user data buffer size. Max size: $userDataSize bytes, " +
+                        "requested: startIndex=$startIndex, size=$dataSize",
+                )
+            }
         }
-    }
 
     /**
      * Pure validator: Checks if user data read is valid.
-     * 
+     *
      * Validates bounds before read operation.
      */
-    fun isValidRead(startIndex: Int, len: Int): Result<Unit> = runCatching {
-        val userDataSize = BUFFER_SIZE - USER_DATA_START_INDEX
-        if (startIndex < 0 || len < 0 || startIndex + len > userDataSize) {
-            throw IllegalArgumentException(
-                "Invalid read request. Index or length is out of bounds. " +
-                "Max size: $userDataSize, requested: startIndex=$startIndex, len=$len"
-            )
+    fun isValidRead(
+        startIndex: Int,
+        len: Int,
+    ): Result<Unit> =
+        runCatching {
+            val userDataSize = BUFFER_SIZE - USER_DATA_START_INDEX
+            if (startIndex < 0 || len < 0 || startIndex + len > userDataSize) {
+                throw IllegalArgumentException(
+                    "Invalid read request. Index or length is out of bounds. " +
+                        "Max size: $userDataSize, requested: startIndex=$startIndex, len=$len",
+                )
+            }
         }
-    }
 
     /**
      * Pure transformer: Writes data into a scratchpad buffer.
-     * 
+     *
      * Creates new buffer with data written at specified position.
      * No side effects - returns new buffer.
      */
-    fun writeUserData(buffer: ByteArray, data: ByteArray, startIndex: Int): Result<ByteArray> =
+    fun writeUserData(
+        buffer: ByteArray,
+        data: ByteArray,
+        startIndex: Int,
+    ): Result<ByteArray> =
         isValidWrite(startIndex, data.size).map {
             ByteArray(BUFFER_SIZE).apply {
                 System.arraycopy(buffer, 0, this, 0, BUFFER_SIZE)
@@ -104,15 +114,19 @@ object AppInfoIOFunctional {
 
     /**
      * Pure extractor: Reads data from a scratchpad buffer.
-     * 
+     *
      * Extracts data at specified position from buffer.
      * No side effects - pure extraction.
      */
-    fun readUserData(buffer: ByteArray, startIndex: Int, len: Int): Result<ByteArray> =
+    fun readUserData(
+        buffer: ByteArray,
+        startIndex: Int,
+        len: Int,
+    ): Result<ByteArray> =
         isValidRead(startIndex, len).map {
             buffer.copyOfRange(
                 USER_DATA_START_INDEX + startIndex,
-                USER_DATA_START_INDEX + startIndex + len
+                USER_DATA_START_INDEX + startIndex + len,
             )
         }
 }
@@ -123,21 +137,21 @@ object AppInfoIOFunctional {
 
 /**
  * App Info IO handler with state management.
- * 
+ *
  * Manages scratchpad data for app configuration.
  * This is needed to re-enable button D (Lower-right) after watch reset or BLE clear.
  * The value is a hard-coded magic number (0x93), matching the official app behavior.
- * 
+ *
  * Protocol: When watch is reset, app info arrives as:
  *   0x22 FF FF FF FF FF FF FF FF FF FF 00
  * In this case, we reinitialize with the magic number so button D works again.
- * 
+ *
  * Uses pure functional core for all buffer operations.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object AppInfoIO {
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null
+        val deferredResult: CompletableDeferred<String>? = null,
     )
 
     private var state = State()
@@ -210,7 +224,7 @@ object AppInfoIO {
                 },
                 onFailure = { error ->
                     throw error
-                }
+                },
             )
     }
 
@@ -225,6 +239,7 @@ object AppInfoIO {
      * @throws IllegalStateException if the scratchpad is not initialized.
      * @throws IllegalArgumentException if the requested index or length is out of bounds.
      */
+
     /**
      * Retrieves all data from the user data area of the scratchpad.
      *
@@ -244,7 +259,7 @@ object AppInfoIO {
         return AppInfoIOFunctional.readUserData(lastReceivedData, 0, userDataSize)
             .fold(
                 onSuccess = { data -> data },
-                onFailure = { error -> throw error }
+                onFailure = { error -> throw error },
             )
     }
 }

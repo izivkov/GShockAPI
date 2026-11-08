@@ -26,7 +26,6 @@ This class is used during development to mock the GShock API.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 class GShockAPIMock(private val context: Context) : IGShockAPI {
-
     private val scope = CoroutineScope(Dispatchers.Default)
 
     init {
@@ -158,20 +157,25 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return "0x22 C7 67 B2 F0 78 86 71 6A 76 EC 02"
     }
 
-    override suspend fun setTime(timeZone: String, timeMs: Long?, offsetFormSystemTime: Long?) {
+    override suspend fun setTime(
+        timeZone: String,
+        timeMs: Long?,
+        offsetFormSystemTime: Long?,
+    ) {
         Timber.i("Time set to $timeZone")
     }
 
     override suspend fun getAlarms(): ArrayList<Alarm> {
         delay(0)
 
-        val alarmList: ArrayList<Alarm> = arrayListOf(
-            Alarm(hour = 6, minute = 45, enabled = true, hasHourlyChime = true),
-            Alarm(hour = 8, minute = 0, enabled = true, hasHourlyChime = false),
-            Alarm(hour = 20, minute = 0, enabled = true, hasHourlyChime = false),
-            Alarm(hour = 20, minute = 50, enabled = false, hasHourlyChime = false),
-            Alarm(hour = 9, minute = 25, enabled = false, hasHourlyChime = false)
-        )
+        val alarmList: ArrayList<Alarm> =
+            arrayListOf(
+                Alarm(hour = 6, minute = 45, enabled = true, hasHourlyChime = true),
+                Alarm(hour = 8, minute = 0, enabled = true, hasHourlyChime = false),
+                Alarm(hour = 20, minute = 0, enabled = true, hasHourlyChime = false),
+                Alarm(hour = 20, minute = 50, enabled = false, hasHourlyChime = false),
+                Alarm(hour = 9, minute = 25, enabled = false, hasHourlyChime = false),
+            )
         return alarmList
     }
 
@@ -188,64 +192,71 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     }
 
     override suspend fun getEventsFromWatch(): ArrayList<Event> {
-
-        val eventList: ArrayList<Event> = arrayListOf(
-            Event(
-                title = "Event 1",
-                startDate = EventDate(
-                    2024,
-                    Month.MAY,
-                    1
-                ), // Replace with actual EventDate structure
-                endDate = EventDate(2024, Month.MAY, 2),
-                repeatPeriod = RepeatPeriod.NEVER,
-                daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
-                enabled = false,
-                incompatible = false
-            ),
-            Event(
-                title = "Event 2",
-                startDate = EventDate(
-                    2024,
-                    Month.MAY,
-                    1
-                ), // Replace with actual EventDate structure
-                endDate = EventDate(2024, Month.MAY, 2),
-                repeatPeriod = RepeatPeriod.NEVER,
-                daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
-                enabled = false,
-                incompatible = false
-            ),
-            Event(
-                title = "Event 3",
-                startDate = EventDate(
-                    2024,
-                    Month.MAY,
-                    1
-                ), // Replace with actual EventDate structure
-                endDate = EventDate(2024, Month.MAY, 2),
-                repeatPeriod = RepeatPeriod.NEVER,
-                daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
-                enabled = false,
-                incompatible = false
-            ),
-            Event(
-                title = "Event 4",
-                startDate = EventDate(
-                    2024,
-                    Month.MAY,
-                    1
-                ), // Replace with actual EventDate structure
-                endDate = EventDate(2024, Month.MAY, 2),
-                repeatPeriod = RepeatPeriod.NEVER,
-                daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
-                enabled = false,
-                incompatible = false
+        val eventList: ArrayList<Event> =
+            arrayListOf(
+                Event(
+                    title = "Event 1",
+                    startDate =
+                        EventDate(
+                            2024,
+                            Month.MAY,
+                            1,
+                        ),
+                    // Replace with actual EventDate structure
+                    endDate = EventDate(2024, Month.MAY, 2),
+                    repeatPeriod = RepeatPeriod.NEVER,
+                    daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
+                    enabled = false,
+                    incompatible = false,
+                ),
+                Event(
+                    title = "Event 2",
+                    startDate =
+                        EventDate(
+                            2024,
+                            Month.MAY,
+                            1,
+                        ),
+                    // Replace with actual EventDate structure
+                    endDate = EventDate(2024, Month.MAY, 2),
+                    repeatPeriod = RepeatPeriod.NEVER,
+                    daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
+                    enabled = false,
+                    incompatible = false,
+                ),
+                Event(
+                    title = "Event 3",
+                    startDate =
+                        EventDate(
+                            2024,
+                            Month.MAY,
+                            1,
+                        ),
+                    // Replace with actual EventDate structure
+                    endDate = EventDate(2024, Month.MAY, 2),
+                    repeatPeriod = RepeatPeriod.NEVER,
+                    daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
+                    enabled = false,
+                    incompatible = false,
+                ),
+                Event(
+                    title = "Event 4",
+                    startDate =
+                        EventDate(
+                            2024,
+                            Month.MAY,
+                            1,
+                        ),
+                    // Replace with actual EventDate structure
+                    endDate = EventDate(2024, Month.MAY, 2),
+                    repeatPeriod = RepeatPeriod.NEVER,
+                    daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
+                    enabled = false,
+                    incompatible = false,
+                ),
             )
-        )
 
         return eventList
-
     }
 
     override suspend fun getEventFromWatch(eventNumber: Int): Event {
@@ -256,7 +267,7 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
             repeatPeriod = RepeatPeriod.NEVER,
             daysOfWeek = arrayListOf(DayOfWeek.MONDAY),
             enabled = false,
-            incompatible = false
+            incompatible = false,
         )
     }
 
@@ -342,8 +353,16 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         return false
     }
 
-    override fun associate(context: Context, delegate: ICDPDelegate) {}
-    override fun disassociate(context: Context, address: String) {}
+    override fun associate(
+        context: Context,
+        delegate: ICDPDelegate,
+    ) {}
+
+    override fun disassociate(
+        context: Context,
+        address: String,
+    ) {}
+
     override fun getAssociationsWithNames(context: Context): List<IGShockAPI.Association> {
         return emptyList()
     }
@@ -354,20 +373,20 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
 
     override fun startObservingDevicePresence(
         context: Context,
-        address: String
+        address: String,
     ) {
     }
 
     override fun stopObservingDevicePresence(
         context: Context,
-        address: String
+        address: String,
     ) {
     }
 
     override fun scan(
         context: Context,
         filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
+        onDeviceFound: (DeviceInfo) -> Unit,
     ) {
     }
 
@@ -377,12 +396,11 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
     override fun startFallbackScan(
         context: Context,
         addresses: List<String>,
-        pendingIntent: android.app.PendingIntent
+        pendingIntent: android.app.PendingIntent,
     ) {
     }
 
     override fun isConnectedTo(address: String): Boolean {
         TODO("Not yet implemented")
     }
-
 }

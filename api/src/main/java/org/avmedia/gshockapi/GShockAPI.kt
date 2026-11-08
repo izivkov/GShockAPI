@@ -5,6 +5,8 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
@@ -29,8 +31,6 @@ import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.time.ZoneId
 
@@ -70,8 +70,7 @@ import java.time.ZoneId
  */
 
 @RequiresApi(Build.VERSION_CODES.O)
- class GShockAPI(private val context: Context) : IGShockAPI {
-
+class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * This function waits for the watch to connect to the phone.
      * When connected, it returns and emits a `ConnectionSetupComplete` event, which
@@ -112,22 +111,24 @@ import java.time.ZoneId
             Timber.e(error, "Failed to read app info; continuing watch initialization")
         }
 
-        val button = try {
-            Timber.i("Requesting watch button info")
-            withTimeoutOrNull(INITIALIZATION_REQUEST_TIMEOUT_MS) { getPressedButton() }
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            Timber.e(error, "Failed to read button info")
-            null
-        }
+        val button =
+            try {
+                Timber.i("Requesting watch button info")
+                withTimeoutOrNull(INITIALIZATION_REQUEST_TIMEOUT_MS) { getPressedButton() }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Timber.e(error, "Failed to read button info")
+                null
+            }
 
         if (button == null || button == IO.WatchButton.INVALID) {
-            val message = if (button == null) {
-                "Timed out waiting for button info from the watch"
-            } else {
-                "Received invalid button info from the watch"
-            }
+            val message =
+                if (button == null) {
+                    "Timed out waiting for button info from the watch"
+                } else {
+                    "Received invalid button info from the watch"
+                }
             Timber.e(message)
             ProgressEvents.onNext("Error", message)
             return false
@@ -154,13 +155,13 @@ import java.time.ZoneId
     override fun scan(
         context: Context,
         filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
+        onDeviceFound: (DeviceInfo) -> Unit,
     ) {
         Connection.scan(
             context,
             { isBluetoothEnabled(context) },
             filter,
-            onDeviceFound
+            onDeviceFound,
         )
     }
 
@@ -181,11 +182,10 @@ import java.time.ZoneId
     override fun startFallbackScan(
         context: Context,
         addresses: List<String>,
-        pendingIntent: android.app.PendingIntent
+        pendingIntent: android.app.PendingIntent,
     ) {
         Connection.startFallbackScan(context, addresses, pendingIntent)
     }
-
 
     /**
      * Returns a Boolean value indicating if the watch is currently commenced to the phone
@@ -463,7 +463,6 @@ import java.time.ZoneId
         return AppInfoIO.wasScratchpadReset
     }
 
-
     /**
      * Sets the current time on the watch from the time on the phone. In addition, it can optionally set the Home Time
      * to the current time zone. If timezone changes during travel, the watch will automatically be set to the
@@ -477,7 +476,11 @@ import java.time.ZoneId
      *      setTime("Europe/Sofia")
      *  ```
      */
-    override suspend fun setTime(timeZone: String, timeMs: Long?, offsetFormSystemTime: Long?) {
+    override suspend fun setTime(
+        timeZone: String,
+        timeMs: Long?,
+        offsetFormSystemTime: Long?,
+    ) {
         if (!ZoneId.getAvailableZoneIds().contains(timeZone)) {
             Timber.e("setTime: Invalid timezone $timeZone passed")
             ProgressEvents.onNext("ApiError")
@@ -522,7 +525,6 @@ import java.time.ZoneId
      * @return ArrayList<[org.avmedia.gshockapi.model.Event]>
      */
     override suspend fun getEventsFromWatch(): ArrayList<Event> {
-
         val events = ArrayList<Event>()
 
         events.add(getEventFromWatch(1))
@@ -634,8 +636,7 @@ import java.time.ZoneId
      *
      * @return true if the notification service is supported.
      */
-    override fun supportsAppNotifications(): Boolean =
-        Connection.isServiceSupported(GetSetMode.NOTIFY)
+    override fun supportsAppNotifications(): Boolean = Connection.isServiceSupported(GetSetMode.NOTIFY)
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:
@@ -726,7 +727,10 @@ import java.time.ZoneId
      * @param context [Context]
      * @param delegate Callback for when the device chooser is ready or if an error occurs.
      */
-    override fun associate(context: Context, delegate: ICDPDelegate) {
+    override fun associate(
+        context: Context,
+        delegate: ICDPDelegate,
+    ) {
         GShockPairingManager.associate(context, delegate::onChooserReady, delegate::onError)
     }
 
@@ -736,7 +740,10 @@ import java.time.ZoneId
      * @param context [Context]
      * @param address The Bluetooth address of the device to disassociate.
      */
-    override fun disassociate(context: Context, address: String) {
+    override fun disassociate(
+        context: Context,
+        address: String,
+    ) {
         GShockPairingManager.disassociate(context, address)
     }
 
@@ -769,7 +776,10 @@ import java.time.ZoneId
      */
     @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
     @RequiresApi(Build.VERSION_CODES.S)
-    override fun startObservingDevicePresence(context: Context, address: String) {
+    override fun startObservingDevicePresence(
+        context: Context,
+        address: String,
+    ) {
         GShockPairingManager.startObservingDevicePresence(context, address)
     }
 
@@ -781,7 +791,10 @@ import java.time.ZoneId
      */
     @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
     @RequiresApi(Build.VERSION_CODES.S)
-    override fun stopObservingDevicePresence(context: Context, address: String) {
+    override fun stopObservingDevicePresence(
+        context: Context,
+        address: String,
+    ) {
         GShockPairingManager.stopObservingDevicePresence(context, address)
     }
 }

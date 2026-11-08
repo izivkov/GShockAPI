@@ -22,7 +22,6 @@ import org.avmedia.gshockapi.ble.GShockScanner.SCAN_INTERVAL_MS
 import timber.log.Timber
 
 object GShockScanner {
-
     private var loopJob: Job? = null
     private val loopScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -40,7 +39,7 @@ object GShockScanner {
         context: Context,
         isBluetoothOn: () -> Boolean,
         filter: (DeviceInfo) -> Boolean,
-        onDeviceFound: (DeviceInfo) -> Unit
+        onDeviceFound: (DeviceInfo) -> Unit,
     ) {
         if (loopJob?.isActive == true) {
             Timber.d("GShockScanner: already running, ignoring startScan()")
@@ -51,79 +50,86 @@ object GShockScanner {
             (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
         val bleScanner = bluetoothAdapter.bluetoothLeScanner
 
-        val scanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-            .build()
-
-        val scanFilters = listOf(
-            ScanFilter.Builder()
-                .setDeviceName(null)
+        val scanSettings =
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
                 .build()
-        )
 
-        loopJob = loopScope.launch {
-            Timber.i("GShockScanner: scan loop started")
+        val scanFilters =
+            listOf(
+                ScanFilter.Builder()
+                    .setDeviceName(null)
+                    .build(),
+            )
 
-            while (isActive) {
-                if (!isBluetoothOn()) {
-                    Timber.w("GShockScanner: Bluetooth not enabled, waiting...")
-                    delay(BLUETOOTH_RETRY_DELAY_MS)
-                    continue
-                }
+        loopJob =
+            loopScope.launch {
+                Timber.i("GShockScanner: scan loop started")
 
-                var lastFoundAddress: String? = null
+                while (isActive) {
+                    if (!isBluetoothOn()) {
+                        Timber.w("GShockScanner: Bluetooth not enabled, waiting...")
+                        delay(BLUETOOTH_RETRY_DELAY_MS)
+                        continue
+                    }
 
-                val scanCallback = object : ScanCallback() {
-                    override fun onScanResult(callbackType: Int, result: ScanResult) {
-                        val address = result.device.address ?: return
-                        val name = result.device.name ?: return
+                    var lastFoundAddress: String? = null
 
-                        if (address == lastFoundAddress) return
-                        lastFoundAddress = address
+                    val scanCallback =
+                        object : ScanCallback() {
+                            override fun onScanResult(
+                                callbackType: Int,
+                                result: ScanResult,
+                            ) {
+                                val address = result.device.address ?: return
+                                val name = result.device.name ?: return
 
-                        val info = DeviceInfo(name, address)
-                        if (filter(info)) {
-                            Timber.i("GShockScanner: matched $address ($name)")
-                            onDeviceFound(info)
+                                if (address == lastFoundAddress) return
+                                lastFoundAddress = address
+
+                                val info = DeviceInfo(name, address)
+                                if (filter(info)) {
+                                    Timber.i("GShockScanner: matched $address ($name)")
+                                    onDeviceFound(info)
+                                }
+                            }
+
+                            override fun onScanFailed(errorCode: Int) {
+                                Timber.e("GShockScanner: scan failed with error $errorCode")
+                            }
+                        }
+
+                    Timber.d("GShockScanner: scan window opening")
+                    try {
+                        try {
+                            bleScanner?.startScan(scanFilters, scanSettings, scanCallback)
+                        } catch (e: SecurityException) {
+                            Timber.e(e, "GShockScanner: missing BLE scan permission")
+                        }
+
+                        delay(SCAN_DURATION_MS)
+                    } finally {
+                        try {
+                            bleScanner?.stopScan(scanCallback)
+                        } catch (e: SecurityException) {
+                            Timber.e(e, "GShockScanner: missing BLE scan permission")
                         }
                     }
+                    Timber.d("GShockScanner: scan window closed, pausing ${SCAN_INTERVAL_MS}ms")
 
-                    override fun onScanFailed(errorCode: Int) {
-                        Timber.e("GShockScanner: scan failed with error $errorCode")
-                    }
+                    delay(SCAN_INTERVAL_MS)
                 }
 
-                Timber.d("GShockScanner: scan window opening")
-                try {
-                    try {
-                        bleScanner?.startScan(scanFilters, scanSettings, scanCallback)
-                    } catch (e: SecurityException) {
-                        Timber.e(e, "GShockScanner: missing BLE scan permission")
-                    }
-
-                    delay(SCAN_DURATION_MS)
-                } finally {
-                    try {
-                        bleScanner?.stopScan(scanCallback)
-                    } catch (e: SecurityException) {
-                        Timber.e(e, "GShockScanner: missing BLE scan permission")
-                    }
-                }
-                Timber.d("GShockScanner: scan window closed, pausing ${SCAN_INTERVAL_MS}ms")
-
-                delay(SCAN_INTERVAL_MS)
+                Timber.i("GShockScanner: scan loop ended")
             }
-
-            Timber.i("GShockScanner: scan loop ended")
-        }
     }
 
     @SuppressLint("MissingPermission")
     fun startFallbackScan(
         context: Context,
         addresses: List<String>,
-        pendingIntent: android.app.PendingIntent
+        pendingIntent: android.app.PendingIntent,
     ) {
         val bluetoothManager =
             context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -143,11 +149,12 @@ object GShockScanner {
             return
         }
 
-        val filters = addresses.map { address ->
-            ScanFilter.Builder()
-                .setDeviceAddress(address.uppercase())
-                .build()
-        }
+        val filters =
+            addresses.map { address ->
+                ScanFilter.Builder()
+                    .setDeviceAddress(address.uppercase())
+                    .build()
+            }
 
         val settings =
             ScanSettings.Builder()

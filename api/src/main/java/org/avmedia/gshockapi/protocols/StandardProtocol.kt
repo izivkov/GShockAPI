@@ -2,10 +2,6 @@ package org.avmedia.gshockapi.protocols
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import org.avmedia.gshockapi.WatchInfo
-import org.avmedia.gshockapi.model.Alarm
-import org.avmedia.gshockapi.model.ExerciseProfile
-import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.HomeTimeIOFunctional
@@ -16,8 +12,10 @@ import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.TimerIO
 import org.avmedia.gshockapi.io.WatchConditionIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
+import org.avmedia.gshockapi.model.Alarm
+import org.avmedia.gshockapi.model.ExerciseProfile
+import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.utils.Utils
-import kotlin.math.max
 
 @RequiresApi(Build.VERSION_CODES.O)
 open class StandardProtocol : WatchProtocol {
@@ -27,7 +25,10 @@ open class StandardProtocol : WatchProtocol {
         return runCatching { Utils.toIntArray(data)[0] }.getOrNull()
     }
 
-    override fun unwrapPayload(data: String, key: Int): String {
+    override fun unwrapPayload(
+        data: String,
+        key: Int,
+    ): String {
         return data
     }
 
@@ -35,7 +36,10 @@ open class StandardProtocol : WatchProtocol {
         return "28"
     }
 
-    override suspend fun setTime(timeMs: Long?, offset: Long?) {
+    override suspend fun setTime(
+        timeMs: Long?,
+        offset: Long?,
+    ) {
         // TimeIO owns the complete setup sequence and tailors it to the
         // connected model.  Performing setup here as well used to force a
         // world-city (0x1f) transaction for watches such as the ABL-100WE,

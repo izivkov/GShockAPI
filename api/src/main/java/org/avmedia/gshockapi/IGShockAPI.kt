@@ -195,7 +195,11 @@ interface IGShockAPI {
      * @param timeZone The target timezone ID (e.g., "Europe/Sofia"). Defaults to phone's current timezone.
      * @param timeMs Optional timestamp in milliseconds to set. Defaults to current time.
      */
-    suspend fun setTime(timeZone: String = TimeZone.getDefault().id, timeMs: Long? = null, offsetFormSystemTime: Long? = null)
+    suspend fun setTime(
+        timeZone: String = TimeZone.getDefault().id,
+        timeMs: Long? = null,
+        offsetFormSystemTime: Long? = null,
+    )
 
     /**
      * Retrieves the list of alarms from the watch.
@@ -363,7 +367,10 @@ interface IGShockAPI {
      * @param context Android context.
      * @param delegate Callback to handle chooser readiness or errors.
      */
-    fun associate(context: Context, delegate: ICDPDelegate)
+    fun associate(
+        context: Context,
+        delegate: ICDPDelegate,
+    )
 
     /**
      * Removes an existing device association.
@@ -371,7 +378,10 @@ interface IGShockAPI {
      * @param context Android context.
      * @param address The MAC address of the device to disassociate.
      */
-    fun disassociate(context: Context, address: String)
+    fun disassociate(
+        context: Context,
+        address: String,
+    )
 
     /**
      * Data class representing a device association.
@@ -403,7 +413,10 @@ interface IGShockAPI {
      */
     @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
     @RequiresApi(Build.VERSION_CODES.S)
-    fun startObservingDevicePresence(context: Context, address: String)
+    fun startObservingDevicePresence(
+        context: Context,
+        address: String,
+    )
 
     /**
      * Stops background observation of a device's presence.
@@ -413,7 +426,10 @@ interface IGShockAPI {
      */
     @RequiresPermission("android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE")
     @RequiresApi(Build.VERSION_CODES.S)
-    fun stopObservingDevicePresence(context: Context, address: String)
+    fun stopObservingDevicePresence(
+        context: Context,
+        address: String,
+    )
 
     /**
      * Scans for G-Shock devices in the foreground.
@@ -422,7 +438,11 @@ interface IGShockAPI {
      * @param filter Lambda to filter discovered devices.
      * @param onDeviceFound Callback invoked for each matching device discovered.
      */
-    fun scan(context: Context, filter: (DeviceInfo) -> Boolean, onDeviceFound: (DeviceInfo) -> Unit)
+    fun scan(
+        context: Context,
+        filter: (DeviceInfo) -> Boolean,
+        onDeviceFound: (DeviceInfo) -> Unit,
+    )
 
     /**
      * Stops an active foreground scan.
@@ -436,6 +456,11 @@ interface IGShockAPI {
      * @param addresses List of MAC addresses to scan for.
      * @param pendingIntent Intent to trigger when a matching device is found.
      */
-    fun startFallbackScan(context: Context, addresses: List<String>, pendingIntent: android.app.PendingIntent)
+    fun startFallbackScan(
+        context: Context,
+        addresses: List<String>,
+        pendingIntent: android.app.PendingIntent,
+    )
+
     fun isConnectedTo(address: String): Boolean
 }

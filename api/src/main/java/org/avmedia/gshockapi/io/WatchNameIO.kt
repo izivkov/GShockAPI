@@ -13,7 +13,7 @@ import timber.log.Timber
 
 /**
  * Pure functional core for watch name processing.
- * 
+ *
  * All methods are pure: no mutable state, no side effects.
  * Handles watch name parsing and sanitization.
  */
@@ -21,21 +21,22 @@ import timber.log.Timber
 object WatchNameIOFunctional {
     /**
      * Pure parser: Extracts and sanitizes watch name from data.
-     * 
+     *
      * Converts raw data (starting at index 1) to ASCII string,
      * then removes non-ASCII characters.
      * No side effects - pure string transformation.
-     * 
+     *
      * @param data Raw data string from watch
      * @return Sanitized watch name
      */
-    fun parseWatchName(data: String): Result<String> = runCatching {
-        if (data.isEmpty()) {
-            throw IllegalArgumentException("Empty watch name data")
+    fun parseWatchName(data: String): Result<String> =
+        runCatching {
+            if (data.isEmpty()) {
+                throw IllegalArgumentException("Empty watch name data")
+            }
+            val asciiName = Utils.toAsciiString(data, 1)
+            Utils.trimNonAsciiCharacters(asciiName)
         }
-        val asciiName = Utils.toAsciiString(data, 1)
-        Utils.trimNonAsciiCharacters(asciiName)
-    }
 }
 
 // ============================================================================
@@ -44,20 +45,19 @@ object WatchNameIOFunctional {
 
 /**
  * Watch Name IO handler with state management.
- * 
+ *
  * Retrieves the user-assigned name of the watch.
  * Uses pure functional core for data parsing and sanitization.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object WatchNameIO {
     private data class State(
-        val deferredResult: CompletableDeferred<String>? = null
+        val deferredResult: CompletableDeferred<String>? = null,
     )
 
     private var state = State()
 
-    suspend fun request(): String =
-        CachedIO.request("23") { key -> getWatchName(key) }
+    suspend fun request(): String = CachedIO.request("23") { key -> getWatchName(key) }
 
     private suspend fun getWatchName(key: String): String {
         val deferred = CompletableDeferred<String>()
@@ -80,7 +80,7 @@ object WatchNameIO {
                     Timber.e("Failed to parse watch name: ${error.message}")
                     state.deferredResult?.complete("")
                     state = State()
-                }
+                },
             )
     }
 }

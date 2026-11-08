@@ -10,7 +10,7 @@ enum class NotificationType(val value: Int) {
     EMAIL(3),
     MESSAGE(4),
     CALENDAR(5),
-    EMAIL_SMS(6)
+    EMAIL_SMS(6),
 }
 
 @Keep
@@ -20,7 +20,7 @@ data class AppNotification(
     val app: String,
     val title: String,
     val text: String,
-    val shortText: String = ""
+    val shortText: String = "",
 ) {
     companion object {
         private const val MAX_TEXT_BYTES = 193
@@ -33,7 +33,7 @@ data class AppNotification(
             app: String,
             title: String,
             text: String,
-            shortText: String = ""
+            shortText: String = "",
         ): AppNotification {
             val truncatedShortText = truncateUtf8Bytes(shortText, MAX_SHORT_TEXT_BYTES)
             val truncatedText = truncateUtf8Bytes(text, MAX_TEXT_BYTES)
@@ -45,17 +45,26 @@ data class AppNotification(
                 app = app,
                 title = title,
                 text = adjustedText,
-                shortText = truncatedShortText
+                shortText = truncatedShortText,
             )
         }
 
-        private fun truncateUtf8Bytes(input: String, maxBytes: Int): String {
+        private fun truncateUtf8Bytes(
+            input: String,
+            maxBytes: Int,
+        ): String {
             val bytes = input.encodeToByteArray()
-            return if (bytes.size <= maxBytes) input
-            else bytes.copyOf(maxBytes).toString(Charsets.UTF_8)
+            return if (bytes.size <= maxBytes) {
+                input
+            } else {
+                bytes.copyOf(maxBytes).toString(Charsets.UTF_8)
+            }
         }
 
-        private fun adjustTextLength(text: String, shortText: String): String {
+        private fun adjustTextLength(
+            text: String,
+            shortText: String,
+        ): String {
             val textBytes = text.encodeToByteArray()
             val shortTextBytes = shortText.encodeToByteArray()
             val totalBytes = textBytes.size + shortTextBytes.size
@@ -63,16 +72,19 @@ data class AppNotification(
             return if (totalBytes > MAX_COMBINED_BYTES) {
                 val allowedTextBytes = (MAX_COMBINED_BYTES - shortTextBytes.size).coerceAtLeast(0)
                 textBytes.copyOf(allowedTextBytes).toString(Charsets.UTF_8)
-            } else text
+            } else {
+                text
+            }
         }
     }
 
-    fun toMap(): Map<String, Any> = mapOf(
-        "type" to type,
-        "timestamp" to timestamp,
-        "app" to app,
-        "title" to title,
-        "text" to text,
-        "short_text" to shortText
-    )
+    fun toMap(): Map<String, Any> =
+        mapOf(
+            "type" to type,
+            "timestamp" to timestamp,
+            "app" to app,
+            "title" to title,
+            "text" to text,
+            "short_text" to shortText,
+        )
 }

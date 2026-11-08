@@ -31,14 +31,17 @@ object AnalogueProtocol : StandardProtocol() {
         }.getOrNull()
     }
 
-    override fun unwrapPayload(data: String, key: Int): String {
+    override fun unwrapPayload(
+        data: String,
+        key: Int,
+    ): String {
         val ints = Utils.toIntArray(data)
         if (ints.isNotEmpty() && ints[0] == 0x28 && key != 0x28) {
             val skip = if (ints.getOrNull(1) == 0x01) 4 else 3
             return Utils.fromByteArrayToHexStrWithSpaces(
                 Utils.byteArrayOfIntArray(
-                    ints.drop(skip).toIntArray()
-                )
+                    ints.drop(skip).toIntArray(),
+                ),
             )
         }
         return data
@@ -48,7 +51,10 @@ object AnalogueProtocol : StandardProtocol() {
         return "280000"
     }
 
-    override suspend fun setTime(timeMs: Long?, offset: Long?) {
+    override suspend fun setTime(
+        timeMs: Long?,
+        offset: Long?,
+    ) {
         TimeIO.apply {
             writeDST()
             writeDSTForWorldCities()
