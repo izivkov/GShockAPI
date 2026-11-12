@@ -6,8 +6,10 @@
 ## 🏃 Exercise Profile & Health Expansion
 - **Exercise IO & Data Models**: Introduced `ExerciseProfile` model and `ExerciseIO` module to support retrieving and configuring exercise tracking data on compatible watch models.
 
-## ⚙️ Protocol & API Enhancements
+## ⚙️ Protocol, API & Developer Experience Enhancements
 - **Advanced Alarm Handling**: Added `ONE_TIME_MASK` support and refined alarm synchronization logic across `AlarmsIO` and `StandardProtocol`.
+- **Exercise Cache Robustness**: Resolved caching and retrieval edge cases for `ExerciseProfile` and `ExerciseIO`.
+- **Strict Linting & Commit Automation**: Integrated Ktlint code formatting and validation with Gradle and automated Git pre-commit hooks.
 - **Toolchain & Build Updates**: Upgraded Android Gradle Plugin (AGP) to version `9.3.3` for improved build performance and stability.
 
 ---
