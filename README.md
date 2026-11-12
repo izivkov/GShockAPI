@@ -62,3 +62,11 @@ If you rather not use a mobile app, but still like to set the time on your G-Sho
 we have also developed a [Python program](https://github.com/izivkov/GShockTimeServer) which can run as a server on a regular PC or Raspberry PI with Bluetooth interface.
 The project is still WIP, but you can give it a try.
 
+## Support this project
+
+If you find this library useful, consider supporting its development:
+
+[![Ko-fi](https://img.shields.io/badge/Ko-fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/ivozivkov)
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/izivkov)
+
+
