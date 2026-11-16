@@ -40,6 +40,11 @@ object ErrorIO {
         if (data.contains("81 13")) {
             SettingsIO.onRunError()
         }
+        // "FF 81 xx": the watch rejected command xx. Fail a pending raw read for xx right away
+        // instead of letting it wait forever (DW-H5600 does this for 0x51 / 0x15 when busy).
+        runCatching { org.avmedia.gshockapi.utils.Utils.toIntArray(data) }.getOrNull()
+            ?.takeIf { it.size >= 3 && it[0] == 0xFF && it[1] == 0x81 }
+            ?.let { RawSettingIO.onRejected(it[2]) }
         if (data.contains("81 11")) {
             TimeAdjustmentIO.onRunError()
         }

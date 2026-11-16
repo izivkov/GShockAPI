@@ -95,8 +95,11 @@ object TimerIOFunctional {
     fun encode(
         timerState: TimerState,
         size: Int,
+        base: ByteArray? = null,
     ): ByteArray {
-        return ByteArray(size).apply {
+        // Start from the watch's own last timer packet when available (same length and the bytes
+        // after hh:mm:ss kept). The DW-H5600 replies with 15 bytes and rejects a shorter write.
+        return (base?.takeIf { it.size >= 4 && it[0] == 0x18.toByte() }?.copyOf() ?: ByteArray(size)).apply {
             this[0] = 0x18
             this[1] = timerState.hours.toByte()
             this[2] = timerState.minutes.toByte()
@@ -117,11 +120,12 @@ object TimerIOFunctional {
     fun buildSetCommand(
         message: String,
         size: Int,
+        base: ByteArray? = null,
     ): Result<ByteArray> =
         runCatching {
             JSONObject(message).get("value").toString().toInt()
                 .let { secondsToTimerState(it) }
-                .let { encode(it, size) }
+                .let { encode(it, size, base) }
         }
 }
 
@@ -163,8 +167,14 @@ object TimerIO {
         CachedIO.set("18") { setFunc() }
     }
 
+    /** Raw 0x18 packet last received from the watch; template for the next write. */
+    @Volatile
+    private var lastRaw: ByteArray? = null
+
     fun onReceived(data: String) {
         Timber.d("TimerIO: onReceived raw data: $data")
+        runCatching { Utils.byteArrayOfIntArray(Utils.toIntArray(data).toIntArray()) }.getOrNull()
+            ?.let { lastRaw = it }
         // Use pure function to decode
         TimerIOFunctional.decode(data)
             .map { timerState -> timerState.totalSeconds }
@@ -198,7 +208,7 @@ object TimerIO {
     fun sendToWatchSet(message: String) {
         // Use pure function to build command, then execute
         val size = WatchInfo.protocol.getTimerSize()
-        TimerIOFunctional.buildSetCommand(message, size)
+        TimerIOFunctional.buildSetCommand(message, size, lastRaw)
             .fold(
                 onSuccess = { encodedData ->
                     IO.writeCmd(GetSetMode.SET, encodedData)

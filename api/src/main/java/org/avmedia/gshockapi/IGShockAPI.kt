@@ -11,6 +11,8 @@ import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.SoundMode
+import org.avmedia.gshockapi.model.WatchFaceItem
 import org.avmedia.gshockapi.model.StepCounterData
 import java.util.TimeZone
 
@@ -463,4 +465,54 @@ interface IGShockAPI {
     )
 
     fun isConnectedTo(address: String): Boolean
+
+    // ---- DW-H5600 family (packets 0x42 / 0x51) ----
+
+    /** True if the connected watch supports the DW-H5600 sound-mode / watch-face calls. */
+    fun isH5600SettingsSupported(): Boolean = false
+
+    /** Reads the sound / notification mode; null if the watch reports an unknown value. */
+    suspend fun getSoundMode(): SoundMode? = null
+
+    /** Sets the sound / notification mode (read-modify-write, other bytes kept). */
+    suspend fun setSoundMode(mode: SoundMode) {}
+
+    /** Reads the watch-face display item; null if unknown or inconsistent. */
+    suspend fun getWatchFaceItem(): WatchFaceItem? = null
+
+    /** Sets the watch-face display item (read-modify-write). */
+    suspend fun setWatchFaceItem(item: WatchFaceItem) {}
+
+    /** DW-H5600: the official app's 0x39 echo handshake that keeps the watch connected. */
+    suspend fun h5600ConnectionHandshake() {}
+
+    /** Drops all cached watch values so the next reads go to the watch (pull-to-refresh). */
+    fun clearCache() {}
+
+    /** Time format from a fresh 0x13 read: true = 24h. */
+    suspend fun getTimeFormat24h(): Boolean? = null
+
+    /** Sets only the 12/24h bit, keeping all other 0x13 bytes. */
+    suspend fun setTimeFormat24h(is24h: Boolean) {}
+
+    /** DW-H5600: run the LifeLog sync and decode steps (takes up to a few minutes). */
+    suspend fun getH5600LifeLog(): org.avmedia.gshockapi.io.H5600LifeLog.Result? = null
+
+    /** DW-H5600: raw 0x42 sound packet as hex. */
+    suspend fun getH5600SoundPacketHex(): String = ""
+
+    /** DW-H5600: send the home location used for sunrise/sunset (packet 0x24 00). */
+    fun setH5600HomeLocation(latitude: Double, longitude: Double) {}
+
+    /** DW-H5600: remember the location (no write); it is re-sent after every time/city sync. */
+    fun rememberH5600HomeLocation(latitude: Double, longitude: Double) {}
+
+    /** DW-H5600: read-only diagnostic reads (0x45, 0x4F) -> hex. */
+    suspend fun h5600ReadDiagnostics(): Map<Int, String> = emptyMap()
+
+    /** Raw watch-face display-item code (for values not yet named); null if unknown/inconsistent. */
+    suspend fun getWatchFaceCode(): Int? = null
+
+    /** Writes back a full 0x13 packet previously read from this watch. */
+    fun restoreH5600BasicSettings(packet: IntArray) {}
 }

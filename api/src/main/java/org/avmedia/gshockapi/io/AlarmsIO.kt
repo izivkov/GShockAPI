@@ -178,17 +178,46 @@ object AlarmsIO {
         return createSecondaryAlarm(alarms)
     }
 
+    // Raw 4-byte entries last read from the watch (0x15 = alarm 1, 0x16 = alarms 2..5).
+    // Encoding starts from these so bits this code does not manage (e.g. 0x10 on the DW-H5600,
+    // and the watch's own byte[1]) are preserved instead of being rebuilt from scratch.
+    @Volatile private var rawFirst: IntArray? = null
+    @Volatile private var rawSecondary: List<IntArray> = emptyList()
+    private const val MANAGED_FLAGS = Alarms.ENABLED_MASK or Alarms.ONE_TIME_MASK or Alarms.HOURLY_CHIME_MASK
+
+    private fun rememberRaw(data: String) {
+        val ints = runCatching { Utils.toIntArray(data) }.getOrNull() ?: return
+        when (ints.firstOrNull()) {
+            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code ->
+                if (ints.size >= 5) rawFirst = ints.subList(1, 5).toIntArray()
+            CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code ->
+                rawSecondary = ints.drop(1).chunked(4).filter { it.size == 4 }.map { it.toIntArray() }
+        }
+    }
+
+    private fun baseFlags(raw: IntArray?): Int = (raw?.get(0) ?: 0) and MANAGED_FLAGS.inv()
+    private fun baseConstant(raw: IntArray?): Int = raw?.get(1) ?: Alarms.ALARM_CONSTANT_VALUE
+
+    /** Applies an explicit snooze choice; null keeps the bit read from the watch. */
+    private fun withSnooze(flag: Int, alarm: Alarm): Int = when (alarm.snooze) {
+        true -> flag or Alarms.SNOOZE_MASK
+        false -> flag and Alarms.SNOOZE_MASK.inv()
+        null -> flag
+    }
+
     private fun createFirstAlarm(alarm: Alarm): ByteArray {
-        var flag = 0
+        val raw = rawFirst
+        var flag = baseFlags(raw)
         if (alarm.enabled) {
             flag = flag or Alarms.ENABLED_MASK
         }
         if (alarm.hasHourlyChime) flag = flag or Alarms.HOURLY_CHIME_MASK
+        flag = withSnooze(flag, alarm)
 
         return Utils.byteArrayOfInts(
             CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code,
             flag,
-            Alarms.ALARM_CONSTANT_VALUE,
+            baseConstant(raw),
             alarm.hour,
             alarm.minute,
         )
@@ -198,8 +227,9 @@ object AlarmsIO {
         var allAlarms =
             Utils.byteArrayOfInts(CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code)
 
-        for (alarm in alarms) {
-            var flag = 0
+        for ((index, alarm) in alarms.withIndex()) {
+            val raw = rawSecondary.getOrNull(index)
+            var flag = baseFlags(raw)
             if (alarm.enabled) {
                 flag = flag or Alarms.ENABLED_MASK
                 if (alarm.oneTime) {
@@ -207,11 +237,12 @@ object AlarmsIO {
                 }
             }
             if (alarm.hasHourlyChime) flag = flag or Alarms.HOURLY_CHIME_MASK
+            flag = withSnooze(flag, alarm)
 
             allAlarms +=
                 Utils.byteArrayOfInts(
                     flag,
-                    Alarms.ALARM_CONSTANT_VALUE,
+                    baseConstant(raw),
                     alarm.hour,
                     alarm.minute,
                 )
@@ -244,6 +275,7 @@ object AlarmsIO {
     }
 
     fun onReceived(data: String) {
+        rememberRaw(data)
         val parsedAlarms = AlarmsIOFunctional.parseReceivedAlarms(data)
         addSortedReceivedAlarms(parsedAlarms.toTypedArray())
 
@@ -369,6 +401,7 @@ object AlarmDecoder {
                 enabled = intArray[0] and Alarms.ENABLED_MASK != 0,
                 hasHourlyChime = if (WatchInfo.hasHourlyChime) (intArray[0] and HOURLY_CHIME_MASK != 0) else false,
                 oneTime = intArray[0] and Alarms.ONE_TIME_MASK != 0,
+                snooze = intArray[0] and Alarms.SNOOZE_MASK != 0,
             ).let { alarm ->
                 JSONObject(Gson().toJson(alarm))
             }

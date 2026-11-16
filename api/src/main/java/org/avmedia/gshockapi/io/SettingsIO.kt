@@ -139,9 +139,24 @@ object SettingsIOFunctional {
      *
      * Returns 17-byte array (or 12-byte for shorter modules) containing all settings encoded per protocol.
      */
-    fun encode(settings: JSONObject): ByteArray {
+    fun encode(settings: JSONObject, base: ByteArray? = null): ByteArray {
         val size = WatchInfo.settingsSize
-        val arr = ByteArray(size)
+        // Start from the packet last read from the watch (if any) so bytes this encoder does not
+        // manage are preserved. Starting from zeros wiped e.g. DW-H5600 bytes 12-16 (sunrise/sunset
+        // display data). Only the bits handled below are cleared and re-set.
+        val arr = base?.takeIf { it.size == size }?.copyOf() ?: ByteArray(size)
+        if (base != null && base.size == size) {
+            var b1Mask = MASK_24_HOURS or MASK_BUTTON_TONE_OFF or POWER_SAVING_MODE
+            if (WatchInfo.hasAutoLight) b1Mask = b1Mask or MASK_AUTO_LIGHT_OFF
+            if (WatchInfo.findButtonUserDefined) b1Mask = b1Mask or DO_NOT_DISTURB_OFF
+            arr[1] = (arr[1].toInt() and b1Mask.inv()).toByte()
+            arr[2] = (arr[2].toInt() and LIGHT_DURATION_LONG.inv()).toByte()
+            if (size == 17) {
+                arr[12] = (arr[12].toInt() and (SOUND_ONLY or VIBRATION_ONLY or CHIME).inv()).toByte()
+                if (WatchInfo.hasMultipleFonts) arr[8] = (arr[8].toInt() and FONT_CLASSIC_MASK.inv()).toByte()
+            }
+            if (WatchInfo.hasDateFormat) arr[4] = 0
+        }
 
         // Command code
         arr[0] = CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_BASIC.code.toByte()
@@ -192,20 +207,14 @@ object SettingsIOFunctional {
             }
         }
 
-        // Byte 2 - Light duration flags
-        var flags = RESET_VALUE
+        // Byte 2 - Light duration flag (other bits of the byte are preserved)
         if (settings["lightDuration"] == "4s" || settings["lightDuration"] == "3s") {
-            flags = flags or LIGHT_DURATION_LONG
+            arr[2] = (arr[2].toInt() or LIGHT_DURATION_LONG).toByte()
         }
-        arr[2] = flags.toByte()
 
-        // Byte 8 - Font flags
-        if (size == 17) {
-            var fontFlags = RESET_VALUE
-            if (WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
-                fontFlags = fontFlags or FONT_CLASSIC_MASK
-            }
-            arr[8] = fontFlags.toByte()
+        // Byte 8 - Font flag (other bits preserved)
+        if (size == 17 && WatchInfo.hasMultipleFonts && settings["font"] == "Classic") {
+            arr[8] = (arr[8].toInt() or FONT_CLASSIC_MASK).toByte()
         }
 
         // Byte 4 - Date format
@@ -277,7 +286,38 @@ object SettingsIO {
         }
     }
 
+    /** Raw 0x13 packet last received from the watch; base for the next encode. */
+    @Volatile
+    private var lastRaw: ByteArray? = null
+
+    /** Fresh read of 0x13 (bypassing the cache); true = 24-hour format. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun readTimeFormat24h(): Boolean {
+        CachedIO.remove("GET_SETTINGS")
+        request() // onReceived also updates lastRaw
+        val raw = lastRaw ?: error("settings not received")
+        return (raw[1].toInt() and 0x01) != 0
+    }
+
+    /** Flips only the 24-hour bit of a freshly read 0x13 packet; every other byte is kept. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun writeTimeFormat24h(is24h: Boolean) {
+        readTimeFormat24h()
+        val b = (lastRaw ?: error("settings not received")).copyOf()
+        b[1] = (if (is24h) b[1].toInt() or 0x01 else b[1].toInt() and 0x01.inv()).toByte()
+        IO.writeCmd(GetSetMode.SET, b)
+        rememberRaw(b)
+    }
+
+    /** Used after writing a raw 0x13 packet directly, so the next encode starts from it. */
+    fun rememberRaw(bytes: ByteArray) {
+        lastRaw = bytes.copyOf()
+        CachedIO.remove("GET_SETTINGS")
+    }
+
     fun onReceived(data: String) {
+        runCatching { Utils.byteArrayOfIntArray(Utils.toIntArray(data).toIntArray()) }
+            .getOrNull()?.let { lastRaw = it }
         // Use pure function to decode
         SettingsIOFunctional.decode(data)
             .fold(
@@ -316,6 +356,6 @@ object SettingsIO {
     fun sendToWatchSet(message: String) {
         // Use pure function to encode, then execute
         val settings = JSONObject(message).get("value") as JSONObject
-        IO.writeCmd(GetSetMode.SET, SettingsIOFunctional.encode(settings))
+        IO.writeCmd(GetSetMode.SET, SettingsIOFunctional.encode(settings, lastRaw))
     }
 }

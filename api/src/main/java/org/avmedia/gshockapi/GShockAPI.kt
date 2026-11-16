@@ -1,5 +1,7 @@
 package org.avmedia.gshockapi
 
+import CachedIO
+
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
@@ -30,6 +32,10 @@ import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.SoundMode
+import org.avmedia.gshockapi.model.WatchFaceItem
+import org.avmedia.gshockapi.io.H5600SettingsIO
+import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.model.StepCounterData
 import timber.log.Timber
 import java.time.ZoneId
@@ -489,6 +495,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
         TimeIO.setTimezone(timeZone)
         WatchInfo.protocol.setTime(timeMs, offset = offsetFormSystemTime)
+        // DW-H5600: the home/world-city writes of the time sync make the watch drop its
+        // sunrise/sunset location, so send the remembered location again right after them.
+        runCatching { H5600SettingsIO.resendHomeLocation() }
+            .onFailure { Timber.e(it, "H5600: re-sending home location failed") }
     }
 
     /**
@@ -797,4 +807,41 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     ) {
         GShockPairingManager.stopObservingDevicePresence(context, address)
     }
+
+    // ---- DW-H5600 family (packets 0x42 / 0x51) ----
+
+    override fun isH5600SettingsSupported(): Boolean = H5600SettingsIO.isSupported()
+
+    override suspend fun getSoundMode(): SoundMode? = H5600SettingsIO.getSoundMode()
+
+    override suspend fun setSoundMode(mode: SoundMode) = H5600SettingsIO.setSoundMode(mode)
+
+    override suspend fun getWatchFaceItem(): WatchFaceItem? = H5600SettingsIO.getWatchFaceItem()
+
+    override suspend fun setWatchFaceItem(item: WatchFaceItem) = H5600SettingsIO.setWatchFaceItem(item)
+
+    override fun restoreH5600BasicSettings(packet: IntArray) = H5600SettingsIO.restoreBasicSettings(packet)
+
+    override suspend fun getWatchFaceCode(): Int? = H5600SettingsIO.getWatchFaceCode()
+
+    override suspend fun h5600ConnectionHandshake() = H5600SettingsIO.connectionHandshake()
+
+    override fun clearCache() = CachedIO.clearCache()
+
+    override suspend fun getTimeFormat24h(): Boolean? = SettingsIO.readTimeFormat24h()
+
+    override suspend fun setTimeFormat24h(is24h: Boolean) = SettingsIO.writeTimeFormat24h(is24h)
+
+    override suspend fun getH5600LifeLog(): org.avmedia.gshockapi.io.H5600LifeLog.Result? =
+        org.avmedia.gshockapi.io.H5600LifeLogIO.download()
+
+    override suspend fun getH5600SoundPacketHex(): String = H5600SettingsIO.getSoundPacketHex()
+
+    override fun setH5600HomeLocation(latitude: Double, longitude: Double) =
+        H5600SettingsIO.setHomeLocation(latitude, longitude)
+
+    override fun rememberH5600HomeLocation(latitude: Double, longitude: Double) =
+        H5600SettingsIO.rememberHomeLocation(latitude, longitude)
+
+    override suspend fun h5600ReadDiagnostics(): Map<Int, String> = H5600SettingsIO.readDiagnostics()
 }

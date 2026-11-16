@@ -32,6 +32,17 @@ enum class GetSetMode {
     DATA_REQUEST,
     SP_REQUEST,
     SP_DATA,
+    CONVOY, // 26eb0024, write without response (DW-H5600 LifeLog transfer)
+}
+
+/**
+ * Lets a component see raw notifications with their characteristic UUID before the normal
+ * first-byte dispatch (which loses the UUID). Return true to consume the notification.
+ * Used by the DW-H5600 LifeLog sync for DRSP / CONVOY traffic.
+ */
+object RawNotifications {
+    @Volatile
+    var listener: ((java.util.UUID, ByteArray) -> Boolean)? = null
 }
 
 interface GShock {
@@ -69,6 +80,7 @@ private class GShockManagerImpl(
     private var writeCharacteristicHolder: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderNotifications: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderDataRequest: BluetoothGattCharacteristic? = null
+    private var writeCharacteristicHolderConvoy: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
 
@@ -122,6 +134,10 @@ private class GShockManagerImpl(
                     subscribedCharacteristics.add(char.uuid)
 
                     setNotificationCallback(char).with { _, data ->
+                        val bytes = data.value
+                        if (bytes != null && RawNotifications.listener?.invoke(char.uuid, bytes) == true) {
+                            return@with // consumed (e.g. DW-H5600 LifeLog DRSP / CONVOY)
+                        }
                         val hexData =
                             data.value?.joinToString(separator = " ", prefix = "0x") {
                                 String.format("%02X", it)
@@ -178,6 +194,7 @@ private class GShockManagerImpl(
         writeCharacteristicHolder = null
         writeCharacteristicHolderNotifications = null
         writeCharacteristicHolderDataRequest = null
+        writeCharacteristicHolderConvoy = null
         writeCharacteristicHolderSPRequest = null
         writeCharacteristicHolderSPData = null
         characteristicUUIDs.clear()
@@ -308,6 +325,7 @@ private class GShockManagerImpl(
                 getCharacteristic(
                     CasioConstants.CASIO_DATA_REQUEST_CHARACTERISTIC_UUID,
                 )
+            writeCharacteristicHolderConvoy = getCharacteristic(java.util.UUID.fromString("26eb0024-b012-49a8-b1f8-394fb2032b0f"))
             if (findCharacteristic(gatt, CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID)) {
                 writeCharacteristicHolderSPRequest =
                     getCharacteristic(
@@ -412,6 +430,7 @@ private class GShockManagerImpl(
                 GetSetMode.DATA_REQUEST -> CasioConstants.CASIO_DATA_REQUEST_CHARACTERISTIC_UUID
                 GetSetMode.SP_REQUEST -> CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID
                 GetSetMode.SP_DATA -> CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID
+                GetSetMode.CONVOY -> java.util.UUID.fromString("26eb0024-b012-49a8-b1f8-394fb2032b0f")
             }
         return characteristicUUIDs.containsKey(uuid.toString())
     }
@@ -439,10 +458,13 @@ private class GShockManagerImpl(
                 GetSetMode.DATA_REQUEST -> writeCharacteristicHolderDataRequest
                 GetSetMode.SP_REQUEST -> writeCharacteristicHolderSPRequest
                 GetSetMode.SP_DATA -> writeCharacteristicHolderSPData
+                GetSetMode.CONVOY -> writeCharacteristicHolderConvoy
             }
 
         val writeType =
-            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST) {
+            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST ||
+                handle == GetSetMode.CONVOY
+            ) {
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             } else {
                 BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT

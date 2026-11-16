@@ -10,6 +10,8 @@ data class Alarm(
     val hasHourlyChime: Boolean = false,
     val oneTime: Boolean = false,
     val name: String? = null,
+    /** Snooze flag (0x10). null = keep whatever the watch has (older callers). */
+    val snooze: Boolean? = null,
 ) {
     override fun toString(): String =
         "Alarm(hour=$hour, minute=$minute, enabled=$enabled, hasHourlyChime=$hasHourlyChime, oneTime=$oneTime, name=$name)"
