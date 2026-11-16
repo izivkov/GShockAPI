@@ -840,6 +840,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     override fun setH5600HomeLocation(latitude: Double, longitude: Double) =
         H5600SettingsIO.setHomeLocation(latitude, longitude)
 
+    override fun setH5600HomeLocationProvider(provider: (() -> Pair<Double, Double>?)?) {
+        H5600SettingsIO.homeLocationProvider = provider
+    }
+
     override fun rememberH5600HomeLocation(latitude: Double, longitude: Double) =
         H5600SettingsIO.rememberHomeLocation(latitude, longitude)
 

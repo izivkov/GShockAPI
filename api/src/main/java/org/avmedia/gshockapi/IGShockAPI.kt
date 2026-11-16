@@ -504,6 +504,9 @@ interface IGShockAPI {
     /** DW-H5600: send the home location used for sunrise/sunset (packet 0x24 00). */
     fun setH5600HomeLocation(latitude: Double, longitude: Double) {}
 
+    /** DW-H5600: where the location re-sent after every time/city sync comes from. */
+    fun setH5600HomeLocationProvider(provider: (() -> Pair<Double, Double>?)?) {}
+
     /** DW-H5600: remember the location (no write); it is re-sent after every time/city sync. */
     fun rememberH5600HomeLocation(latitude: Double, longitude: Double) {}
 

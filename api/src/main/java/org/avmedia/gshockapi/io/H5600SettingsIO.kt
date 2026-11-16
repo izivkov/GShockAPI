@@ -41,9 +41,17 @@ object H5600SettingsIO {
         if (latitude in -90.0..90.0 && longitude in -180.0..180.0) homeLocation = latitude to longitude
     }
 
-    /** Re-sends the remembered location (no-op if none or not a DW-H5600). */
+    /**
+     * Supplied by the app: the location to send right now (real or "weather" coordinates). Asked at
+     * re-send time so a time sync never goes out without a location, even before the app has
+     * remembered one in this process.
+     */
+    @Volatile
+    var homeLocationProvider: (() -> Pair<Double, Double>?)? = null
+
+    /** Re-sends the location after a time/city sync (no-op if none or not a DW-H5600). */
     fun resendHomeLocation() {
-        val loc = homeLocation ?: return
+        val loc = runCatching { homeLocationProvider?.invoke() }.getOrNull() ?: homeLocation ?: return
         if (isSupported()) setHomeLocation(loc.first, loc.second)
     }
 
