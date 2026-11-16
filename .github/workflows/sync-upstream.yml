@@ -1,0 +1,32 @@
+# Weekly: merge izivkov/GShockAPI main into our h5600-sound-mode branch and push.
+# Fails (and pushes nothing) on merge conflicts. Tests run in the app fork's weekly job.
+name: Sync with upstream
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'   # Mondays 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: h5600-sound-mode
+          fetch-depth: 0
+      - name: Merge izivkov/GShockAPI main
+        run: |
+          git config user.name "flyboy14"
+          git config user.email "7253326+flyboy14@users.noreply.github.com"
+          git remote add upstream https://github.com/izivkov/GShockAPI.git
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date with upstream/main"; exit 0
+          fi
+          git log --oneline HEAD..upstream/main
+          git merge --no-edit upstream/main
+          git push origin HEAD:h5600-sound-mode
