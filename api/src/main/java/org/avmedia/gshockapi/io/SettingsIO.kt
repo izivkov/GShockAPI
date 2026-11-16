@@ -269,11 +269,13 @@ object SettingsIO {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
-        val deferred = CompletableDeferred<Settings>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
+        // Concurrent readers share the pending request: replacing it (as before) left the first
+        // caller waiting forever, e.g. a toggle and a screen refresh reading 0x13 at the same time.
+        val (deferred, isNew) = synchronized(this) {
+            state.deferredResult?.takeIf { it.isActive }?.let { it to false }
+                ?: CompletableDeferred<Settings>().also { state = state.copy(deferredResult = it) } to true
         }
-        Connection.sendMessage("{ action: '$key'}")
+        if (isNew) Connection.sendMessage("{ action: '$key'}")
         return deferred.await()
     }
 
@@ -294,7 +296,7 @@ object SettingsIO {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun readTimeFormat24h(): Boolean {
         CachedIO.remove("GET_SETTINGS")
-        request() // onReceived also updates lastRaw
+        kotlinx.coroutines.withTimeout(8_000) { request() } // onReceived also updates lastRaw
         val raw = lastRaw ?: error("settings not received")
         return (raw[1].toInt() and 0x01) != 0
     }
