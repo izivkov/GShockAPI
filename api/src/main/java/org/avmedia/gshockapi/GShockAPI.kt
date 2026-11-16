@@ -495,10 +495,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
         TimeIO.setTimezone(timeZone)
         WatchInfo.protocol.setTime(timeMs, offset = offsetFormSystemTime)
-        // DW-H5600: the home/world-city writes of the time sync make the watch drop its
-        // sunrise/sunset location, so send the remembered location again right after them.
-        runCatching { H5600SettingsIO.resendHomeLocation() }
-            .onFailure { Timber.e(it, "H5600: re-sending home location failed") }
+        // DW-H5600: the location is now written inside the time sync itself (TimeIO, between 1E
+        // and 1F, like the official app), so no re-send after the time write is needed.
     }
 
     /**
@@ -824,11 +822,24 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
     override suspend fun getWatchFaceCode(): Int? = H5600SettingsIO.getWatchFaceCode()
 
+    override suspend fun getH5600WatchFaceNumber(): Int? = H5600SettingsIO.getWatchFaceNumber()
+
+    override suspend fun setH5600WatchFaceNumber(face: Int) = H5600SettingsIO.setWatchFaceNumber(face)
+
     override suspend fun h5600ConnectionHandshake() = H5600SettingsIO.connectionHandshake()
 
     override fun clearCache() = CachedIO.clearCache()
 
     override suspend fun getTimeFormat24h(): Boolean? = SettingsIO.readTimeFormat24h()
+
+    override suspend fun getH5600SmartAlarm() = H5600SettingsIO.getSmartAlarm()
+
+    override suspend fun setH5600SmartAlarm(alarm: org.avmedia.gshockapi.model.SmartAlarm) =
+        H5600SettingsIO.setSmartAlarm(alarm)
+
+    override suspend fun getHourlyChime(): Boolean? = SettingsIO.readHourlyChime()
+
+    override suspend fun setHourlyChime(on: Boolean) = SettingsIO.writeHourlyChime(on)
 
     override suspend fun setTimeFormat24h(is24h: Boolean) = SettingsIO.writeTimeFormat24h(is24h)
 

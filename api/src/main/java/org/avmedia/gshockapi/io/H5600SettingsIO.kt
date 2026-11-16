@@ -18,6 +18,7 @@ import timber.log.Timber
 object H5600SettingsIO {
     const val SOUND_MODE_CODE = 0x42
     const val WATCH_FACE_CODE = 0x51
+    const val SMART_ALARM_CODE = 0x50
 
     /** CASIO_CURRENT_TIME_MANAGER. The official app requests it after connecting and writes the reply back. */
     const val TIME_MANAGER_CODE = 0x39
@@ -29,9 +30,9 @@ object H5600SettingsIO {
      * connected. Echoes exactly what the watch sent; nothing else is written.
      */
     /**
-     * Home location for sunrise/sunset: `24 00 01 <lat f64 BE> <lon f64 BE> 01`, as the official app
-     * writes it (izivkov's DW-H5600 captures: phone GPS, 43.7072 / -79.3801). The watch computes
-     * sunrise/sunset from it; without it the watch face shows dashes.
+     * Home location for sunrise/sunset: `24 00 01 <lat f64 BE> <lon f64 BE> 04`. Trailing byte 0x04
+     * as the current official app writes it (user's capture 2026-11-16 23:08; izivkov's older capture
+     * had 0x01). The watch computes sunrise/sunset from it; without it the watch shows dashes.
      */
     /** Last home location given by the app; re-sent after each time/city sync ([resendHomeLocation]). */
     @Volatile
@@ -49,6 +50,17 @@ object H5600SettingsIO {
     @Volatile
     var homeLocationProvider: (() -> Pair<Double, Double>?)? = null
 
+    /**
+     * Called by TimeIO in the middle of a time sync, after the DST/world-city writes (1D, 1E) and
+     * before the city names (1F) and the time (09): the exact place the official app writes 0x24,
+     * so the watch recalculates sunrise/sunset with the location already in place.
+     */
+    fun writeLocationInTimeSync() {
+        if (!isSupported()) return
+        val loc = runCatching { homeLocationProvider?.invoke() }.getOrNull() ?: homeLocation ?: return
+        setHomeLocation(loc.first, loc.second)
+    }
+
     /** Re-sends the location after a time/city sync (no-op if none or not a DW-H5600). */
     fun resendHomeLocation() {
         val loc = runCatching { homeLocationProvider?.invoke() }.getOrNull() ?: homeLocation ?: return
@@ -60,7 +72,7 @@ object H5600SettingsIO {
         require(latitude in -90.0..90.0 && longitude in -180.0..180.0) { "Bad coordinates" }
         homeLocation = latitude to longitude
         val buf = java.nio.ByteBuffer.allocate(20).order(java.nio.ByteOrder.BIG_ENDIAN)
-        buf.put(0x24.toByte()).put(0x00).put(0x01).putDouble(latitude).putDouble(longitude).put(0x01)
+        buf.put(0x24.toByte()).put(0x00).put(0x01).putDouble(latitude).putDouble(longitude).put(0x04)
         RawSettingIO.write(buf.array().map { it.toInt() and 0xFF }.toIntArray())
     }
 
@@ -127,6 +139,35 @@ object H5600SettingsIO {
         check(packet.size == 17 && packet[0] == 0x13) { "Not a 17-byte 0x13 packet" }
         RawSettingIO.write(packet)
         SettingsIO.rememberRaw(org.avmedia.gshockapi.utils.Utils.byteArrayOfIntArray(packet))
+    }
+
+    /** Watch face: byte 1 of 0x51, 1 = simple face (weekday), 2 = customisable face (item). */
+    suspend fun getWatchFaceNumber(): Int = readChecked(WATCH_FACE_CODE)[1]
+
+    suspend fun setWatchFaceNumber(face: Int) {
+        require(face == 1 || face == 2) { "face must be 1 or 2" }
+        val packet = readChecked(WATCH_FACE_CODE)
+        if (packet[1] == face) return
+        RawSettingIO.write(packet.copyOf().also { it[1] = face })
+    }
+
+    suspend fun getSmartAlarm(): org.avmedia.gshockapi.model.SmartAlarm {
+        check(isSupported()) { "Not a DW-H5600 family watch (model=${WatchInfo.model})" }
+        val p = RawSettingIO.request(SMART_ALARM_CODE)
+        check(p.size == 5 && p[0] == SMART_ALARM_CODE) { "Unexpected 0x50 packet: ${p.joinToString(" ") { "%02X".format(it) }}" }
+        return org.avmedia.gshockapi.model.SmartAlarm(p[1], p[2], p[3] and 0x01 != 0, p[3] and 0x02 != 0, p[4])
+    }
+
+    /** Writes the smart-alarm slot; other flag bits read from the watch are kept. */
+    suspend fun setSmartAlarm(a: org.avmedia.gshockapi.model.SmartAlarm) {
+        val p = RawSettingIO.request(SMART_ALARM_CODE)
+        check(p.size == 5 && p[0] == SMART_ALARM_CODE) { "Unexpected 0x50 packet" }
+        require(a.hour in 0..23 && a.minute in 0..59 && a.windowMin in 0..120) { "Bad smart alarm" }
+        var flags = p[3] and 0x03.inv()
+        if (a.enabled) flags = flags or 0x01
+        if (a.snooze) flags = flags or 0x02
+        val wanted = intArrayOf(SMART_ALARM_CODE, a.hour, a.minute, flags, a.windowMin)
+        if (!wanted.contentEquals(p)) RawSettingIO.write(wanted)
     }
 
     suspend fun setWatchFaceItem(item: WatchFaceItem) {

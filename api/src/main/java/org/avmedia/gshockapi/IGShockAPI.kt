@@ -489,6 +489,14 @@ interface IGShockAPI {
     /** Drops all cached watch values so the next reads go to the watch (pull-to-refresh). */
     fun clearCache() {}
 
+    /** DW-H5600 smart alarm slot (0x50). */
+    suspend fun getH5600SmartAlarm(): org.avmedia.gshockapi.model.SmartAlarm? = null
+    suspend fun setH5600SmartAlarm(alarm: org.avmedia.gshockapi.model.SmartAlarm) {}
+
+    /** Hourly time signal (0x13 byte 12 bit 0x20). */
+    suspend fun getHourlyChime(): Boolean? = null
+    suspend fun setHourlyChime(on: Boolean) {}
+
     /** Time format from a fresh 0x13 read: true = 24h. */
     suspend fun getTimeFormat24h(): Boolean? = null
 
@@ -512,6 +520,10 @@ interface IGShockAPI {
 
     /** DW-H5600: read-only diagnostic reads (0x45, 0x4F) -> hex. */
     suspend fun h5600ReadDiagnostics(): Map<Int, String> = emptyMap()
+
+    /** DW-H5600 watch face: 1 = simple (weekday), 2 = customisable (display item). */
+    suspend fun getH5600WatchFaceNumber(): Int? = null
+    suspend fun setH5600WatchFaceNumber(face: Int) {}
 
     /** Raw watch-face display-item code (for values not yet named); null if unknown/inconsistent. */
     suspend fun getWatchFaceCode(): Int? = null

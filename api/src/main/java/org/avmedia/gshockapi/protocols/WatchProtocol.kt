@@ -59,6 +59,7 @@ interface WatchProtocol {
                 H5600SettingsIO.SOUND_MODE_CODE to RawSettingIO::onReceived,
                 H5600SettingsIO.WATCH_FACE_CODE to RawSettingIO::onReceived,
                 H5600SettingsIO.TIME_MANAGER_CODE to RawSettingIO::onReceived,
+                H5600SettingsIO.SMART_ALARM_CODE to RawSettingIO::onReceived,
                 0x45 to RawSettingIO::onReceived, // DW-H5600 diagnostics (read-only)
                 0x4F to RawSettingIO::onReceived, // DW-H5600 diagnostics (read-only)
             )

@@ -309,6 +309,24 @@ object SettingsIO {
         rememberRaw(b)
     }
 
+    /** Hourly time signal: byte 12 bit 0x20 of a fresh 0x13 read (confirmed on the DW-H5600). */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun readHourlyChime(): Boolean {
+        readTimeFormat24h() // fresh read, updates lastRaw
+        val raw = lastRaw ?: error("settings not received")
+        return raw.size > 12 && (raw[12].toInt() and 0x20) != 0
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun writeHourlyChime(on: Boolean) {
+        readTimeFormat24h()
+        val b = (lastRaw ?: error("settings not received")).copyOf()
+        check(b.size > 12) { "short 0x13 packet" }
+        b[12] = (if (on) b[12].toInt() or 0x20 else b[12].toInt() and 0x20.inv()).toByte()
+        IO.writeCmd(GetSetMode.SET, b)
+        rememberRaw(b)
+    }
+
     /** Used after writing a raw 0x13 packet directly, so the next encode starts from it. */
     fun rememberRaw(bytes: ByteArray) {
         lastRaw = bytes.copyOf()

@@ -231,6 +231,8 @@ object TimeIO {
     private suspend fun initializeForSettingTime() {
         writeDST()
         writeDSTForWorldCities()
+        // DW-H5600: location (0x24) goes here, between 1E and 1F, exactly like the official app.
+        H5600SettingsIO.writeLocationInTimeSync()
         if (WatchInfo.hasWorldCities) {
             writeWorldCities()
         } else if (WatchInfo.hasHomeTime) {
