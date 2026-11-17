@@ -382,6 +382,11 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         return WatchInfo.protocol.getBatteryLevel()
     }
 
+    override suspend fun getBatteryRawLevel(): Int? {
+        WatchInfo.protocol.getBatteryLevel() // reads 0x28 (cached) if not read yet
+        return org.avmedia.gshockapi.io.WatchConditionIO.lastRawBatteryLevel
+    }
+
     /**
      * Get Watch Temperature.
      *

@@ -85,6 +85,11 @@ object WatchConditionIO {
 
     private var state = State()
 
+    /** 0x28 byte 1 as the watch sent it (a level step, e.g. 0..6 on the DW-H5600); null until read. */
+    @Volatile
+    var lastRawBatteryLevel: Int? = null
+        private set
+
     suspend fun request(requestString: String = "28"): WatchConditionValue =
         CachedIO.request(requestString) { key -> getWatchCondition(key) }
 
@@ -98,6 +103,8 @@ object WatchConditionIO {
     }
 
     fun onReceived(data: String) {
+        runCatching { org.avmedia.gshockapi.utils.Utils.toIntArray(data) }.getOrNull()
+            ?.takeIf { it.size >= 2 }?.let { lastRawBatteryLevel = it[1] }
         // Use pure function to decode watch condition
         WatchConditionIOFunctional.decode(data)
             .fold(

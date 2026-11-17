@@ -147,6 +147,9 @@ interface IGShockAPI {
      */
     suspend fun getBatteryLevel(): Int
 
+    /** The watch's raw battery level step (0x28 byte 1), for watches whose scale is not a percentage. */
+    suspend fun getBatteryRawLevel(): Int? = null
+
     /**
      * Retrieves the current temperature from the watch's sensor.
      *
