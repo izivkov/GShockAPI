@@ -25,6 +25,7 @@ import org.avmedia.gshockapi.io.WatchNameIO
 import org.avmedia.gshockapi.io.WorldCitiesIO
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.StepCounterData
 
 @RequiresApi(Build.VERSION_CODES.O)
 interface WatchProtocol {
@@ -99,4 +100,6 @@ interface WatchProtocol {
     suspend fun getBasicSettings(): Settings
 
     suspend fun getTimeAdjustment(): TimeAdjustmentInfo
+
+    suspend fun getStepCount(peek: Boolean): StepCounterData
 }

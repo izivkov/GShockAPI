@@ -22,6 +22,7 @@ object CasioConstants {
         UUID.fromString("26eb0030-b012-49a8-b1f8-394fb2032b0f")
 
     /** Requests life-log/activity-record data; replies arrive on the convoy characteristic. */
+    val CASIO_CONVOY_CHARACTERISTIC_UUID: UUID = UUID.fromString("26eb0024-b012-49a8-b1f8-394fb2032b0f")
     val CASIO_DATA_REQUEST_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("26eb0023-b012-49a8-b1f8-394fb2032b0f")
 

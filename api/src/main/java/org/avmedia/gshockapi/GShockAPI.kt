@@ -20,7 +20,6 @@ import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
-import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
@@ -392,7 +391,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return hourly and daily history plus the current-day total
      */
     override suspend fun getStepCount(peek: Boolean): StepCounterData {
-        return StepCounterIO.request(peek)
+        return WatchInfo.protocol.getStepCount(peek)
     }
 
     /**

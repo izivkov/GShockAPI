@@ -3,6 +3,7 @@ package org.avmedia.gshockapi
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.protocols.AnalogueProtocol
+import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.avmedia.gshockapi.protocols.MipProtocol
 import org.avmedia.gshockapi.protocols.StandardProtocol
 import org.avmedia.gshockapi.protocols.WatchProtocol
@@ -367,6 +368,7 @@ data object WatchInfo {
                 hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
                 weekLanguageSupported = false,
                 hasStepCounter = true,
+                protocol = H5600Protocol,
             ),
             ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
             ModelInfo(
