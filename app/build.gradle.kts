@@ -78,6 +78,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.timber)
     implementation(project(":api"))
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

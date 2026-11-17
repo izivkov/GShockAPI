@@ -44,6 +44,7 @@ import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Settings
+import timber.log.Timber
 import java.time.ZoneId
 import java.util.TimeZone
 import kotlin.system.measureTimeMillis
@@ -57,6 +58,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Without a planted tree, every Timber call in the library is discarded.
+        if (Timber.forest().isEmpty()) Timber.plant(Timber.DebugTree())
 
         setContent {
             val viewModel: MainScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
