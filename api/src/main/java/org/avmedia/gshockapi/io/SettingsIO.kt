@@ -267,16 +267,38 @@ object SettingsIO {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun request(): Settings = CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
 
+    /**
+     * Reads 0x13. Concurrent readers share one request. An unanswered request is discarded and the
+     * reader retries (it used to throw "no 0x13 answer" into whichever reader had joined it — a
+     * crash in upstream code that does not catch). After 3 tries it falls back to the last packet
+     * the watch actually sent, and only throws if there never was one.
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun getBasicSettings(key: String): Settings {
-        // Concurrent readers share the pending request: replacing it (as before) left the first
-        // caller waiting forever, e.g. a toggle and a screen refresh reading 0x13 at the same time.
-        val (deferred, isNew) = synchronized(this) {
-            state.deferredResult?.takeIf { it.isActive }?.let { it to false }
-                ?: CompletableDeferred<Settings>().also { state = state.copy(deferredResult = it) } to true
+        for (attempt in 0 until 3) {
+            val (deferred, isNew) = synchronized(this) {
+                state.deferredResult?.takeIf { it.isActive }?.let { it to false }
+                    ?: CompletableDeferred<Settings>().also { state = state.copy(deferredResult = it) }.let { it to true }
+            }
+            if (isNew) Connection.sendMessage("{ action: '$key'}")
+            try {
+                kotlinx.coroutines.withTimeoutOrNull(3_000) { deferred.await() }?.let { return it }
+                synchronized(this) { if (state.deferredResult === deferred) state = state.copy(deferredResult = null) }
+                deferred.completeExceptionally(IllegalStateException("no 0x13 answer")) // joiners retry too
+            } catch (e: IllegalStateException) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                // the shared request was given up on, or rejected: try again
+            }
+            Timber.w("0x13 read try ${attempt + 1} got no answer")
+            kotlinx.coroutines.delay(400L * (attempt + 1))
         }
-        if (isNew) Connection.sendMessage("{ action: '$key'}")
-        return deferred.await()
+        lastRaw?.let { raw ->
+            SettingsIOFunctional.decode(Utils.fromByteArrayToHexStrWithSpaces(raw)).getOrNull()?.let {
+                Timber.w("0x13: watch did not answer; using the last packet it sent")
+                return it
+            }
+        }
+        throw IllegalStateException("watch did not answer the settings read")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -297,26 +319,17 @@ object SettingsIO {
     private var rawSeq = 0
 
     /**
-     * Fresh 0x13 read (bypassing the cache), retried. The watch sometimes drops a GET sent right
-     * after a SET; the unanswered request must then be discarded, otherwise later readers join it
-     * (see getBasicSettings) and never send a new one.
+     * Fresh 0x13 read (bypassing the cache). [getBasicSettings] retries unanswered requests; if it
+     * only had the last known packet to offer, that is not fresh and this throws.
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun freshRaw(): ByteArray {
-        repeat(3) { attempt ->
-            val seq = rawSeq
-            CachedIO.remove("GET_SETTINGS")
-            kotlinx.coroutines.withTimeoutOrNull(3_000) { request() }
-            if (rawSeq != seq) lastRaw?.let { return it.copyOf() }
-            synchronized(this) {
-                state.deferredResult?.completeExceptionally(IllegalStateException("no 0x13 answer"))
-                state = state.copy(deferredResult = null)
-            }
-            CachedIO.remove("GET_SETTINGS")
-            Timber.w("0x13 read attempt ${attempt + 1} got no answer; retrying")
-            kotlinx.coroutines.delay(400L * (attempt + 1))
-        }
-        error("watch did not answer the settings read")
+        val seq = rawSeq
+        CachedIO.remove("GET_SETTINGS")
+        request() // retries itself; may fall back to the last packet, which does not count as fresh
+        CachedIO.remove("GET_SETTINGS")
+        if (rawSeq == seq) error("watch did not answer the settings read")
+        return (lastRaw ?: error("settings not received")).copyOf()
     }
 
     private const val CODE = 0x13
@@ -399,11 +412,10 @@ object SettingsIO {
             )
     }
 
+    /** `FF 81 13`: the watch rejected the read (busy). The reader retries — it used to get blank defaults. */
     fun onRunError() {
-        synchronized(this) {
-            state.deferredResult?.complete(Settings())
-            state = state.copy(deferredResult = null)
-        }
+        val d = synchronized(this) { state.deferredResult.also { state = state.copy(deferredResult = null) } }
+        d?.completeExceptionally(IllegalStateException("watch rejected the settings read (busy?)"))
     }
 
     @Suppress("UNUSED_PARAMETER")
