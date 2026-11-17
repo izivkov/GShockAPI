@@ -364,7 +364,9 @@ data object WatchInfo {
                 vibrate = true, chimeInSettings = true,
                 findButtonUserDefined = true,
                 shortLightDuration = "1.5s", longLightDuration = "5s",
-                hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
+                // 0x28 byte 1 is a 0..5 level on the DW-H5600 (5 = full, confirmed by the user's watch).
+                hasBatteryLevel = true, batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 5,
+                alwaysConnected = true, hasDateFormat = false,
                 weekLanguageSupported = false,
                 hasStepCounter = true,
             ),
