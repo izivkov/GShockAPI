@@ -424,6 +424,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** DW-H5600 LifeLog: runs one transfer and logs the decoded values, for checking against the watch. */
+    private suspend fun runHealthTest(viewModel: MainScreenViewModel) {
+        viewModel.addLog("--- DW-H5600 LifeLog ---")
+        val data = api.getStepCount(peek = true)
+        viewModel.addLog("Time (local): ${data.timestamp}")
+        viewModel.addLog("Steps today: ${data.currentDaySteps}")
+        viewModel.addLog("Goal: ${data.h5600?.stepGoal}")
+        val hours =
+            data.hourlyByHour
+                .withIndex()
+                .filter { (it.value ?: 0) > 0 }
+                .joinToString { "${it.index}:00=${it.value}" }
+        viewModel.addLog("Steps by hour: $hours")
+        viewModel.addLog("Energy (provisional): ${data.h5600?.energyKcal} kcal")
+        viewModel.addLog("Heart rate (day): ${data.h5600?.heartRate}")
+        viewModel.addLog("Heart rate (recent): ${data.h5600?.recentHeartRate}")
+        viewModel.addLog(
+            "Pending: LifeLog=${data.h5600?.lifeLogPending}, ActivityLog=${data.h5600?.activityLogPending}",
+        )
+        data.warnings.forEach { viewModel.addLog("Note: $it") }
+        viewModel.addLog("Stream: ${data.raw?.size ?: 0} bytes")
+    }
+
     private suspend fun runCommands(viewModel: MainScreenViewModel) {
         viewModel.addLog("Button pressed: ${api.getPressedButton()}")
         viewModel.addLog("Name returned: ${api.getWatchName()}")
@@ -437,6 +460,9 @@ class MainActivity : ComponentActivity() {
         }
         if (WatchInfo.hasTemperature) {
             viewModel.addLog("Temperature: ${api.getWatchTemperature()}")
+        }
+        if (WatchInfo.model == WatchInfo.WatchModel.DW_H5600) {
+            runHealthTest(viewModel)
         }
 
         getDSTState(viewModel)
