@@ -60,5 +60,11 @@ object RunActionsIO {
             Timber.i("Run actions triggered by always-connected watch")
             ProgressEvents.onNext("RunActions")
         }
+        // "0x0A 00": the user left the watch's Find Phone screen (back button / done), confirmed on
+        // the DW-H5600. Lets the app stop ringing instead of waiting for a lift or the 30 s timeout.
+        if (data == "0x0A 00" && WatchInfo.alwaysConnected) {
+            Timber.i("Find Phone ended on the watch")
+            ProgressEvents.onNext("FindPhoneEnded")
+        }
     }
 }
