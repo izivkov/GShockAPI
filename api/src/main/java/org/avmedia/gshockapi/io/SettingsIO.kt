@@ -292,20 +292,41 @@ object SettingsIO {
     @Volatile
     private var lastRaw: ByteArray? = null
 
+    /** Bumped on every 0x13 packet from the watch, so a fresh read can tell a new answer from stale lastRaw. */
+    @Volatile
+    private var rawSeq = 0
+
+    /**
+     * Fresh 0x13 read (bypassing the cache), retried. The watch sometimes drops a GET sent right
+     * after a SET; the unanswered request must then be discarded, otherwise later readers join it
+     * (see getBasicSettings) and never send a new one.
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun freshRaw(): ByteArray {
+        repeat(3) { attempt ->
+            val seq = rawSeq
+            CachedIO.remove("GET_SETTINGS")
+            kotlinx.coroutines.withTimeoutOrNull(3_000) { request() }
+            if (rawSeq != seq) lastRaw?.let { return it.copyOf() }
+            synchronized(this) {
+                state.deferredResult?.completeExceptionally(IllegalStateException("no 0x13 answer"))
+                state = state.copy(deferredResult = null)
+            }
+            CachedIO.remove("GET_SETTINGS")
+            Timber.w("0x13 read attempt ${attempt + 1} got no answer; retrying")
+            kotlinx.coroutines.delay(400L * (attempt + 1))
+        }
+        error("watch did not answer the settings read")
+    }
+
     /** Fresh read of 0x13 (bypassing the cache); true = 24-hour format. */
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun readTimeFormat24h(): Boolean {
-        CachedIO.remove("GET_SETTINGS")
-        kotlinx.coroutines.withTimeout(8_000) { request() } // onReceived also updates lastRaw
-        val raw = lastRaw ?: error("settings not received")
-        return (raw[1].toInt() and 0x01) != 0
-    }
+    suspend fun readTimeFormat24h(): Boolean = (freshRaw()[1].toInt() and 0x01) != 0
 
     /** Flips only the 24-hour bit of a freshly read 0x13 packet; every other byte is kept. */
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun writeTimeFormat24h(is24h: Boolean) {
-        readTimeFormat24h()
-        val b = (lastRaw ?: error("settings not received")).copyOf()
+        val b = freshRaw()
         b[1] = (if (is24h) b[1].toInt() or 0x01 else b[1].toInt() and 0x01.inv()).toByte()
         IO.writeCmd(GetSetMode.SET, b)
         rememberRaw(b)
@@ -314,15 +335,13 @@ object SettingsIO {
     /** Hourly time signal: byte 12 bit 0x20 of a fresh 0x13 read (confirmed on the DW-H5600). */
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun readHourlyChime(): Boolean {
-        readTimeFormat24h() // fresh read, updates lastRaw
-        val raw = lastRaw ?: error("settings not received")
+        val raw = freshRaw()
         return raw.size > 12 && (raw[12].toInt() and 0x20) != 0
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun writeHourlyChime(on: Boolean) {
-        readTimeFormat24h()
-        val b = (lastRaw ?: error("settings not received")).copyOf()
+        val b = freshRaw()
         check(b.size > 12) { "short 0x13 packet" }
         b[12] = (if (on) b[12].toInt() or 0x20 else b[12].toInt() and 0x20.inv()).toByte()
         IO.writeCmd(GetSetMode.SET, b)
@@ -337,7 +356,7 @@ object SettingsIO {
 
     fun onReceived(data: String) {
         runCatching { Utils.byteArrayOfIntArray(Utils.toIntArray(data).toIntArray()) }
-            .getOrNull()?.let { lastRaw = it }
+            .getOrNull()?.let { lastRaw = it; rawSeq++ }
         // Use pure function to decode
         SettingsIOFunctional.decode(data)
             .fold(
