@@ -149,15 +149,36 @@ object TimerIO {
 
     suspend fun request(requestString: String = "18"): Int = CachedIO.request(requestString) { key -> getTimer(key) }
 
+    /** Shared between concurrent callers; each try times out and is retried (see RawSettingIO). */
     private suspend fun getTimer(key: String): Int {
-        val deferred = CompletableDeferred<Int>()
-        synchronized(this) {
-            state = state.copy(deferredResult = deferred)
+        var last: Throwable = IllegalStateException("no answer to the timer read")
+        for (attempt in 0 until 3) {
+            val (deferred, isNew) = synchronized(this) {
+                state.deferredResult?.takeIf { it.isActive }?.let { it to false }
+                    ?: CompletableDeferred<Int>().also { state = state.copy(deferredResult = it) }.let { it to true }
+            }
+            if (isNew) IO.request(key)
+            try {
+                kotlinx.coroutines.withTimeoutOrNull(3_000) { deferred.await() }?.let {
+                    Timber.d("TimerIO: getTimer returning $it")
+                    return it
+                }
+                last = IllegalStateException("no answer to the timer read")
+                synchronized(this) { if (state.deferredResult === deferred) state = state.copy(deferredResult = null) }
+                deferred.completeExceptionally(last)
+            } catch (e: IllegalStateException) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                last = e
+            }
+            kotlinx.coroutines.delay(400L * (attempt + 1))
         }
-        IO.request(key)
-        val result = deferred.await()
-        Timber.d("TimerIO: getTimer returning $result")
-        return result
+        throw last
+    }
+
+    /** The watch answered `FF 81 18`: fail the pending read now. */
+    fun onRejected() {
+        val d = synchronized(this) { state.deferredResult.also { state = state.copy(deferredResult = null) } }
+        d?.completeExceptionally(IllegalStateException("watch rejected the timer read (busy?)"))
     }
 
     fun set(timerValue: Int) {
@@ -208,6 +229,12 @@ object TimerIO {
     fun sendToWatchSet(message: String) {
         // Use pure function to build command, then execute
         val size = WatchInfo.protocol.getTimerSize()
+        // The DW-H5600 replies with 15 bytes and rejects a shorter write; without a packet read in
+        // this process there is no correct template, so refuse instead of sending 7 bytes.
+        if (lastRaw == null && WatchInfo.model == WatchInfo.WatchModel.DW_H5600) {
+            Timber.e("Timer not read yet in this session; not writing a short 0x18 packet")
+            return
+        }
         TimerIOFunctional.buildSetCommand(message, size, lastRaw)
             .fold(
                 onSuccess = { encodedData ->

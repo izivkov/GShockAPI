@@ -37,13 +37,20 @@ object CachedIO {
         val cacheOff: Boolean = false,
     )
 
+    // Read from coroutines and the BLE thread: every update is a locked read-copy-write.
+    @Volatile
     private var state = State()
+    private val lock = Any()
 
-    fun clearCache() {
+    private fun store(key: String, value: Any?) = synchronized(lock) {
+        state = state.copy(cache = state.cache + (key.uppercase() to value))
+    }
+
+    fun clearCache() = synchronized(lock) {
         state = state.copy(cache = emptyMap())
     }
 
-    fun remove(key: String) {
+    fun remove(key: String) = synchronized(lock) {
         state = state.copy(cache = state.cache - key.uppercase())
     }
 
@@ -54,14 +61,10 @@ object CachedIO {
     ): T =
         when {
             state.cacheOff ->
-                compute(key).also { value ->
-                    state = state.copy(cache = state.cache + (key.uppercase() to value))
-                }
+                compute(key).also { value -> store(key, value) }
 
             else ->
-                state.cache[key.uppercase()]?.let { it as T } ?: compute(key).also { value ->
-                    state = state.copy(cache = state.cache + (key.uppercase() to value))
-                }
+                state.cache[key.uppercase()]?.let { it as T } ?: compute(key).also { value -> store(key, value) }
         }
 
     fun set(
@@ -75,9 +78,7 @@ object CachedIO {
     fun put(
         key: String,
         value: Any,
-    ) {
-        state = state.copy(cache = state.cache + (key.uppercase() to value))
-    }
+    ) = store(key, value)
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(key: String): T =

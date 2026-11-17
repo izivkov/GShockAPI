@@ -319,33 +319,56 @@ object SettingsIO {
         error("watch did not answer the settings read")
     }
 
+    private const val CODE = 0x13
+
+    private fun is24h(raw: ByteArray) = (raw[1].toInt() and 0x01) != 0
+    private fun chime(raw: ByteArray) = raw.size > 12 && (raw[12].toInt() and 0x20) != 0
+
     /** Fresh read of 0x13 (bypassing the cache); true = 24-hour format. */
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun readTimeFormat24h(): Boolean = (freshRaw()[1].toInt() and 0x01) != 0
-
-    /** Flips only the 24-hour bit of a freshly read 0x13 packet; every other byte is kept. */
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun writeTimeFormat24h(is24h: Boolean) {
-        val b = freshRaw()
-        b[1] = (if (is24h) b[1].toInt() or 0x01 else b[1].toInt() and 0x01.inv()).toByte()
-        IO.writeCmd(GetSetMode.SET, b)
-        rememberRaw(b)
-    }
+    suspend fun readTimeFormat24h(): Boolean = is24h(freshRaw())
 
     /** Hourly time signal: byte 12 bit 0x20 of a fresh 0x13 read (confirmed on the DW-H5600). */
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun readHourlyChime(): Boolean {
-        val raw = freshRaw()
-        return raw.size > 12 && (raw[12].toInt() and 0x20) != 0
+    suspend fun readHourlyChime(): Boolean = chime(freshRaw())
+
+    /** Both bits from ONE fresh read: (24-hour format, hourly signal). */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun readTimeFormatAndChime(): Pair<Boolean, Boolean> = freshRaw().let { is24h(it) to chime(it) }
+
+    /**
+     * Read-modify-write of the raw 0x13 packet, under the per-code lock shared with [update], so
+     * concurrent changes (Time tab, Settings tab, scheduler) cannot undo each other.
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun modifyRaw(change: (ByteArray) -> Unit) = RawSettingIO.withLock(CODE) {
+        val b = freshRaw()
+        change(b)
+        IO.writeCmd(GetSetMode.SET, b)
+        rememberRaw(b)
+    }
+
+    /** Flips only the 24-hour bit of a freshly read 0x13 packet; every other byte is kept. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun writeTimeFormat24h(is24h: Boolean) = modifyRaw { b ->
+        b[1] = (if (is24h) b[1].toInt() or 0x01 else b[1].toInt() and 0x01.inv()).toByte()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun writeHourlyChime(on: Boolean) {
-        val b = freshRaw()
+    suspend fun writeHourlyChime(on: Boolean) = modifyRaw { b ->
         check(b.size > 12) { "short 0x13 packet" }
         b[12] = (if (on) b[12].toInt() or 0x20 else b[12].toInt() and 0x20.inv()).toByte()
-        IO.writeCmd(GetSetMode.SET, b)
-        rememberRaw(b)
+    }
+
+    /** Fresh read, [change] on the decoded settings, encoded onto that same fresh packet and written. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun update(change: (Settings) -> Unit) = RawSettingIO.withLock(CODE) {
+        val raw = freshRaw()
+        val settings = SettingsIOFunctional.decode(Utils.fromByteArrayToHexStrWithSpaces(raw)).getOrThrow()
+        change(settings)
+        val bytes = SettingsIOFunctional.encode(JSONObject(Gson().toJson(settings)), raw)
+        IO.writeCmd(GetSetMode.SET, bytes)
+        rememberRaw(bytes)
     }
 
     /** Used after writing a raw 0x13 packet directly, so the next encode starts from it. */

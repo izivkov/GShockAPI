@@ -843,6 +843,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
 
     override suspend fun setTimeFormat24h(is24h: Boolean) = SettingsIO.writeTimeFormat24h(is24h)
 
+    override suspend fun getTimeFormatAndChime(): Pair<Boolean, Boolean>? = SettingsIO.readTimeFormatAndChime()
+
+    override suspend fun updateSettings(change: (Settings) -> Unit) = SettingsIO.update(change)
+
     override suspend fun getH5600LifeLog(): org.avmedia.gshockapi.io.H5600LifeLog.Result? =
         org.avmedia.gshockapi.io.H5600LifeLogIO.download()
 

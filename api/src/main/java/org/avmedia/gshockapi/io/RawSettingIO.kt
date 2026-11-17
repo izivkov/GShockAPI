@@ -1,61 +1,108 @@
 package org.avmedia.gshockapi.io
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
+
+/** "42 05 3D …" */
+internal fun IntArray.toHex(): String = joinToString(" ") { "%02X".format(it) }
 
 /**
- * Generic read / write for short settings packets whose first byte is the command code.
- *
- * Used for the DW-H5600 packets decoded from the official app's traffic:
- *  - 0x42: sound / notification mode (6 bytes)
- *  - 0x51: watch-face display item (6 bytes)
+ * Generic read / write for settings packets whose first byte is the command code
+ * (DW-H5600: 0x24, 0x39, 0x42, 0x45, 0x4F, 0x50, 0x51, and raw 0x13 restores).
  *
  * Read:  1-byte request [code] on the read-request characteristic (GetSetMode.GET, 26eb002c);
- *        the watch answers with a notification on 26eb002d.
- * Write: the full packet on the all-features characteristic (GetSetMode.SET, 26eb002d),
- *        exactly as the official app does (read-modify-write).
+ *        the watch answers with a notification on 26eb002d, or `FF 81 <code>` when busy.
+ * Write: the full packet on the all-features characteristic (GetSetMode.SET, 26eb002d).
+ *
+ * Reads are robust against what the watch actually does:
+ *  - concurrent readers of the same code share one request (a second caller used to cancel the first);
+ *  - a GET sent right after a SET is sometimes ignored, so each try is short and retried, and an
+ *    unanswered request is discarded (later readers would otherwise join it forever);
+ *  - a rejection fails the try at once instead of waiting for the timeout.
+ * [modify] serializes read-modify-write per code, so two quick changes cannot undo each other.
  */
 object RawSettingIO {
-    private const val TIMEOUT_MS = 10_000L
+    private const val TRY_TIMEOUT_MS = 3_000L
+    private const val TRIES = 3
 
     private val pending = mutableMapOf<Int, CompletableDeferred<IntArray>>()
+    private val locks = ConcurrentHashMap<Int, Mutex>()
 
-    /** Reads packet [code] from the watch. Throws on timeout. */
-    suspend fun request(code: Int): IntArray {
-        val deferred = CompletableDeferred<IntArray>()
-        synchronized(pending) {
-            pending[code]?.cancel()
-            pending[code] = deferred
+    private class Rejected(code: Int) : IllegalStateException("watch rejected 0x%02X (busy?)".format(code))
+
+    /** Reads packet [code] from the watch; throws after [tries] unanswered or rejected tries. */
+    suspend fun request(code: Int, tries: Int = TRIES): IntArray {
+        var last: Throwable = IllegalStateException("no answer to 0x%02X".format(code))
+        for (attempt in 0 until tries) {
+            val (deferred, isNew) = synchronized(pending) {
+                pending[code]?.takeIf { it.isActive }?.let { it to false }
+                    ?: CompletableDeferred<IntArray>().also { pending[code] = it }.let { it to true }
+            }
+            if (isNew) IO.writeCmd(GetSetMode.GET, byteArrayOf(code.toByte()))
+            try {
+                val reply = withTimeoutOrNull(TRY_TIMEOUT_MS) { deferred.await() }
+                if (reply != null) return reply
+                last = IllegalStateException("no answer to 0x%02X".format(code))
+                discard(code, deferred, last)
+            } catch (e: Rejected) {
+                last = e
+            } catch (e: NoAnswer) {
+                last = e // another reader's try timed out on the shared request
+            }
+            Timber.w("0x%02X read try %d failed: %s".format(code, attempt + 1, last.message))
+            if (attempt < tries - 1) delay(400L * (attempt + 1))
         }
-        IO.writeCmd(GetSetMode.GET, byteArrayOf(code.toByte()))
-        return try {
-            withTimeout(TIMEOUT_MS) { deferred.await() }
-        } finally {
-            synchronized(pending) { if (pending[code] === deferred) pending.remove(code) }
-        }
+        throw last
     }
+
+    private class NoAnswer(code: Int) : IllegalStateException("no answer to 0x%02X".format(code))
+
+    /**
+     * Read-modify-write of packet [code], serialized per code. [transform] gets a fresh copy of the
+     * packet and returns the packet to write, or null / an equal packet to skip the write.
+     * Returns the packet as it was before the change.
+     */
+    suspend fun modify(code: Int, transform: (IntArray) -> IntArray?): IntArray =
+        lock(code).withLock {
+            val before = request(code)
+            val after = transform(before.copyOf())
+            if (after != null && !after.contentEquals(before)) write(after)
+            before
+        }
+
+    /** Runs [block] holding the same per-code lock as [modify] (for packets read through another IO). */
+    suspend fun <T> withLock(code: Int, block: suspend () -> T): T = lock(code).withLock { block() }
+
+    private fun lock(code: Int) = locks.getOrPut(code) { Mutex() }
 
     /** Writes a full packet (first byte = code) to the watch. */
     fun write(packet: IntArray) {
-        val bytes = Utils.byteArrayOfIntArray(packet)
-        Timber.i("RawSettingIO write: ${bytes.joinToString(" ") { "%02X".format(it) }}")
-        IO.writeCmd(GetSetMode.SET, bytes)
+        Timber.i("RawSettingIO write: ${packet.toHex()}")
+        IO.writeCmd(GetSetMode.SET, Utils.byteArrayOfIntArray(packet))
+    }
+
+    private fun discard(code: Int, deferred: CompletableDeferred<IntArray>, cause: Throwable) {
+        synchronized(pending) { if (pending[code] === deferred) pending.remove(code) }
+        deferred.completeExceptionally(NoAnswer(code)) // readers that joined it retry on their own
     }
 
     /** The watch answered `FF 81 <code>` (rejected): fail the pending read for that code now. */
     fun onRejected(code: Int) {
-        synchronized(pending) { pending.remove(code) }
-            ?.completeExceptionally(IllegalStateException("watch rejected 0x%02X (busy?)".format(code)))
+        synchronized(pending) { pending.remove(code) }?.completeExceptionally(Rejected(code))
     }
 
     /** Handler registered in WatchProtocol.dataReceivedHandlers for each supported code. */
     fun onReceived(data: String) {
         val ints = runCatching { Utils.toIntArray(data).toIntArray() }.getOrNull() ?: return
         if (ints.isEmpty()) return
-        Timber.i("RawSettingIO received: ${ints.joinToString(" ") { "%02X".format(it) }}")
+        Timber.i("RawSettingIO received: ${ints.toHex()}")
         synchronized(pending) { pending.remove(ints[0]) }?.complete(ints)
     }
 }

@@ -474,14 +474,14 @@ interface IGShockAPI {
     /** Reads the sound / notification mode; null if the watch reports an unknown value. */
     suspend fun getSoundMode(): SoundMode? = null
 
-    /** Sets the sound / notification mode (read-modify-write, other bytes kept). */
-    suspend fun setSoundMode(mode: SoundMode) {}
+    /** Sets the sound / notification mode (read-modify-write, other bytes kept; no write if equal). Returns the previous mode. */
+    suspend fun setSoundMode(mode: SoundMode): SoundMode? = null
 
     /** Reads the watch-face display item; null if unknown or inconsistent. */
     suspend fun getWatchFaceItem(): WatchFaceItem? = null
 
-    /** Sets the watch-face display item (read-modify-write). */
-    suspend fun setWatchFaceItem(item: WatchFaceItem) {}
+    /** Sets the watch-face display item (read-modify-write; no write if equal). Returns the previous item. */
+    suspend fun setWatchFaceItem(item: WatchFaceItem): WatchFaceItem? = null
 
     /** DW-H5600: the official app's 0x39 echo handshake that keeps the watch connected. */
     suspend fun h5600ConnectionHandshake() {}
@@ -502,6 +502,16 @@ interface IGShockAPI {
 
     /** Sets only the 12/24h bit, keeping all other 0x13 bytes. */
     suspend fun setTimeFormat24h(is24h: Boolean) {}
+
+    /** One fresh 0x13 read: (24-hour format, hourly time signal). */
+    suspend fun getTimeFormatAndChime(): Pair<Boolean, Boolean>? = null
+
+    /**
+     * Fresh 0x13 read, [change] applied to the decoded settings, written back — under the same lock
+     * as the 12/24h and hourly-signal writes, so fields the caller does not touch keep the watch's
+     * current values.
+     */
+    suspend fun updateSettings(change: (Settings) -> Unit) {}
 
     /** DW-H5600: run the LifeLog sync and decode steps (takes up to a few minutes). */
     suspend fun getH5600LifeLog(): org.avmedia.gshockapi.io.H5600LifeLog.Result? = null

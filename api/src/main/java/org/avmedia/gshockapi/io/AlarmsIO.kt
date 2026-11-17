@@ -145,8 +145,15 @@ object AlarmsIO {
     private var state = AlarmIOState()
     private var receivedAlarms = ArrayList<Alarm>()
 
+    // The two alarm packets of the current read (0x15 = alarm 1, 0x16 = alarms 2..5), latest copy of
+    // each: the watch sometimes sends a packet twice, and they can arrive in either order.
+    private var firstAlarms: List<Alarm>? = null
+    private var secondaryAlarms: List<Alarm>? = null
+
     private fun clearReceivedAlarms() {
         receivedAlarms.clear()
+        firstAlarms = null
+        secondaryAlarms = null
     }
 
     private fun addSortedReceivedAlarms(source: Array<Alarm>) {
@@ -251,16 +258,49 @@ object AlarmsIO {
         return allAlarms
     }
 
+    /**
+     * Reads all alarms (0x15 + 0x16). Concurrent callers share one request (a second caller used to
+     * replace the first one's request and wipe its half-received alarms, leaving it waiting forever);
+     * each try times out and is retried, and an `FF 81 15/16` rejection fails the try at once.
+     * Callers get a copy, never the list the next read clears.
+     */
     suspend fun request(): ArrayList<Alarm> =
-        CachedIO.request("GET_ALARMS") { key ->
-            val deferred = CompletableDeferred<ArrayList<Alarm>>()
-            synchronized(this) {
-                state = state.copy(deferredResult = deferred, isProcessing = true)
+        CachedIO.request("GET_ALARMS") fetch@{ key ->
+            var last: Throwable = IllegalStateException("no answer to the alarm read")
+            for (attempt in 0 until 3) {
+                val (deferred, isNew) = synchronized(this) {
+                    state.deferredResult?.takeIf { it.isActive }?.let { it to false }
+                        ?: CompletableDeferred<ArrayList<Alarm>>().also {
+                            state = state.copy(deferredResult = it, isProcessing = true)
+                            clearReceivedAlarms()
+                        }.let { it to true }
+                }
+                if (isNew) Connection.sendMessage("{ action: '$key'}")
+                try {
+                    // 0x15 and 0x16 can arrive seconds apart while the watch is busy (e.g. right after a time sync).
+                    kotlinx.coroutines.withTimeoutOrNull(8_000) { deferred.await() }?.let { return@fetch ArrayList(it) }
+                    last = IllegalStateException("no answer to the alarm read")
+                    synchronized(this) {
+                        if (state.deferredResult === deferred) state = state.copy(deferredResult = null, isProcessing = false)
+                    }
+                    deferred.completeExceptionally(last)
+                } catch (e: IllegalStateException) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    last = e // rejected, or another caller's try timed out on the shared request
+                }
+                Timber.w("Alarm read try ${attempt + 1} failed: ${last.message}")
+                kotlinx.coroutines.delay(500L * (attempt + 1))
             }
-            clearReceivedAlarms()
-            Connection.sendMessage("{ action: '$key'}")
-            deferred.await()
+            throw last
         }
+
+    /** The watch answered `FF 81 15` / `FF 81 16` (busy): fail the pending read now. */
+    fun onRejected() {
+        val d = synchronized(this) {
+            state.deferredResult.also { state = state.copy(deferredResult = null, isProcessing = false) }
+        }
+        d?.completeExceptionally(IllegalStateException("watch rejected the alarm read (busy?)"))
+    }
 
     fun set(alarms: ArrayList<Alarm>) {
         if (alarms.isEmpty()) {
@@ -277,16 +317,22 @@ object AlarmsIO {
     fun onReceived(data: String) {
         rememberRaw(data)
         val parsedAlarms = AlarmsIOFunctional.parseReceivedAlarms(data)
-        addSortedReceivedAlarms(parsedAlarms.toTypedArray())
-
-        if (AlarmsIOFunctional.isAlarmCountComplete(
-                getReceivedAlarms().size,
-                WatchInfo.alarmCount,
-            )
-        ) {
-            synchronized(this) {
-                state.deferredResult?.complete(getReceivedAlarms())
-                state = state.copy(alarms = getReceivedAlarms(), isProcessing = false, deferredResult = null)
+        synchronized(this) {
+            when (runCatching { Utils.toIntArray(data).firstOrNull() }.getOrNull()) {
+                CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM.code -> firstAlarms = parsedAlarms
+                CasioConstants.CHARACTERISTICS.CASIO_SETTING_FOR_ALM2.code -> secondaryAlarms = parsedAlarms
+                else -> return
+            }
+            receivedAlarms.clear()
+            receivedAlarms.addAll(firstAlarms.orEmpty() + secondaryAlarms.orEmpty())
+            // Complete only when both packets are in. Counting entries is not enough: the DW-H5600
+            // (alarmCount 4) sends 4 entries in 0x16 alone, so when 0x16 arrived before 0x15 the
+            // read finished without alarm 1 and every slot looked shifted (-> needless rewrites).
+            val complete = firstAlarms != null && (WatchInfo.alarmCount <= 1 || secondaryAlarms != null)
+            if (complete && AlarmsIOFunctional.isAlarmCountComplete(getReceivedAlarms().size, WatchInfo.alarmCount)) {
+                val snapshot = ArrayList(getReceivedAlarms()) // never hand out the buffer the next read clears
+                state.deferredResult?.complete(snapshot)
+                state = state.copy(alarms = snapshot, isProcessing = false, deferredResult = null)
             }
         }
     }

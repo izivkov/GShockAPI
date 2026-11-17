@@ -43,7 +43,7 @@ object H5600LifeLogIO {
             }
         }
         try {
-            withTimeout(H5600LifeLog.OVERALL_TIMEOUT_MS) {
+            withTimeoutOrNull(H5600LifeLog.OVERALL_TIMEOUT_MS) { // null = timed out (not a cancellation)
                 // 1. Setup requests, echoing some replies back like the official app.
                 for (cmd in H5600LifeLog.SETUP_COMMANDS) {
                     val d = CompletableDeferred<ByteArray>()

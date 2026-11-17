@@ -37,16 +37,17 @@ object ErrorIO {
         state = state.copy(error = data)
         Timber.d("ErrorIO: onReceived: $data")
 
-        if (data.contains("81 13")) {
-            SettingsIO.onRunError()
-        }
-        // "FF 81 xx": the watch rejected command xx. Fail a pending raw read for xx right away
-        // instead of letting it wait forever (DW-H5600 does this for 0x51 / 0x15 when busy).
-        runCatching { org.avmedia.gshockapi.utils.Utils.toIntArray(data) }.getOrNull()
+        // "FF 81 xx": the watch rejected command xx (the DW-H5600 does this when busy). Fail the
+        // pending read for xx right away instead of letting it wait for its timeout.
+        val code = runCatching { org.avmedia.gshockapi.utils.Utils.toIntArray(data) }.getOrNull()
             ?.takeIf { it.size >= 3 && it[0] == 0xFF && it[1] == 0x81 }
-            ?.let { RawSettingIO.onRejected(it[2]) }
-        if (data.contains("81 11")) {
-            TimeAdjustmentIO.onRunError()
+            ?.get(2) ?: return
+        when (code) {
+            0x13 -> SettingsIO.onRunError()
+            0x11 -> TimeAdjustmentIO.onRunError()
+            0x15, 0x16 -> AlarmsIO.onRejected()
+            0x18 -> TimerIO.onRejected()
+            else -> RawSettingIO.onRejected(code)
         }
     }
 }
