@@ -29,8 +29,13 @@ internal fun IntArray.toHex(): String = joinToString(" ") { "%02X".format(it) }
  * [modify] serializes read-modify-write per code, so two quick changes cannot undo each other.
  */
 object RawSettingIO {
-    private const val TRY_TIMEOUT_MS = 3_000L
     private const val TRIES = 3
+
+    // Seams for unit tests (a fake watch); production values below.
+    internal var tryTimeoutMs = 3_000L
+    internal var retryBaseDelayMs = 400L
+    internal var sendRequest: (Int) -> Unit = { code -> IO.writeCmd(GetSetMode.GET, byteArrayOf(code.toByte())) }
+    internal var sendPacket: (IntArray) -> Unit = { packet -> IO.writeCmd(GetSetMode.SET, Utils.byteArrayOfIntArray(packet)) }
 
     private val pending = mutableMapOf<Int, CompletableDeferred<IntArray>>()
     private val locks = ConcurrentHashMap<Int, Mutex>()
@@ -45,9 +50,9 @@ object RawSettingIO {
                 pending[code]?.takeIf { it.isActive }?.let { it to false }
                     ?: CompletableDeferred<IntArray>().also { pending[code] = it }.let { it to true }
             }
-            if (isNew) IO.writeCmd(GetSetMode.GET, byteArrayOf(code.toByte()))
+            if (isNew) sendRequest(code)
             try {
-                val reply = withTimeoutOrNull(TRY_TIMEOUT_MS) { deferred.await() }
+                val reply = withTimeoutOrNull(tryTimeoutMs) { deferred.await() }
                 if (reply != null) return reply
                 last = IllegalStateException("no answer to 0x%02X".format(code))
                 discard(code, deferred, last)
@@ -57,7 +62,7 @@ object RawSettingIO {
                 last = e // another reader's try timed out on the shared request
             }
             Timber.w("0x%02X read try %d failed: %s".format(code, attempt + 1, last.message))
-            if (attempt < tries - 1) delay(400L * (attempt + 1))
+            if (attempt < tries - 1) delay(retryBaseDelayMs * (attempt + 1))
         }
         throw last
     }
@@ -85,7 +90,7 @@ object RawSettingIO {
     /** Writes a full packet (first byte = code) to the watch. */
     fun write(packet: IntArray) {
         Timber.i("RawSettingIO write: ${packet.toHex()}")
-        IO.writeCmd(GetSetMode.SET, Utils.byteArrayOfIntArray(packet))
+        sendPacket(packet)
     }
 
     private fun discard(code: Int, deferred: CompletableDeferred<IntArray>, cause: Throwable) {
