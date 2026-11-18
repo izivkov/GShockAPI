@@ -122,7 +122,7 @@ object H5600HealthIO {
                 return StepCounterData.unavailable()
             }
             Timber.i(
-                "H5600: decoded steps=${decoded.currentDaySteps} goal=${stepGoal} " +
+                "H5600: decoded steps=${decoded.currentDaySteps} goal=$stepGoal " +
                     "hours=${decoded.hourlyByHour.withIndex().filter { (it.value ?: 0) > 0 }.map { it.index }} " +
                     "warnings=${decoded.warnings.size}",
             )

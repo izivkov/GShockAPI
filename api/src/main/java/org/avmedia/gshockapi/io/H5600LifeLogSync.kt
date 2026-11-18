@@ -123,7 +123,9 @@ class H5600LifeLogSync {
         private val SETUP_SECOND = bytesOf(0x04, 0x01, 0x18, 0x00, 0x18, 0x00, 0x00, 0x00, 0xDC, 0x05)
         private val SETUP_THIRD = ByteArray(14).also { it[0] = 0x06 }
         private val ACK_FRAGMENT = ByteArray(15).also { it[0] = 0x07 }
-        private val START = bytesOf(0x00, 0x2E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)
+
+        /** START on DRSP. Written before the first poll and again after the second setup reply. */
+        val START = bytesOf(0x00, 0x2E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)
 
         /** Which channel a notification came from, judged from its bytes. */
         fun channelOf(data: ByteArray): H5600Channel =

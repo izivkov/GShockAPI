@@ -82,16 +82,17 @@ object H5600HealthDecoder {
         }
 
         val buffer = ByteBuffer.wrap(stream).order(ByteOrder.LITTLE_ENDIAN)
-        val utcTime = OffsetDateTime.of(
-            LocalDateTime.of(
-                2000 + unsigned(stream, 5),
-                unsigned(stream, 6),
-                unsigned(stream, 7),
-                unsigned(stream, 8),
-                unsigned(stream, 9),
-            ),
-            ZoneOffset.UTC,
-        )
+        val utcTime =
+            OffsetDateTime.of(
+                LocalDateTime.of(
+                    2000 + unsigned(stream, 5),
+                    unsigned(stream, 6),
+                    unsigned(stream, 7),
+                    unsigned(stream, 8),
+                    unsigned(stream, 9),
+                ),
+                ZoneOffset.UTC,
+            )
         val localTime = utcTime.atZoneSameInstant(zone).toLocalDateTime()
 
         val steps = buffer.getShort(14).toInt() and 0xFFFF
@@ -118,25 +119,27 @@ object H5600HealthDecoder {
         warnings += "header energy $energyRaw read as kcal (provisional, one comparison)"
 
         val currentStats = frameBody(stream, spans, TAG_CURRENT_STATS)
-        val heartRate = currentStats?.let {
-            HeartRateSummary(
-                maxBpm = validBpm(it, HEART_RATE_OFFSET_MAX),
-                minBpm = validBpm(it, HEART_RATE_OFFSET_MIN),
-                restingBpm = validBpm(it, HEART_RATE_OFFSET_RESTING),
-            )
-        }
+        val heartRate =
+            currentStats?.let {
+                HeartRateSummary(
+                    maxBpm = validBpm(it, HEART_RATE_OFFSET_MAX),
+                    minBpm = validBpm(it, HEART_RATE_OFFSET_MIN),
+                    restingBpm = validBpm(it, HEART_RATE_OFFSET_RESTING),
+                )
+            }
 
         val watchFlags = watchCondition?.takeIf { it.size > WATCH_CONDITION_LIFELOG_BYTE }
 
-        val health = H5600HealthData(
-            energyKcal = energyRaw,
-            energyIsProvisional = true,
-            heartRate = heartRate,
-            recentHeartRate = recentHeartRate(stream, spans),
-            stepGoal = stepGoal,
-            lifeLogPending = watchFlags?.let { it[WATCH_CONDITION_LIFELOG_BYTE].toInt() != 0 },
-            activityLogPending = watchFlags?.let { it[WATCH_CONDITION_ACTIVITY_BYTE].toInt() != 0 },
-        )
+        val health =
+            H5600HealthData(
+                energyKcal = energyRaw,
+                energyIsProvisional = true,
+                heartRate = heartRate,
+                recentHeartRate = recentHeartRate(stream, spans),
+                stepGoal = stepGoal,
+                lifeLogPending = watchFlags?.let { it[WATCH_CONDITION_LIFELOG_BYTE].toInt() != 0 },
+                activityLogPending = watchFlags?.let { it[WATCH_CONDITION_ACTIVITY_BYTE].toInt() != 0 },
+            )
 
         return StepCounterData(
             timestamp = localTime,
@@ -165,13 +168,17 @@ object H5600HealthDecoder {
         return out.toByteArray().map { (it.toInt() xor 0xFF).toByte() }.toByteArray()
     }
 
-    private fun locateFrames(stream: ByteArray, announcedLengths: Map<Int, Int>): Map<Int, IntRange> {
+    private fun locateFrames(
+        stream: ByteArray,
+        announcedLengths: Map<Int, Int>,
+    ): Map<Int, IntRange> {
         val starts = linkedMapOf<Int, Int>()
         var searchFrom = HEADER_SIZE
         for (tag in FRAME_ORDER) {
             val length = announcedLengths[tag] ?: continue
-            val needle = ByteBuffer.allocate(FRAME_HEADER_SIZE).order(ByteOrder.LITTLE_ENDIAN)
-                .put(tag.toByte()).putInt(length).array()
+            val needle =
+                ByteBuffer.allocate(FRAME_HEADER_SIZE).order(ByteOrder.LITTLE_ENDIAN)
+                    .put(tag.toByte()).putInt(length).array()
             val start = indexOf(stream, needle, searchFrom)
             if (start >= 0) {
                 starts[tag] = start
@@ -185,14 +192,22 @@ object H5600HealthDecoder {
         }.toMap()
     }
 
-    private fun frameBody(stream: ByteArray, spans: Map<Int, IntRange>, tag: Int): ByteArray? {
+    private fun frameBody(
+        stream: ByteArray,
+        spans: Map<Int, IntRange>,
+        tag: Int,
+    ): ByteArray? {
         val span = spans[tag] ?: return null
         val from = span.first + FRAME_HEADER_SIZE
         val to = span.last + 1
         return if (from <= to) stream.copyOfRange(from, to) else null
     }
 
-    private fun frameRecords(stream: ByteArray, spans: Map<Int, IntRange>, tag: Int): List<Pair<Int, Int>> {
+    private fun frameRecords(
+        stream: ByteArray,
+        spans: Map<Int, IntRange>,
+        tag: Int,
+    ): List<Pair<Int, Int>> {
         val body = frameBody(stream, spans, tag) ?: return emptyList()
         return (0 until body.size - RECORD_SIZE + 1 step RECORD_SIZE).map { offset ->
             val buffer = ByteBuffer.wrap(body, offset, RECORD_SIZE).order(ByteOrder.LITTLE_ENDIAN)
@@ -200,11 +215,15 @@ object H5600HealthDecoder {
         }
     }
 
-    private fun recentHeartRate(stream: ByteArray, spans: Map<Int, IntRange>): HeartRateSamples? {
+    private fun recentHeartRate(
+        stream: ByteArray,
+        spans: Map<Int, IntRange>,
+    ): HeartRateSamples? {
         val body = frameBody(stream, spans, TAG_HEART_RATE) ?: return null
-        val values = (0 until body.size step RECORD_SIZE)
-            .map { body[it].toInt() and 0xFF }
-            .filter { it in MIN_BPM..MAX_BPM }
+        val values =
+            (0 until body.size step RECORD_SIZE)
+                .map { body[it].toInt() and 0xFF }
+                .filter { it in MIN_BPM..MAX_BPM }
         val min = values.minOrNull() ?: return null
         val max = values.maxOrNull() ?: return null
         return HeartRateSamples(
@@ -215,15 +234,25 @@ object H5600HealthDecoder {
         )
     }
 
-    private fun validBpm(body: ByteArray, offset: Int): Int? {
+    private fun validBpm(
+        body: ByteArray,
+        offset: Int,
+    ): Int? {
         if (body.size < offset + 2) return null
         val value = ByteBuffer.wrap(body, offset, 2).order(ByteOrder.LITTLE_ENDIAN).short.toInt() and 0xFFFF
         return value.takeIf { it in MIN_BPM..MAX_BPM }
     }
 
-    private fun unsigned(bytes: ByteArray, index: Int): Int = bytes[index].toInt() and 0xFF
+    private fun unsigned(
+        bytes: ByteArray,
+        index: Int,
+    ): Int = bytes[index].toInt() and 0xFF
 
-    private fun indexOf(haystack: ByteArray, needle: ByteArray, from: Int): Int {
+    private fun indexOf(
+        haystack: ByteArray,
+        needle: ByteArray,
+        from: Int,
+    ): Int {
         for (start in from..haystack.size - needle.size) {
             if (needle.indices.all { haystack[start + it] == needle[it] }) return start
         }

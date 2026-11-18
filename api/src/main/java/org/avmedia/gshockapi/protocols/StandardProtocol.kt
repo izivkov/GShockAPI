@@ -5,8 +5,8 @@ import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.HomeTimeIOFunctional
-import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.SettingsIO
+import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO

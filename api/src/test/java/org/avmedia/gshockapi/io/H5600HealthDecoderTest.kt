@@ -17,18 +17,27 @@ class H5600HealthDecoderTest {
 
     private fun le16(value: Int) = byteArrayOf(value.toByte(), (value shr 8).toByte())
 
-    private fun le32(value: Int) =
-        byteArrayOf(value.toByte(), (value shr 8).toByte(), (value shr 16).toByte(), (value shr 24).toByte())
+    private fun le32(value: Int) = byteArrayOf(value.toByte(), (value shr 8).toByte(), (value shr 16).toByte(), (value shr 24).toByte())
 
-    private fun record(value: Int, flag: Int = 0x08F0) = le16(value) + le16(flag)
+    private fun record(
+        value: Int,
+        flag: Int = 0x08F0,
+    ) = le16(value) + le16(flag)
 
-    private fun frame(tag: Int, records: List<ByteArray>): ByteArray {
+    private fun frame(
+        tag: Int,
+        records: List<ByteArray>,
+    ): ByteArray {
         val body = records.fold(ByteArray(0)) { acc, next -> acc + next }
         return byteArrayOf(tag.toByte()) + le32(body.size + 5) + body
     }
 
     /** 2026-10-26 22:18 UTC, the time of the 26 October 2026 capture. */
-    private fun header(steps: Int, energy: Int, stepsTail: ByteArray = byteArrayOf(0, 0)): ByteArray =
+    private fun header(
+        steps: Int,
+        energy: Int,
+        stepsTail: ByteArray = byteArrayOf(0, 0),
+    ): ByteArray =
         byteArrayOf(0x00, 0x0F, 0x00, 0x00, 0x00, 26, 10, 26, 22, 18) +
             le32(0) + le16(steps) + stepsTail + le16(energy)
 

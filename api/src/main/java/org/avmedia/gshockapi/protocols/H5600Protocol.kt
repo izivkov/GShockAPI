@@ -16,8 +16,7 @@ import org.avmedia.gshockapi.model.StepCounterData
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object H5600Protocol : StandardProtocol() {
-    override fun extractKey(data: String): Int? =
-        if (H5600HealthIO.isActive) H5600HealthIO.channelOf(data).key else super.extractKey(data)
+    override fun extractKey(data: String): Int? = if (H5600HealthIO.isActive) H5600HealthIO.channelOf(data).key else super.extractKey(data)
 
     override suspend fun getStepCount(peek: Boolean): StepCounterData = H5600HealthIO.request(peek)
 
