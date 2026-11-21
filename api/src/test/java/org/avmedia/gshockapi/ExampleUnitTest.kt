@@ -1,7 +1,7 @@
 package org.avmedia.gshockapi
 
 import org.junit.Assert.*
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Example local unit test, which will execute on the development machine (host).
