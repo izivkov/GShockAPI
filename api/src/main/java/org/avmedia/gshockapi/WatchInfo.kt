@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.protocols.AnalogueProtocol
 import org.avmedia.gshockapi.protocols.MipProtocol
+import org.avmedia.gshockapi.protocols.OceanusProtocol
 import org.avmedia.gshockapi.protocols.StandardProtocol
 import org.avmedia.gshockapi.protocols.WatchProtocol
 
@@ -204,6 +205,7 @@ data object WatchInfo {
         GW_BX5600,
         MTG_B1000,
         MTG_B3000,
+        OCW_S400,
         GENERIC,
     }
 
@@ -430,6 +432,31 @@ data object WatchInfo {
                 findButtonUserDefined = true,
                 hasPowerSavingMode = false,
             ),
+            ModelInfo(
+                // Oceanus analog, single button (A). Supports pairing, time sync (following the
+                // phone's time zone), battery/temperature, auto-sync on/off and phone finder only.
+                model = WatchModel.OCW_S400,
+                alarmCount = 0,
+                hasAutoLight = false,
+                hasReminders = false,
+                weekLanguageSupported = false,
+                worldCities = false,
+                hasWorldCities = false,
+                hasHomeTime = false,
+                batteryLevelLowerLimit = 14,
+                batteryLevelUpperLimit = 20,
+                hasPowerSavingMode = false,
+                hasDateFormat = false,
+                hasTimeFormat = false,
+                hasHourlyChime = false,
+                hasScratchpad = false,
+                hasTimer = false,
+                hasLight = false,
+                hasOperationTone = false,
+                hasWatchSettings = false,
+                hasTimeAdjustmentMinutes = false,
+                protocol = OceanusProtocol,
+            ),
             ModelInfo(model = WatchModel.GENERIC),
         )
 
@@ -553,7 +580,7 @@ data object WatchInfo {
             // Module 5713: GWG-B1000
             put("GWG-B1000", WatchModel.GW)
             // Module 5728: OCW-S400
-            put("OCW-S400", WatchModel.GENERIC)
+            put("OCW-S400", WatchModel.OCW_S400)
             // Module 5736: GA-B010
             put("GA-B010", WatchModel.GA)
             // Module 5737: GBA-950
