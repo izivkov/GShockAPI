@@ -36,11 +36,11 @@ object TimeAdjustmentIOFunctional {
      * Pure parser: Checks if time adjustment is enabled.
      *
      * Protocol format:
-     * [12] - Time adjustment flag:
-     *     0x00 = syncing on  (time adjustment enabled)
-     *     0x80 = syncing off (time adjustment disabled)
+     * [12] - bit 7: time adjustment flag:
+     *     0 = syncing on  (time adjustment enabled), e.g. 0x00
+     *     1 = syncing off (time adjustment disabled), e.g. 0x80
      */
-    fun parseIsTimeAdjustmentSet(data: String): Boolean = Utils.toIntArray(data)[12] == 0
+    fun parseIsTimeAdjustmentSet(data: String): Boolean = Utils.toIntArray(data)[12] and SYNC_OFF == 0
 
     /**
      * Pure parser: Extracts the time adjustment minutes.
@@ -72,12 +72,27 @@ object TimeAdjustmentIOFunctional {
      *
      * Takes original data and applies new settings without side effects.
      * Protocol format:
-     * [12] - Time adjustment flag (0x00 = on, 0x80 = off)
+     * [12] - bit 7: time adjustment flag (0 = on, 1 = off). Some watches keep other
+     *        data in bits 0-6 (e.g. the hour of the first automatic sync), so only
+     *        bit 7 is changed.
      * [13] - Adjustment time minutes
      */
     fun encode(
         originalData: String,
         settings: JSONObject,
+    ): Result<ByteArray> =
+        runCatching {
+            encode(
+                originalData,
+                timeAdjustment = settings.get("timeAdjustment") == true,
+                adjustmentTimeMinutes = settings.getInt("adjustmentTimeMinutes"),
+            ).getOrThrow()
+        }
+
+    fun encode(
+        originalData: String,
+        timeAdjustment: Boolean,
+        adjustmentTimeMinutes: Int,
     ): Result<ByteArray> =
         runCatching {
             if (originalData.isEmpty()) {
@@ -88,14 +103,16 @@ object TimeAdjustmentIOFunctional {
                 Utils.toIntArray(originalData).apply {
                     // syncing off: 110f0f0f0600500004000100->80<-37d2
                     // syncing on:  110f0f0f0600500004000100->00<-37d2
-                    this[12] = if (settings.get("timeAdjustment") == true) 0x00 else 0x80
-                    this[13] = settings.getInt("adjustmentTimeMinutes")
+                    this[12] = (this[12] and SYNC_OFF.inv()) or (if (timeAdjustment) 0 else SYNC_OFF)
+                    this[13] = adjustmentTimeMinutes
                 }
             val size = intArr.size
             intArr.foldIndexed(ByteArray(size)) { i, array, value ->
                 array.apply { set(i, value.toByte()) }
             }
         }
+
+    private const val SYNC_OFF = 0x80
 
     /**
      * Pure command builder: Creates fetch command for time adjustment.
@@ -148,13 +165,14 @@ object TimeAdjustmentIO {
     }
 
     fun set(settings: Settings) {
-        settings.let {
-            Gson().toJson(it)
-        }.let { settingJson ->
-            CachedIO.set("GET_TIME_ADJUSTMENT") {
-                Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: $settingJson}")
-            }
-        }
+        val settingJson = Gson().toJson(settings)
+        Connection.sendMessage("{action: \"SET_TIME_ADJUSTMENT\", value: $settingJson}")
+        // Keep the new value instead of reading it back: a read sent now can reach the
+        // watch before the queued write, and the watch then answers with the old value.
+        CachedIO.put(
+            "GET_TIME_ADJUSTMENT",
+            TimeAdjustmentInfo(settings.timeAdjustment, settings.adjustmentTimeMinutes),
+        )
     }
 
     fun onReceived(data: String) {
@@ -205,6 +223,8 @@ object TimeAdjustmentIO {
             .fold(
                 onSuccess = { encodedData ->
                     IO.writeCmd(GetSetMode.SET, encodedData)
+                    // The next change in this connection starts from what was written.
+                    CasioIsAutoTimeOriginalValue.value = Utils.fromByteArrayToHexStr(encodedData)
                 },
                 onFailure = { error ->
                     Timber.e("Failed to encode time adjustment: ${error.message}")
