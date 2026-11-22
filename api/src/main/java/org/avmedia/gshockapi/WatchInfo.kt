@@ -153,6 +153,24 @@ data object WatchInfo {
     val settingsSize: Int
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.settingsSize
+    val hasScratchpad: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasScratchpad
+    val hasTimer: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasTimer
+    val hasLight: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasLight
+    val hasOperationTone: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasOperationTone
+    val hasWatchSettings: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasWatchSettings
+    val hasTimeAdjustmentMinutes: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasTimeAdjustmentMinutes
 
     val protocol: WatchProtocol
         @RequiresApi(Build.VERSION_CODES.O)
@@ -228,6 +246,16 @@ data object WatchInfo {
         val hasExerciseProfile: Boolean = false,
         val settingsSize: Int = 17,
         val protocol: WatchProtocol = StandardProtocol,
+        // The 10-byte user area of app information (0x22) is used as a scratchpad.
+        // Disable for watches where 0x22 holds data owned by the official app.
+        val hasScratchpad: Boolean = true,
+        val hasTimer: Boolean = true,
+        val hasLight: Boolean = true,
+        val hasOperationTone: Boolean = true,
+        // Basic watch settings (0x13): language, date/time format, light, tone...
+        val hasWatchSettings: Boolean = true,
+        // "Adjustment time minutes" in BLE settings (0x11) can be changed by the user.
+        val hasTimeAdjustmentMinutes: Boolean = true,
     )
 
     // =========================================================================

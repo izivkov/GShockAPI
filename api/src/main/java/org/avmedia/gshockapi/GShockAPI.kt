@@ -12,6 +12,7 @@ import org.avmedia.gshockapi.ble.GShockPairingManager
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.io.AppInfoIO
+import org.avmedia.gshockapi.io.AppInfoIOFunctional
 import org.avmedia.gshockapi.io.AppNotificationIO
 import org.avmedia.gshockapi.io.ButtonPressedIO
 import org.avmedia.gshockapi.io.DstForWorldCitiesIO
@@ -441,6 +442,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param startIndex The starting index in the scratchpad.
      */
     override suspend fun setScratchpadData(data: ByteArray) {
+        if (!WatchInfo.hasScratchpad) {
+            Timber.i("setScratchpadData: ${WatchInfo.model} has no scratchpad; not written")
+            return
+        }
         AppInfoIO.setUserData(data)
     }
 
@@ -450,6 +455,9 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return The retrieved byte array.
      */
     override suspend fun getScratchpadData(): ByteArray {
+        if (!WatchInfo.hasScratchpad) {
+            return ByteArray(AppInfoIOFunctional.BUFFER_SIZE - AppInfoIOFunctional.USER_DATA_START_INDEX)
+        }
         AppInfoIO.request()
         return AppInfoIO.getUserData()
     }
@@ -457,10 +465,11 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * Checks if the scratchpad data was reset since the last read.
      *
-     * @return true if scratchpad was reset.
+     * @return true if scratchpad was reset, or if the watch has no scratchpad, so there is
+     * no stored data to decode and defaults should be used.
      */
     override fun isScratchpadReset(): Boolean {
-        return AppInfoIO.wasScratchpadReset
+        return !WatchInfo.hasScratchpad || AppInfoIO.wasScratchpadReset
     }
 
     /**
@@ -552,6 +561,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param ArrayList<[Event]>
      */
     override fun setEvents(events: ArrayList<Event>) {
+        if (!WatchInfo.hasReminders) {
+            Timber.i("setEvents: ${WatchInfo.model} has no reminders; not written")
+            return
+        }
         EventsIO.set(events)
     }
 
@@ -561,6 +574,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param none
      */
     override fun clearEvents() {
+        if (!WatchInfo.hasReminders) return
         EventsIO.clearAll()
     }
 
