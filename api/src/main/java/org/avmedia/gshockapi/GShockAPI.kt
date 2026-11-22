@@ -136,6 +136,13 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         }
 
         Timber.i("Watch button info received: $button")
+        try {
+            WatchInfo.protocol.onInitialized()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Timber.e(error, "Watch protocol initialization failed")
+        }
         ProgressEvents.onNext("ButtonPressedInfoReceived")
         ProgressEvents.onNext("WatchInitializationCompleted")
         Timber.i("Watch initialization complete event emitted")

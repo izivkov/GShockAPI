@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -54,6 +55,15 @@ interface GShock {
         handle: GetSetMode,
         data: ByteArray,
     )
+
+    /**
+     * Like [write], but returns only once the write has completed: true if it succeeded,
+     * false if it failed or could not be sent.
+     */
+    suspend fun writeAndWait(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean
 
     fun isServiceSupported(handle: GetSetMode): Boolean
 }
@@ -419,15 +429,32 @@ private class GShockManagerImpl(
     override suspend fun write(
         handle: GetSetMode,
         data: ByteArray,
+    ) = write(handle, data, completion = null)
+
+    override suspend fun writeAndWait(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean {
+        val completion = CompletableDeferred<Boolean>()
+        write(handle, data, completion)
+        return completion.await()
+    }
+
+    private fun write(
+        handle: GetSetMode,
+        data: ByteArray,
+        completion: CompletableDeferred<Boolean>?,
     ) {
         if (characteristicUUIDs.isEmpty()) {
             ProgressEvents.onNext("ApiError", "Not connected to watch")
             disconnect()
+            completion?.complete(false)
             return
         }
 
         if (!isServiceSupported(handle)) {
             Timber.e("${handle.name.lowercase()} feature not supported")
+            completion?.complete(false)
             return
         }
 
@@ -456,13 +483,21 @@ private class GShockManagerImpl(
 
         try {
             val request = writeCharacteristic(characteristic, data, writeType)
-            if (isStartupRead) {
+            if (isStartupRead || completion != null) {
                 request
-                    .done { Timber.i("Startup read write completed: request=0x$requestHex") }
-                    .fail { _, status -> Timber.e("Startup read write failed: request=0x$requestHex status=$status") }
+                    .done {
+                        if (isStartupRead) Timber.i("Startup read write completed: request=0x$requestHex")
+                        completion?.complete(true)
+                    }
+                    .fail { _, status ->
+                        if (isStartupRead) Timber.e("Startup read write failed: request=0x$requestHex status=$status")
+                        completion?.complete(false)
+                    }
+                    .invalid { completion?.complete(false) }
             }
             request.enqueue()
         } catch (e: Exception) {
+            completion?.complete(false)
             Timber.e(e, "Error writing to characteristic ${characteristic?.uuid}")
             ProgressEvents.onNext("ApiError", "Failed to write data: ${e.message}")
             disconnect()
