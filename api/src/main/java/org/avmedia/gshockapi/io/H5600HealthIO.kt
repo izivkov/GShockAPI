@@ -45,7 +45,16 @@ object H5600HealthIO {
     private const val BULK_LOG_EVERY = 50
     private const val HEX_PREVIEW_BYTES = 16
     private const val POLL_REPLY_TIMEOUT_MS = 1_000L
-    private const val POLL_RETRIES_PER_ATTEMPT = 5
+
+    /** How long an attempt waits for the watch to report ready after START (GBX-H5600: 6 to 50 s). */
+    internal var readyWaitMs = 60_000L
+
+    /** What a read on a set-up link (`47 01` seen) asks before START: the values the decoder needs. */
+    internal val QUICK_SETUP_COMMANDS: List<Int> = listOf(STEP_GOAL_COMMAND, WATCH_CONDITION_COMMAND)
+
+    // Seams for unit tests (a fake watch); production values below.
+    internal var writeCmd: (GetSetMode, ByteArray) -> Unit = { mode, bytes -> IO.writeCmd(mode, bytes) }
+    internal var stepCounterSupported: () -> Boolean = { WatchInfo.hasStepCounter }
     private const val MAX_TRANSFER_ATTEMPTS = 3
 
     private class Transfer(
@@ -102,7 +111,7 @@ object H5600HealthIO {
      * the setup, up to [MAX_TRANSFER_ATTEMPTS] times, and [status] says so.
      */
     suspend fun request(peek: Boolean = true): StepCounterData {
-        if (!WatchInfo.hasStepCounter) {
+        if (!stepCounterSupported()) {
             Timber.i("H5600: step counter not supported on model ${WatchInfo.model}")
             return StepCounterData.unavailable()
         }
@@ -214,18 +223,21 @@ object H5600HealthIO {
     }
 
     /**
-     * Polls the watch until it reports ready. A poll that gets no reply, and a poll that gets a busy reply
-     * (00 01 xx), both count as not ready. After [POLL_RETRIES_PER_ATTEMPT] such polls in a row, the
-     * attempt is marked for restart.
+     * Polls the watch until it reports ready. A busy reply (`00 01 xx`) and a poll without a reply both
+     * mean "still preparing": the watch answers a few polls busy, then goes silent while it prepares,
+     * and answers the next poll ready (GBX-H5600: ready 6 to 50 s after START). The attempt is marked
+     * for restart only when the watch has not been ready for [readyWaitMs]. Ending it after five such
+     * polls gave up just before the watch was ready, and the next attempt started from the setup again.
      */
     private suspend fun keepPolling(transfer: Transfer) {
+        val started = System.currentTimeMillis()
         var notReady = 0
         while (!transfer.finished.isCompleted) {
             val reply = withTimeoutOrNull(POLL_REPLY_TIMEOUT_MS.milliseconds) { transfer.convoyReplies.receive() }
             if (!synchronized(lock) { transfer.sync.isPolling }) break
             notReady++
-            if (notReady > POLL_RETRIES_PER_ATTEMPT) {
-                Timber.w("H5600: watch not ready after $POLL_RETRIES_PER_ATTEMPT polls; restarting the attempt")
+            if (System.currentTimeMillis() - started > readyWaitMs) {
+                Timber.w("H5600: watch not ready after ${readyWaitMs / 1000} s ($notReady polls); restarting the attempt")
                 transfer.silent = true
                 transfer.finished.complete(Unit)
                 break
@@ -240,13 +252,22 @@ object H5600HealthIO {
         }
     }
 
+    /**
+     * The setup requests of this read. Once the watch reported its connection setup done (`47 01`), only
+     * the step goal and the watch condition are read: the official app replays nothing before a transfer,
+     * and the full replay of twelve reads and six echoes cost about 13 s on the always-connected link of
+     * the GBX-H5600 (0.78 s per answer). Without `47 01` the full replay stays.
+     */
+    internal fun setupCommands(): List<Int> =
+        if (H5600ConnectionIO.watchSetupDone) QUICK_SETUP_COMMANDS else H5600LifeLogSync.SETUP_COMMANDS
+
     /** Sends each one-byte setup request and waits for its reply. Returns the step goal, if read. */
     private suspend fun runSetup(transfer: Transfer): Int? {
         var stepGoal: Int? = null
-        for (command in H5600LifeLogSync.SETUP_COMMANDS) {
+        for (command in setupCommands()) {
             Timber.d("H5600: setup 0x${command.toString(16)} -> watch")
             setupWaiting = true
-            IO.writeCmd(GetSetMode.GET, byteArrayOf(command.toByte()))
+            writeCmd(GetSetMode.GET, byteArrayOf(command.toByte()))
             val reply = awaitSetupReply(transfer, command)
             setupWaiting = false
             if (reply == null) {
@@ -259,7 +280,7 @@ object H5600HealthIO {
             }
             if (command in H5600LifeLogSync.ECHO_REPLY_COMMANDS) {
                 // The same values the connection setup writes (0x11 and 0x3A are not echoed unchanged).
-                IO.writeCmd(GetSetMode.SET, H5600ConnectionSetup.writeBackValue(command, reply))
+                writeCmd(GetSetMode.SET, H5600ConnectionSetup.writeBackValue(command, reply))
             }
         }
         return stepGoal
@@ -331,9 +352,9 @@ object H5600HealthIO {
         }
         Timber.i("H5600: ${write.channel} -> ${hex(write.data, HEX_PREVIEW_BYTES)}")
         when (write.channel) {
-            H5600Channel.CONVOY -> IO.writeCmd(GetSetMode.CONVOY, write.data)
-            H5600Channel.DRSP -> IO.writeCmd(GetSetMode.DATA_REQUEST, write.data)
-            H5600Channel.STATUS -> IO.writeCmd(GetSetMode.SET, write.data)
+            H5600Channel.CONVOY -> writeCmd(GetSetMode.CONVOY, write.data)
+            H5600Channel.DRSP -> writeCmd(GetSetMode.DATA_REQUEST, write.data)
+            H5600Channel.STATUS -> writeCmd(GetSetMode.SET, write.data)
         }
     }
 
