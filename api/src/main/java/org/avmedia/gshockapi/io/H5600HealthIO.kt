@@ -97,6 +97,10 @@ object H5600HealthIO {
             val stepGoal = runSetup(transfer)
             Timber.i("H5600: setup finished, step goal=$stepGoal")
 
+            // The official app and the Python script write START before the first poll. The watch
+            // acknowledges it on DRSP once it is ready. Without this write the first poll gets no reply.
+            send(H5600Write(H5600Channel.DRSP, H5600LifeLogSync.START))
+
             for (write in synchronized(lock) { transfer.sync.start() }) {
                 send(write)
             }
