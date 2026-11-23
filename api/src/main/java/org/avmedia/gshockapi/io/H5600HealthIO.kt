@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.WatchInfo
@@ -30,6 +32,9 @@ import kotlin.time.Duration.Companion.milliseconds
  * `adb logcat | grep H5600`.
  */
 @RequiresApi(Build.VERSION_CODES.O)
+/** Peek test: when true, a peek read does not echo END. Set to false to restore the normal transfer. */
+private const val TEST_PEEK_SKIPS_END = true
+
 object H5600HealthIO {
     private const val SETUP_REPLY_TIMEOUT_MS = 5_000L
     private const val OVERALL_TIMEOUT_MS = 180_000L
@@ -39,6 +44,9 @@ object H5600HealthIO {
     private const val ANNOUNCEMENT_BYTES = 6
     private const val BULK_LOG_EVERY = 50
     private const val HEX_PREVIEW_BYTES = 16
+    private const val POLL_REPLY_TIMEOUT_MS = 1_000L
+    private const val POLL_RETRIES_PER_ATTEMPT = 5
+    private const val MAX_TRANSFER_ATTEMPTS = 3
 
     private class Transfer(
         val sync: H5600LifeLogSync,
@@ -47,13 +55,25 @@ object H5600HealthIO {
         val notifications = mutableListOf<ByteArray>()
         val announcements = mutableMapOf<Int, Int>()
         val setupReplies = Channel<ByteArray>(Channel.UNLIMITED)
+        val convoyReplies = Channel<Unit>(Channel.UNLIMITED)
         val finished = CompletableDeferred<Unit>()
         var watchCondition: ByteArray? = null
         var bulkCount = 0
+        var silent = false
     }
 
     private val lock = Any()
     private var active: Transfer? = null
+
+    private val _status = MutableStateFlow<String?>(null)
+
+    /** What the transfer is doing when it is not simply running, for example a restart. */
+    val status: StateFlow<String?> = _status
+
+    /** Why the last transfer produced no data, for the UI. Null when the last transfer worked. */
+    @Volatile
+    var lastError: String? = null
+        private set
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val isActive: Boolean
@@ -67,23 +87,31 @@ object H5600HealthIO {
 
     fun onStatus(hex: String) = onNotification(H5600Channel.STATUS, hex)
 
+    private var requestRunning = false
+
+    /** True while a setup request is waiting for its reply. Only then does the transfer take status notifications. */
+    @Volatile
+    private var setupWaiting = false
+
+    fun isAwaitingSetupReply(): Boolean = setupWaiting
+
+    private class AttemptOutcome(val data: StepCounterData, val restart: Boolean)
+
     /**
-     * Runs one transfer and returns the decoded data. The watch always finishes the transfer
-     * with END, so [peek] does not change the sequence.
+     * Runs the LifeLog transfer. If the watch stops answering an attempt, that attempt is restarted from
+     * the setup, up to [MAX_TRANSFER_ATTEMPTS] times, and [status] says so.
      */
     suspend fun request(peek: Boolean = true): StepCounterData {
         if (!WatchInfo.hasStepCounter) {
             Timber.i("H5600: step counter not supported on model ${WatchInfo.model}")
             return StepCounterData.unavailable()
         }
-
-        val transfer = Transfer(H5600LifeLogSync(), ZoneId.systemDefault())
         val started =
             synchronized(lock) {
-                if (active != null) {
+                if (requestRunning) {
                     false
                 } else {
-                    active = transfer
+                    requestRunning = true
                     true
                 }
             }
@@ -91,9 +119,39 @@ object H5600HealthIO {
             Timber.w("H5600: request ignored, a transfer is already running")
             return StepCounterData.unavailable()
         }
-        Timber.i("H5600: LifeLog request start (peek=$peek, zone=${transfer.zone})")
-
+        lastError = null
         try {
+            for (attempt in 1..MAX_TRANSFER_ATTEMPTS) {
+                _status.value =
+                    if (attempt == 1) {
+                        null
+                    } else {
+                        "LifeLog data failed, trying again (attempt $attempt of $MAX_TRANSFER_ATTEMPTS)"
+                    }
+                val outcome = runAttempt(ZoneId.systemDefault(), peek)
+                if (!outcome.restart) return outcome.data
+                Timber.w("H5600: the watch did not answer; attempt $attempt of $MAX_TRANSFER_ATTEMPTS failed")
+            }
+            lastError =
+                "LifeLog data could not be read after $MAX_TRANSFER_ATTEMPTS tries. Open the Health screen to try again."
+            Timber.e("H5600: giving up after $MAX_TRANSFER_ATTEMPTS attempts")
+            return StepCounterData.unavailable()
+        } finally {
+            _status.value = null
+            synchronized(lock) { requestRunning = false }
+        }
+    }
+
+    /** One attempt: setup, START, polls, then the data. restart = true when the watch stopped answering. */
+    private suspend fun runAttempt(
+        zone: ZoneId,
+        peek: Boolean,
+    ): AttemptOutcome {
+        // Peek test: with peek, END is not echoed, so the watch may keep the data it has not yet been told it can drop.
+        val transfer = Transfer(H5600LifeLogSync(echoEnd = !(peek && TEST_PEEK_SKIPS_END)), zone)
+        synchronized(lock) { active = transfer }
+        try {
+            Timber.i("H5600: LifeLog attempt start (peek=$peek, zone=$zone)")
             val stepGoal = runSetup(transfer)
             Timber.i("H5600: setup finished, step goal=$stepGoal")
 
@@ -105,7 +163,21 @@ object H5600HealthIO {
                 send(write)
             }
 
-            val completed = withTimeoutOrNull(OVERALL_TIMEOUT_MS.milliseconds) { transfer.finished.await() } != null
+            // Re-polls while the watch is silent, and gives up on this attempt after a few silent polls.
+            val watchdog = scope.launch { keepPolling(transfer) }
+            val completed =
+                try {
+                    withTimeoutOrNull(OVERALL_TIMEOUT_MS.milliseconds) { transfer.finished.await() } != null
+                } finally {
+                    watchdog.cancel()
+                }
+            if (transfer.silent) {
+                return AttemptOutcome(StepCounterData.unavailable(), restart = true)
+            }
+            if (!completed) {
+                lastError = "The sync did not finish. Open the Health screen to try again."
+            }
+
             val snapshot = synchronized(lock) { transfer.notifications.toList() to transfer.announcements.toMap() }
             Timber.i(
                 "H5600: transfer ${if (completed) "finished" else "TIMED OUT"}: " +
@@ -123,18 +195,46 @@ object H5600HealthIO {
             if (decoded == null) {
                 val stream = H5600HealthDecoder.lifeLogStream(snapshot.first)
                 Timber.w("H5600: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
-                return StepCounterData.unavailable()
+                return AttemptOutcome(StepCounterData.unavailable(), restart = false)
             }
             Timber.i(
                 "H5600: decoded steps=${decoded.currentDaySteps} goal=$stepGoal " +
                     "hours=${decoded.hourlyByHour.withIndex().filter { (it.value ?: 0) > 0 }.map { it.index }} " +
                     "warnings=${decoded.warnings.size}",
             )
-            return decoded
+            return AttemptOutcome(decoded, restart = false)
         } finally {
+            setupWaiting = false
             synchronized(lock) { active = null }
             transfer.setupReplies.close()
-            Timber.i("H5600: request end")
+            Timber.i("H5600: attempt end")
+        }
+    }
+
+    /**
+     * Polls the watch until it reports ready. A poll that gets no reply, and a poll that gets a busy reply
+     * (00 01 xx), both count as not ready. After [POLL_RETRIES_PER_ATTEMPT] such polls in a row, the
+     * attempt is marked for restart.
+     */
+    private suspend fun keepPolling(transfer: Transfer) {
+        var notReady = 0
+        while (!transfer.finished.isCompleted) {
+            val reply = withTimeoutOrNull(POLL_REPLY_TIMEOUT_MS.milliseconds) { transfer.convoyReplies.receive() }
+            if (!synchronized(lock) { transfer.sync.isPolling }) break
+            notReady++
+            if (notReady > POLL_RETRIES_PER_ATTEMPT) {
+                Timber.w("H5600: watch not ready after $POLL_RETRIES_PER_ATTEMPT polls; restarting the attempt")
+                transfer.silent = true
+                transfer.finished.complete(Unit)
+                break
+            }
+            if (reply == null) {
+                Timber.w("H5600: no reply to poll within $POLL_REPLY_TIMEOUT_MS ms, retry #$notReady")
+            } else {
+                Timber.w("H5600: watch busy, retry #$notReady")
+                delay(POLL_REPLY_TIMEOUT_MS.milliseconds)
+            }
+            send(H5600Write(H5600Channel.CONVOY, byteArrayOf(0x00, 0x00, 0x00)))
         }
     }
 
@@ -143,8 +243,10 @@ object H5600HealthIO {
         var stepGoal: Int? = null
         for (command in H5600LifeLogSync.SETUP_COMMANDS) {
             Timber.d("H5600: setup 0x${command.toString(16)} -> watch")
+            setupWaiting = true
             IO.writeCmd(GetSetMode.GET, byteArrayOf(command.toByte()))
             val reply = awaitSetupReply(transfer, command)
+            setupWaiting = false
             if (reply == null) {
                 Timber.w("H5600: setup 0x${command.toString(16)}: no reply within ${SETUP_REPLY_TIMEOUT_MS} ms")
                 continue
@@ -179,10 +281,11 @@ object H5600HealthIO {
     ) {
         val transfer = synchronized(lock) { active } ?: return
         val bytes = bytesOf(hex)
-        val writes =
+        val (writes, nowDone) =
             synchronized(lock) {
                 when (channel) {
                     H5600Channel.CONVOY -> {
+                        transfer.convoyReplies.trySend(Unit)
                         transfer.notifications += bytes
                         transfer.bulkCount++
                         if (bytes.firstOrNull() != BULK_PREFIX_BYTE || transfer.bulkCount % BULK_LOG_EVERY == 0) {
@@ -205,11 +308,16 @@ object H5600HealthIO {
                     }
                 }
                 val next = transfer.sync.onMessage(channel, bytes)
-                if (transfer.sync.isFinished) transfer.finished.complete(Unit)
-                next
+                // While polling, the watchdog owns the poll timing. The busy re-polls scheduled by
+                // the sync would duplicate it, so they are dropped here.
+                val pending = if (transfer.sync.isPolling) next.filter { it.delayMs == 0L } else next
+                pending to transfer.sync.isFinished // capture isFinished; complete() moves below
             }
         scope.launch {
+            // Send all echo writes FIRST (e.g. the END echo for 04 2e), then signal
+            // completion so request() does not resume and clean up before the write goes out.
             for (write in writes) send(write)
+            if (nowDone) transfer.finished.complete(Unit)
         }
     }
 

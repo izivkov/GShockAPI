@@ -22,7 +22,7 @@ data class H5600Write(
  * poll until ready, two setup writes, echo the first 9-byte reply to 0x06, start on the second,
  * then echo each index announcement and finish, acknowledge each bulk fragment, and echo END.
  */
-class H5600LifeLogSync {
+class H5600LifeLogSync(private val echoEnd: Boolean = true) {
     private enum class Phase { IDLE, POLLING, SETUP, SETUP_WAIT, TRANSFER, DONE }
 
     private var phase = Phase.IDLE
@@ -31,6 +31,10 @@ class H5600LifeLogSync {
 
     val isFinished: Boolean
         get() = phase == Phase.DONE
+
+    /** True until the watch reports ready. Only then does the transfer send setup and data. */
+    val isPolling: Boolean
+        get() = phase == Phase.POLLING
 
     fun start(): List<H5600Write> {
         phase = Phase.POLLING
@@ -100,7 +104,10 @@ class H5600LifeLogSync {
 
             data.startsWith(0x04, 0x2E) -> {
                 phase = Phase.DONE
-                listOf(H5600Write(H5600Channel.DRSP, data.copyOf()))
+                // Echo END back to the watch, exactly as the Python script does.
+                // Without this the watch returns 0xFF 81 2D (invalid command) and drops the connection.
+                // The peek test skips this echo, to see whether the watch keeps its unsent data.
+                if (echoEnd) listOf(H5600Write(H5600Channel.DRSP, data.copyOf())) else emptyList()
             }
 
             else -> emptyList()
@@ -114,7 +121,7 @@ class H5600LifeLogSync {
         /** Replies the official app writes back unchanged to STATUS. */
         val ECHO_REPLY_COMMANDS: Set<Int> = setOf(0x11, 0x3B, 0x3A, 0x2F, 0x13, 0x45)
 
-        private const val BUSY_RETRY_MS = 3_500L
+        private const val BUSY_RETRY_MS = 1_000L
         private const val NINE_BYTES = 9
         private const val BULK_PREFIX: Byte = 0x05
 

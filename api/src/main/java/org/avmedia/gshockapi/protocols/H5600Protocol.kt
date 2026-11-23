@@ -16,7 +16,17 @@ import org.avmedia.gshockapi.model.StepCounterData
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object H5600Protocol : StandardProtocol() {
-    override fun extractKey(data: String): Int? = if (H5600HealthIO.isActive) H5600HealthIO.channelOf(data).key else super.extractKey(data)
+    override fun extractKey(data: String): Int? {
+        if (!H5600HealthIO.isActive) return super.extractKey(data)
+        val channel = H5600HealthIO.channelOf(data)
+        // A status notification belongs to the transfer only while one of its setup requests is waiting.
+        // Anything else on status (such as the button info reply) goes through the normal routing.
+        return if (channel == H5600Channel.STATUS && !H5600HealthIO.isAwaitingSetupReply()) {
+            super.extractKey(data)
+        } else {
+            channel.key
+        }
+    }
 
     override suspend fun getStepCount(peek: Boolean): StepCounterData = H5600HealthIO.request(peek)
 
