@@ -1,3 +1,16 @@
+# GShockAPI Release Notes - v1.8.6
+
+## ⌚ New Watch Support: Oceanus OCW-S400 Series
+- **Oceanus Integration**: Added dedicated `OceanusProtocol` and model support for the Oceanus OCW-S400 (module 5728). Features verified against official BLE app captures including pairing sequences, time sync, DST management, battery status, temperature, and Phone Finder support.
+
+## ⚙️ Protocol, Concurrency & Feature Flag Enhancements
+- **Ordered Writes & Initialization Hooks**: Introduced `Connection.writeInOrder` / `GShock.writeAndWait` for sequential write execution in strict-order protocols. Added `WatchProtocol.onInitialized()` connection hook.
+- **Granular Per-Model Feature Flags**: Added `hasScratchpad`, `hasTimer`, `hasLight`, `hasOperationTone`, `hasWatchSettings`, and `hasTimeAdjustmentMinutes` flags in `ModelInfo`. Setting `hasScratchpad = false` prevents overwriting official companion app pairing info on protected models.
+- **BLE Settings Preservation**: Preserved lower bits of BLE settings byte 12 (such as automatic sync hour) when toggling time synchronization, along with improved setting caching.
+- **Test Stability**: Fixed JUnit 4 vs 5 test dependencies in `ExampleUnitTest`.
+
+---
+
 # GShockAPI Release Notes - v1.8.1
 
 ## ⌚ New Watch Support: BSA-B100 Series
