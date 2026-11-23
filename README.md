@@ -10,6 +10,8 @@ This library provides an API to communicate to the Casio G-Shock watches via the
 - Get watch's battery level
 - Get Watch's temperature
 - Get/Set watch's Timer
+- Get step count & LifeLog health data (DW-H5600, ABL-100 series)
+- Get/Set DW-H5600 watch faces, sound modes & smart alarms
 
 ## Supported Watch Models
 
@@ -17,7 +19,7 @@ The library works with many Bluetooth-enabled G-Shock, Edifice, Oceanus, and Pro
 
 | Series | Compatible Models (Examples)                                 | Note |
 |:---|:-------------------------------------------------------------|:---|
-| **Square** | GW-B5600, GMW-B5000, GW-B5000, DW-B5600, TRN-50              | Classic square design support |
+| **Square** | GW-B5600, GMW-B5000, GW-B5000, DW-B5600, DW-H5600, TRN-50    | Classic & health square design support |
 | **CasiOak** | GA-B2100, GBM-2100, GMC-B2100, MRG-B2100                     | Octagonal bezel models |
 | **G-Steel** | GST-B100 to B1000, GST-W1000, ECB-900                        | Metal series |
 | **Edifice** | ECB-10 to ECB-2300, EQB-500 to EQB-2000                      | Bluetooth Edifice series |
@@ -44,7 +46,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.izivkov:GShockAPI:1.7.1'
+    implementation 'com.github.izivkov:GShockAPI:1.9.0'
 }
 ```
 

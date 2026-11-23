@@ -1,3 +1,21 @@
+# GShockAPI Release Notes - v1.9.0
+
+## 🏃 DW-H5600 LifeLog & Health Integration
+- **Full DW-H5600 LifeLog Sync**: Implemented full LifeLog health data sync protocol for the DW-H5600 series (`H5600HealthDecoder`, `H5600HealthIO`, `H5600LifeLogSync`).
+- **Rich Health Metrics**: Decodes daily total step count, daily step goal, 24-hour hourly step buckets, energy expenditure (kcal), heart rate summary (min, max, average BPM), recent heart rate samples, and breakdown of daily activity times (walking, running, cycling, active, and still seconds).
+- **Self-Healing Sync & Fault Tolerance**: Added automatic retry mechanism (up to 3 attempts) and watchdog polling for missing or delayed watch responses during packet transfer. Real-time transfer status and diagnostics are exposed via `H5600HealthIO.status` and `lastError`.
+
+## ⚙️ DW-H5600 Settings & Watch Face Control
+- **DW-H5600 Configuration IO**: Added dedicated `H5600SettingsIO` and `RawSettingIO` for reading and writing DW-H5600 watch settings.
+- **Sound Mode & Watch Face Customization**: Supports configuring Sound Mode (`MUTE`, `CUSTOM`, `VIBE_ONLY`), Watch Face display selection (Face 1 / Face 2), Watch Face item data widgets (e.g., `STEPS`, `HEART_RATE`), and Smart Alarm schedules.
+- **Unified API Extensions**: Exposed `getWatchFaceItem()`, `setWatchFaceItem()`, `getH5600WatchFaceNumber()`, and `setH5600WatchFaceNumber()` directly on `GShockAPI` / `IGShockAPI`.
+
+## 🛠 Stability & Protocol Enhancements
+- **Button Response Routing**: Improved button press deferred state routing in `ButtonPressedIO` to handle pending requests safely across watch disconnects/reconnects.
+- **Always-Connected Query API**: Added `WatchInfo.isAlwaysConnected(watchName)` for querying whether a watch model maintains a persistent BLE connection.
+
+---
+
 # GShockAPI Release Notes - v1.8.6
 
 ## ⌚ New Watch Support: Oceanus OCW-S400 Series
