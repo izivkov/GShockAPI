@@ -45,6 +45,8 @@ data class StepCounterData(
     val hourlyByHour: List<Int?> = emptyList(),
     val raw: ByteArray? = null,
     val warnings: List<String> = emptyList(),
+    // DW-H5600 health data (energy, heart rate, goal). Null for ABL-100 and other watches.
+    val h5600: H5600HealthData? = null,
 ) {
     companion object {
         fun unavailable() =

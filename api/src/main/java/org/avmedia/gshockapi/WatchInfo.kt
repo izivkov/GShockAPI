@@ -3,6 +3,7 @@ package org.avmedia.gshockapi
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.protocols.AnalogueProtocol
+import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.avmedia.gshockapi.protocols.MipProtocol
 import org.avmedia.gshockapi.protocols.OceanusProtocol
 import org.avmedia.gshockapi.protocols.StandardProtocol
@@ -397,6 +398,7 @@ data object WatchInfo {
                 hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
                 weekLanguageSupported = false,
                 hasStepCounter = true,
+                protocol = H5600Protocol,
             ),
             ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
             ModelInfo(
@@ -708,6 +710,14 @@ data object WatchInfo {
     /** Pure: look up ModelInfo, falling back to GENERIC. */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveModelInfo(model: WatchModel): ModelInfo = modelMap[model] ?: modelMap.getValue(WatchModel.GENERIC)
+
+    /** Look up whether a watch model is always-connected by device name. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun isAlwaysConnected(watchName: String): Boolean {
+        if (watchName.isBlank()) return false
+        val model = resolveModel(watchName)
+        return resolveModelInfo(model).alwaysConnected
+    }
 
     /** Pure: build a complete new State from a device name. */
     @RequiresApi(Build.VERSION_CODES.O)

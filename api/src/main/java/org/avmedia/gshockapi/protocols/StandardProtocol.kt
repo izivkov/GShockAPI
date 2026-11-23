@@ -7,6 +7,7 @@ import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.HomeTimeIOFunctional
 import org.avmedia.gshockapi.io.SettingsIO
+import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
@@ -16,6 +17,7 @@ import org.avmedia.gshockapi.io.WorldCitiesIO
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.StepCounterData
 import org.avmedia.gshockapi.utils.Utils
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -48,6 +50,8 @@ open class StandardProtocol : WatchProtocol {
         // FF 81 1F and the actual current-time command never follows.
         TimeIO.set(timeMs, offset)
     }
+
+    override suspend fun getStepCount(peek: Boolean): StepCounterData = StepCounterIO.request(peek)
 
     override suspend fun getTimer(): Int {
         return TimerIO.request(getTimerRequest())

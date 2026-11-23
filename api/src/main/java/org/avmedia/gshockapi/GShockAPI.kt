@@ -19,9 +19,9 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
+import org.avmedia.gshockapi.io.H5600SettingsIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
-import org.avmedia.gshockapi.io.StepCounterIO
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
 import org.avmedia.gshockapi.io.TimeIO
 import org.avmedia.gshockapi.io.WaitForConnectionIO
@@ -32,6 +32,7 @@ import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
+import org.avmedia.gshockapi.model.WatchFaceItem
 import timber.log.Timber
 import java.time.ZoneId
 
@@ -400,7 +401,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @return hourly and daily history plus the current-day total
      */
     override suspend fun getStepCount(peek: Boolean): StepCounterData {
-        return StepCounterIO.request(peek)
+        return WatchInfo.protocol.getStepCount(peek)
     }
 
     /**
@@ -596,6 +597,14 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * ```
      * @return [org.avmedia.gshockapi.model.Settings]
      */
+
+    override suspend fun getWatchFaceItem(): WatchFaceItem? = H5600SettingsIO.getWatchFaceItem()
+
+    override suspend fun setWatchFaceItem(item: WatchFaceItem): WatchFaceItem? = H5600SettingsIO.setWatchFaceItem(item)
+
+    override suspend fun getH5600WatchFaceNumber(): Int? = H5600SettingsIO.getWatchFaceNumber()
+
+    override suspend fun setH5600WatchFaceNumber(face: Int) = H5600SettingsIO.setWatchFaceNumber(face)
 
     override suspend fun getSettings(): Settings {
         return WatchInfo.protocol.getSettings()

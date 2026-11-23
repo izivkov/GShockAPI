@@ -33,6 +33,7 @@ enum class GetSetMode {
     DATA_REQUEST,
     SP_REQUEST,
     SP_DATA,
+    CONVOY,
 }
 
 interface GShock {
@@ -81,6 +82,7 @@ private class GShockManagerImpl(
     private var writeCharacteristicHolderDataRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
+    private var writeCharacteristicHolderConvoy: BluetoothGattCharacteristic? = null
 
     private val subscribedCharacteristics = mutableSetOf<UUID>()
 
@@ -190,6 +192,7 @@ private class GShockManagerImpl(
         writeCharacteristicHolderDataRequest = null
         writeCharacteristicHolderSPRequest = null
         writeCharacteristicHolderSPData = null
+        writeCharacteristicHolderConvoy = null
         characteristicUUIDs.clear()
         subscribedCharacteristics.clear()
 
@@ -288,6 +291,7 @@ private class GShockManagerImpl(
             writeCharacteristicHolderNotifications = null
             writeCharacteristicHolderSPRequest = null
             writeCharacteristicHolderSPData = null
+            writeCharacteristicHolderConvoy = null
             characteristicUUIDs.clear()
 
             System.gc()
@@ -328,6 +332,12 @@ private class GShockManagerImpl(
                 writeCharacteristicHolderSPData =
                     getCharacteristic(
                         CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID,
+                    )
+            }
+            if (findCharacteristic(gatt, CasioConstants.CASIO_CONVOY_CHARACTERISTIC_UUID)) {
+                writeCharacteristicHolderConvoy =
+                    getCharacteristic(
+                        CasioConstants.CASIO_CONVOY_CHARACTERISTIC_UUID,
                     )
             }
             Timber.i("isRequiredServiceSupported returning true")
@@ -422,6 +432,7 @@ private class GShockManagerImpl(
                 GetSetMode.DATA_REQUEST -> CasioConstants.CASIO_DATA_REQUEST_CHARACTERISTIC_UUID
                 GetSetMode.SP_REQUEST -> CasioConstants.CASIO_SET_CONFIGURATION_CHARACTERISTIC_UUID
                 GetSetMode.SP_DATA -> CasioConstants.CASIO_GET_CONFIGURATION_CHARACTERISTIC_UUID
+                GetSetMode.CONVOY -> CasioConstants.CASIO_CONVOY_CHARACTERISTIC_UUID
             }
         return characteristicUUIDs.containsKey(uuid.toString())
     }
@@ -466,10 +477,13 @@ private class GShockManagerImpl(
                 GetSetMode.DATA_REQUEST -> writeCharacteristicHolderDataRequest
                 GetSetMode.SP_REQUEST -> writeCharacteristicHolderSPRequest
                 GetSetMode.SP_DATA -> writeCharacteristicHolderSPData
+                GetSetMode.CONVOY -> writeCharacteristicHolderConvoy
             }
 
         val writeType =
-            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST) {
+            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST ||
+                handle == GetSetMode.CONVOY
+            ) {
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             } else {
                 BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
