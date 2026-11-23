@@ -17,6 +17,7 @@ import org.avmedia.gshockapi.DeviceInfo
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
+import org.avmedia.gshockapi.io.ButtonPressedIO
 import timber.log.Timber
 
 object Connection {
@@ -58,6 +59,7 @@ object Connection {
 
     private suspend fun connectToDevice(device: BluetoothDevice): ConnectionResult =
         try {
+            ButtonPressedIO.resetConnectionKind()
             requireBleManager().connect(device) { name, address ->
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
                 WatchInfo.setAddress(address)
@@ -141,6 +143,25 @@ object Connection {
                 manager.write(handle, data)
             }
         }
+    }
+
+    /**
+     * Writes in call order. Unlike [write], which launches a coroutine per call, this
+     * returns only once the write has completed, so consecutive calls from one coroutine
+     * reach the watch in the same order, each after the previous one.
+     *
+     * @return true if the write succeeded, false if it failed or could not be sent.
+     */
+    suspend fun writeInOrder(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean {
+        val manager = bleManager
+        if (manager == null) {
+            ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
+            return false
+        }
+        return manager.writeAndWait(handle, data)
     }
 
     fun isServiceSupported(handle: GetSetMode): Boolean = bleManager?.isServiceSupported(handle) == true

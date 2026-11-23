@@ -66,6 +66,15 @@ object ButtonPressedIOFunctional {
                 }
             }
         }
+
+    /**
+     * Pure parser: the raw "kind of connection" byte, [8], or null if the data is too short.
+     */
+    fun parseConnectionKind(data: String): Int? =
+        runCatching { Utils.toIntArray(data) }
+            .getOrNull()
+            ?.takeIf { it.size >= 19 }
+            ?.get(8)
 }
 
 // ============================================================================
@@ -82,6 +91,7 @@ object ButtonPressedIOFunctional {
 object ButtonPressedIO {
     private data class State(
         val lastKnownButton: IO.WatchButton = IO.WatchButton.INVALID,
+        val connectionKind: Int? = null,
         val deferredResult: CompletableDeferred<IO.WatchButton>? = null,
     )
 
@@ -90,6 +100,7 @@ object ButtonPressedIO {
     suspend fun request(): IO.WatchButton {
         Timber.i("Button info request started (0x10)")
         return CachedIO.request("10") { key ->
+            resetConnectionKind()
             val deferred = CompletableDeferred<IO.WatchButton>()
             synchronized(this) {
                 state = state.copy(deferredResult = deferred)
@@ -113,12 +124,27 @@ object ButtonPressedIO {
 
     fun get(): IO.WatchButton = state.lastKnownButton
 
+    /**
+     * The raw kind of connection reported by the watch for the current connection,
+     * or null if it has not been read yet.
+     */
+    fun getConnectionKind(): Int? = state.connectionKind
+
+    fun resetConnectionKind() {
+        synchronized(this) {
+            state = state.copy(connectionKind = null)
+        }
+    }
+
     fun put(value: Any) {
         CachedIO.put("10", value)
     }
 
     fun onReceived(data: String) {
         Timber.i("Button info response received: $data")
+        synchronized(this) {
+            state = state.copy(connectionKind = ButtonPressedIOFunctional.parseConnectionKind(data))
+        }
         // Use pure function to parse button press
         ButtonPressedIOFunctional.parseButtonPress(data)
             .fold(
