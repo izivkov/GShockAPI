@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 @RequiresApi(Build.VERSION_CODES.O)
 /** Peek test: when true, a peek read does not echo END. Set to false to restore the normal transfer. */
-private const val TEST_PEEK_SKIPS_END = true
+private const val TEST_PEEK_SKIPS_END = false
 
 object H5600HealthIO {
     private const val SETUP_REPLY_TIMEOUT_MS = 5_000L
