@@ -80,6 +80,15 @@ data object WatchInfo {
     val hasTemperature: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.hasTemperature
+    val hasTide: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasTide
+
+    /** DW-H5600 family: same protocol, LifeLog and settings codes (DW-H5600, GBX-H5600). */
+    val isH5600Family: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().model == WatchModel.DW_H5600 || getState().model == WatchModel.GBX_H5600
+
     val hasBatteryLevel: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.hasBatteryLevel
@@ -202,6 +211,7 @@ data object WatchInfo {
         F_B100,
         BSA_B100,
         DW_H5600,
+        GBX_H5600,
         GMW_BZ5000,
         GW_BX5600,
         MTG_B1000,
@@ -238,6 +248,8 @@ data object WatchInfo {
         val hasHomeTime: Boolean = true,
         val hasMultipleFonts: Boolean = false,
         val hasStepCounter: Boolean = false,
+        // Tide graph and port data (GBX-H5600)
+        val hasTide: Boolean = false,
         val hasStepCounterMock: Boolean = false,
         val hasNewTimeFormat: Boolean = false,
         val hasTimeAdjustment: Boolean = true,
@@ -400,6 +412,20 @@ data object WatchInfo {
                 hasStepCounter = true,
                 protocol = H5600Protocol,
             ),
+            // Module 3586: DW-H5600 protocol plus tide; battery level from 0x28 index 1 as 0 to 6
+            ModelInfo(
+                model = WatchModel.GBX_H5600,
+                alarmCount = 4,
+                hasAutoLight = true, hasReminders = false,
+                vibrate = true, chimeInSettings = true,
+                findButtonUserDefined = true,
+                shortLightDuration = "1.5s", longLightDuration = "5s",
+                hasBatteryLevel = true, batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 6,
+                hasTide = true, alwaysConnected = true, hasDateFormat = false,
+                weekLanguageSupported = false,
+                hasStepCounter = true,
+                protocol = H5600Protocol,
+            ),
             ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
             ModelInfo(
                 model = WatchModel.GBD,
@@ -536,7 +562,7 @@ data object WatchInfo {
             // Module 3577: GM-H5600
             put("GM-H5600", WatchModel.DW_H5600)
             // Module 3586: GBX-H5600
-            put("GBX-H5600", WatchModel.GBD)
+            put("GBX-H5600", WatchModel.GBX_H5600)
             // Module 3587: GDG-B100
             put("GDG-B100", WatchModel.GBD)
             // Module 3599: GWF-300
