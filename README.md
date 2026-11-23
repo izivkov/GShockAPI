@@ -34,6 +34,8 @@ The library works with many Bluetooth-enabled G-Shock, Edifice, Oceanus, and Pro
 
 The API documentation can be found [here](https://izivkov.github.io/GShockAPI/api/org.avmedia.gshockapi/index.html)
 
+To add support for a new watch, see [Adding support for a new watch](docs/ADDING_A_WATCH.md).
+
 ## Dependency
 
 Add the following to your **build.gradle** file:
