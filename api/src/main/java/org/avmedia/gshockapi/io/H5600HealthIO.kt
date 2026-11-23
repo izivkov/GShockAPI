@@ -121,6 +121,8 @@ object H5600HealthIO {
         }
         lastError = null
         try {
+            // The connection setup goes first: its requests must not queue behind ours, the transfer would take their answers.
+            H5600ConnectionIO.awaitSetup()
             for (attempt in 1..MAX_TRANSFER_ATTEMPTS) {
                 _status.value =
                     if (attempt == 1) {
@@ -256,7 +258,8 @@ object H5600HealthIO {
                 stepGoal = (reply[1].toInt() and 0xFF) or ((reply[2].toInt() and 0xFF) shl 8)
             }
             if (command in H5600LifeLogSync.ECHO_REPLY_COMMANDS) {
-                IO.writeCmd(GetSetMode.SET, reply)
+                // The same values the connection setup writes (0x11 and 0x3A are not echoed unchanged).
+                IO.writeCmd(GetSetMode.SET, H5600ConnectionSetup.writeBackValue(command, reply))
             }
         }
         return stepGoal

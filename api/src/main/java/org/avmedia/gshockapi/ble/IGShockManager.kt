@@ -14,6 +14,7 @@ import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.io.H5600ConnectionIO
 import timber.log.Timber
 import java.util.UUID
 
@@ -285,6 +286,7 @@ private class GShockManagerImpl(
                 }
             }
             connectionState = ConnectionState.DISCONNECTED
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) H5600ConnectionIO.onDisconnected()
 
             readCharacteristicHolder = null
             writeCharacteristicHolder = null

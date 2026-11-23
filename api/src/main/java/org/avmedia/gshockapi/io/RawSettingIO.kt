@@ -37,6 +37,8 @@ object RawSettingIO {
     internal var sendRequest: (Int) -> Unit = { code -> IO.writeCmd(GetSetMode.GET, byteArrayOf(code.toByte())) }
     internal var sendPacket: (IntArray) -> Unit = { packet -> IO.writeCmd(GetSetMode.SET, Utils.byteArrayOfIntArray(packet)) }
 
+    internal var awaitSetup: suspend () -> Unit = { H5600ConnectionIO.awaitSetup() }
+
     private val pending = mutableMapOf<Int, CompletableDeferred<IntArray>>()
     private val locks = ConcurrentHashMap<Int, Mutex>()
 
@@ -47,6 +49,8 @@ object RawSettingIO {
         code: Int,
         tries: Int = TRIES,
     ): IntArray {
+        // The connection setup goes first: a read queued in front of it would take its answers.
+        awaitSetup()
         var last: Throwable = IllegalStateException("no answer to 0x%02X".format(code))
         for (attempt in 0 until tries) {
             val (deferred, isNew) =
