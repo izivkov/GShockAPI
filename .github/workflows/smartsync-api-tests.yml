@@ -1,0 +1,37 @@
+name: smartsync api unit tests
+
+on:
+  push:
+    branches: [ smartsync ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests of the api module
+        run: ./gradlew :api:testDebugUnitTest --continue
+      - name: Test report summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          t = f = 0
+          for p in glob.glob('api/build/test-results/**/*.xml', recursive=True):
+              r = ET.parse(p).getroot()
+              t += int(r.get('tests', 0)); f += int(r.get('failures', 0)) + int(r.get('errors', 0))
+              for c in r.iter('testcase'):
+                  for e in list(c):
+                      if e.tag in ('failure', 'error'):
+                          print('FAILED', c.get('classname'), c.get('name'), (e.get('message') or '')[:200])
+          print(f'tests={t} failed={f}')
+          PY
