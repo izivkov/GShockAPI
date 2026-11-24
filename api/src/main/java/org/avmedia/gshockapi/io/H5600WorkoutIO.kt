@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.WatchLink
@@ -94,10 +95,15 @@ object H5600WorkoutIO {
         scope.launch { download() }
     }
 
-    /** End of the last download that finished (with or without workouts); null until one did. */
-    @Volatile
-    var lastCheckMs: Long? = null
-        internal set
+    /** The connected watch (a test seam): the last check and the failure back-off are each watch's own. */
+    @Volatile internal var watch: () -> String = { WatchInfo.getAddress() }
+
+    /** Per watch: the end of its last download that finished. */
+    private val lastCheck = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** End of the connected watch's last download that finished (with or without workouts); null until one did. */
+    val lastCheckMs: Long?
+        get() = lastCheck[watch()]
 
     /** After a LifeLog read ([condition] = its raw `0x28` answer, code byte first): download when [WorkoutReadTrigger] says so. */
     fun afterRead(condition: ByteArray?, nowMs: Long = System.currentTimeMillis()) {
@@ -117,14 +123,14 @@ object H5600WorkoutIO {
     /** How long a read waits for `47 01` (the watch's own setup) before it goes on anyway. */
     @Volatile internal var setupWaitMs: Long = org.avmedia.gshockapi.casio.ConnectionSetup.SETUP_WAIT_MS
 
-    /** When the last read failed; null after a read that finished. */
-    @Volatile private var lastFailMs: Long? = null
+    /** Per watch: when its last read failed; none after a read that finished. Another watch is not held back by it. */
+    private val lastFail = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     /** An automatic read runs or waits for the link: a second automatic one is not queued behind it. */
     private val automaticPending = java.util.concurrent.atomic.AtomicBoolean(false)
 
     internal fun resetBackoff() {
-        lastFailMs = null
+        lastFail.clear()
     }
 
     /**
@@ -155,7 +161,7 @@ object H5600WorkoutIO {
 
     /** The log line when an automatic read must wait after a failure, else null. */
     private fun backedOff(): String? {
-        val failed = lastFailMs ?: return null
+        val failed = lastFail[watch()] ?: return null
         val left = failed + RETRY_AFTER_FAIL_MS - clock()
         if (left <= 0) return null
         return "Workout read not started: the last one failed, next automatic try in ${(left + 59_999) / 60_000} min (the button reads now)"
@@ -221,13 +227,13 @@ object H5600WorkoutIO {
                 result = runOnce(store)
             }
             lastError = result.error
-            lastFailMs = if (result.error == null) null else clock()
-            if (result.error == null) lastCheckMs = System.currentTimeMillis()
+            if (result.error == null) lastFail.remove(watch()) else lastFail[watch()] = clock()
+            if (result.error == null) lastCheck[watch()] = System.currentTimeMillis()
             if (result.error == null) log("Workout read done: ${result.downloaded} new stored")
             else problem("Workout read stopped: ${result.error}" + if (result.downloaded > 0) " (${result.downloaded} stored before)" else "")
             return result
         } catch (t: Throwable) {
-            lastFailMs = clock()
+            lastFail[watch()] = clock()
             if (t !is kotlinx.coroutines.CancellationException) problem("Workout read stopped: ${t.javaClass.simpleName} ${t.message.orEmpty()}")
             throw t
         } finally {

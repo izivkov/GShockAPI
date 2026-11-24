@@ -87,9 +87,12 @@ class H5600WorkoutDataReadReplayTest {
         val at = watch.writes.indexOf("001f0040010000100000")
         assertTrue("the data read went out: $why", at >= 0)
         assertEquals("whole sector end echo: $why", "071f0000000000", watch.writes.getOrNull(at + 1))
-        assertEquals("then at once the next request (next block or the laps): $why", 1, watch.nextRequests.size)
-        assertEquals("no other write in between: $why", watch.nextRequests[0], watch.writes.getOrNull(at + 2))
-        assertTrue("no 09 or 04 for the data read: $why", watch.writes.none { it == "091f0000000000" || it == "041f" })
+        assertEquals("then the next request (here the laps): $why", 1, watch.nextRequests.size)
+        // One data block: the chain ends with it and is closed with `04 1F` before the laps (2026-11-24 17:20, see
+        // H5600WorkoutTransferTest.eachBlockChainIsClosedBeforeTheNextCategory).
+        assertEquals("the data chain closed: $why", "041f", watch.writes.getOrNull(at + 2))
+        assertEquals("no other write in between: $why", watch.nextRequests[0], watch.writes.getOrNull(at + 3))
+        assertTrue("no 09 for the data read: $why", watch.writes.none { it == "091f0000000000" })
         assertTrue("the data block is read: $why", lines.any { it.contains("slot 0 1F 1 data blocks") })
         assertFalse("not stalled on the data read: $why", result.error.orEmpty().contains("data blocks could not be read"))
     }

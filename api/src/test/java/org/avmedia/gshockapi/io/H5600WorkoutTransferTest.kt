@@ -25,6 +25,11 @@ internal class FakeWatch(
     private val replayOn: String? = null,
     /** The test clock (virtual time), to see how long after the mark answer the next request came. */
     private val now: () -> Long = { 0L },
+    /**
+     * As the real watch on 2026-11-24 17:20: a request of another category while the last block read (1F, 20) was not
+     * closed with `04 cat` is answered with these frames (a replay of that block read), every time.
+     */
+    private val replaysUnclosed: List<WorkoutMsg>? = null,
 ) : WorkoutLink {
     val events = mutableListOf<String>()
     val marks = mutableListOf<ByteArray>()
@@ -35,6 +40,8 @@ internal class FakeWatch(
     val gapsAfterBlockEnd = mutableListOf<Long>()
     private var blockEndAt: Long? = null
     private var replayed = false
+    /** The block category whose last read ended with its sector end and got no `04 cat` yet. */
+    private var openBlock: Int? = null
     private var corrupted = false
     private val store = HashMap<Pair<Int, Long>, ByteArray>()
 
@@ -76,6 +83,7 @@ internal class FakeWatch(
     }
 
     override fun drsp(data: ByteArray) {
+        if (data.size == 2 && data[0].toInt() == 4) { events += "close ${data[1]}"; if (data[1].toInt() == openBlock) openBlock = null; return }
         if (data.size != 10 || data[0].toInt() != 0) { events += "drsp ${data[0]}"; return }
         val cat = data[1].toInt()
         val addr = (0 until 4).sumOf { (data[2 + it].toLong() and 0xFF) shl (8 * it) }
@@ -84,6 +92,11 @@ internal class FakeWatch(
         events += "read $cat $addr"
         markAnsweredAt?.let { gapsAfterMark += now() - it }
         if (len != 256) blockEndAt?.let { gapsAfterBlockEnd += now() - it }
+        if (replaysUnclosed != null && openBlock != null && openBlock != cat) {
+            events += "unclosed replay"
+            for (m in replaysUnclosed) inbox.trySend(WorkoutMsg(m.channel, m.data.copyOf()))
+            return
+        }
         val afterMark = markAnsweredAt != null
         markAnsweredAt = null
         val replayHere = if (replayOn != null) "read $cat $addr" == replayOn else afterMark
@@ -106,7 +119,7 @@ internal class FakeWatch(
         }
         // As the real watch: a 256-byte read (1D, 1E) ends with `09`; a block read (1F, 20) ends
         // with its sector end `07`, and then the watch waits for the next request (no `09`).
-        if (len == 256) send(H5600Channel.DRSP, 0x09) else { send(H5600Channel.DRSP, 0x07); blockEndAt = now() }
+        if (len == 256) send(H5600Channel.DRSP, 0x09) else { send(H5600Channel.DRSP, 0x07); blockEndAt = now(); openBlock = cat }
     }
 }
 
@@ -260,5 +273,27 @@ class H5600WorkoutTransferTest {
         assertTrue("its whole end was answered: $why", lines.any { it.endsWith("tx 07 1F 00 00 00 00 00") })
         assertEquals("one log line: $why", 1, lines.count { it.contains("stale replay of 1F 00017000, request sent again") })
         assertTrue("each block request waits after the last block end: ${watch.gapsAfterBlockEnd}", watch.gapsAfterBlockEnd.isNotEmpty() && watch.gapsAfterBlockEnd.all { it >= 300L })
+    }
+
+    /**
+     * 2026-11-24 17:20: the data chain (1F) ended with our `07 1F` echo and the laps request (`00 20`) came next. The watch
+     * replayed its last 1F read twice and the workout was not stored. The 17:21 retry, with the data blocks from the cache,
+     * asked `00 20` right after the closed 1E read and the watch served it. The last block of each chain is closed with
+     * `04 cat`, as `09 cat` is followed by `04 cat`; the blocks inside a chain are not.
+     */
+    @Test
+    fun eachBlockChainIsClosedBeforeTheNextCategory() = runTest {
+        val inbox = Channel<WorkoutMsg>(Channel.UNLIMITED)
+        val watch = FakeWatch(inbox, twoWorkouts = true, replaysUnclosed = staleReplayFrames("/h5600_workout_lap_replay_1f.txt"))
+        val lines = mutableListOf<String>()
+        val result = WorkoutTransfer(watch, inbox, sink = { true }, log = { lines += it }).run()
+        val why = "error ${result.error}, events ${watch.events.takeLast(14)}, log ${lines.takeLast(8)}"
+
+        assertEquals("no request met an unclosed block read: $why", 0, watch.events.count { it == "unclosed replay" })
+        assertNull(why, result.error)
+        assertEquals(why, 2, result.downloaded)
+        val e = watch.events.filter { it.startsWith("read 31") || it.startsWith("read 32") || it == "close 31" || it == "close 32" || it == "mark" }
+        assertEquals(why, listOf("read 31 8192", "close 31", "read 32 12288", "close 32", "mark",
+            "read 31 16384", "close 31", "read 32 20480", "close 32", "mark"), e)
     }
 }

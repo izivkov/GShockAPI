@@ -11,19 +11,22 @@ package org.avmedia.gshockapi.io
 object WatchFaceCodec {
     const val CODE = 0x51
     const val SLOTS = 4
-    /** The faces the watch has: 1 to 4. Face 0 does nothing and is refused. */
+    /** Every face code a watch may have: 1 to 4 (a model has 1 to WatchInfo.faceCountFor). Face 0 does nothing and is refused. */
     val FACES: IntRange = 1..4
 
     /** The custom face, and the slot of it that does something: the top-right item. */
     const val CUSTOM_FACE = 2
     const val TOP_RIGHT_SLOT = 3
 
+    /** The faces a watch with [faceCount] faces has (see WatchInfo.faceCountFor). */
+    fun faces(faceCount: Int): IntRange = FACES.first..minOf(faceCount, FACES.last)
+
     fun faceName(face: Int): String =
         when (face) {
             1 -> "Time only"
             CUSTOM_FACE -> "Custom"
             3 -> "Steps"
-            4 -> "Tide" // likely, not proven
+            4 -> "Tide" // GBX-H5600 user manual: the tide graph
             else -> "Face $face"
         }
 
@@ -43,8 +46,13 @@ object WatchFaceCodec {
     /** The stress score (0x0F) is in the code table but not among the items the watch offers. */
     const val STRESS_ITEM = 0x0F
 
-    /** The item codes a person can choose: all but [STRESS_ITEM]. */
-    val OFFERED_ITEMS: List<Int> = ITEM_NAMES.indices.filter { it != STRESS_ITEM }
+    /**
+     * The item codes a person can choose: the 13 items the DW-H5600 and GBX-H5600 user manuals list for face 2
+     * (steps, cardio load status, monthly run and walk distance, heart rate, highest/lowest heart rate, sleep score
+     * and level, sleep time, sleep evaluation, calories, active time, sunrise/sunset, moon age). The other codes stay
+     * in [ITEM_NAMES] for decoding only.
+     */
+    val OFFERED_ITEMS: List<Int> = listOf(0, 2, 3, 4, 10, 11, 12, 13, 14, 16, 17, 18, 19)
 
     fun itemName(code: Int): String = ITEM_NAMES.getOrNull(code) ?: "Item $code"
 
@@ -63,7 +71,8 @@ object WatchFaceCodec {
     fun withFace(
         frame: ByteArray,
         face: Int,
-    ): ByteArray? = if (face in FACES) withFaceRaw(frame, face) else null
+        faceCount: Int = FACES.last,
+    ): ByteArray? = if (face in faces(faceCount)) withFaceRaw(frame, face) else null
 
     /** Any face index 0 to 255, for decoding only (the Details part of the screen). */
     fun withFaceRaw(

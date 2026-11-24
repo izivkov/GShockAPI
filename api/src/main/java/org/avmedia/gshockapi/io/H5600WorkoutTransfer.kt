@@ -222,19 +222,26 @@ class WorkoutTransfer(
         return WorkoutSessionBuilder.build(slot, h, data, laps)
     }
 
-    /** Reads a block chain. Blocks already read for the same workout (same start time) are not asked for again. */
+    /**
+     * Reads a block chain. Blocks already read for the same workout (same start time) are not asked for again.
+     * Inside the chain no `04 cat` goes between blocks; after its last block read the chain is closed with `04 cat`.
+     * Left open, the next request of another category got a replay of the last block read (2026-11-24, `00 20` after
+     * the 1F chain, three runs); after a closed read (`04 1E`) the same `00 20` was served.
+     */
     private suspend fun chain(h: WorkoutHeader, category: Int, first: Long, announced: Long): List<ByteArray>? {
         if (announced == 0L || first == WorkoutHeader.NO_ADDRESS) return emptyList()
         val blocks = ArrayList<ByteArray>()
         val seen = HashSet<Long>()
+        var asked = false
         var addr: Long? = first
         while (addr != null && seen.add(addr) && blocks.size < MAX_BLOCKS) {
             val key = "${h.startUtcMillis}:$category:$addr"
-            val block = blockCache[key] ?: (read(category, addr, WorkoutRecords.BLOCK_SIZE, WorkoutChunkAssembler.BLOCK_CHUNK) ?: return null)
+            val block = blockCache[key] ?: (read(category, addr, WorkoutRecords.BLOCK_SIZE, WorkoutChunkAssembler.BLOCK_CHUNK) ?: return null).also { asked = true }
             blockCache[key] = block
             blocks += block
             addr = WorkoutRecords.nextAddress(block)
         }
+        if (asked) drsp("read %02X".format(category), byteArrayOf(0x04, category.toByte()))
         return blocks
     }
 
@@ -331,7 +338,7 @@ class WorkoutTransfer(
         if (r.asm.endSector()) {
             drsp(r.step, echo(frame, r.category))
             // The sector end with every asked byte in is the end of a block read (1F, 20): the watch then
-            // waits for the next request and sends no `09`. 1D and 1E end with `09`.
+            // waits for the next request and sends no `09`; [chain] closes the chain. 1D and 1E end with `09`.
             return r.asm.result()?.let { capture(null, it); ReadStep.End(it) } ?: ReadStep.Next
         }
         if (++r.bad >= 2) return ReadStep.End(null)

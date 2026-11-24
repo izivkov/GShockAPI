@@ -51,6 +51,7 @@ class H5600WorkoutReadGateTest {
         H5600WorkoutIO.sink = savedSink
         H5600WorkoutIO.link = savedLink
         H5600WorkoutIO.clock = System::currentTimeMillis
+        H5600WorkoutIO.watch = { org.avmedia.gshockapi.WatchInfo.getAddress() }
         H5600WorkoutIO.setupWaitMs = ConnectionSetup.SETUP_WAIT_MS
         H5600WorkoutIO.resetBackoff()
         ConnectionSetup.reset()
@@ -67,6 +68,22 @@ class H5600WorkoutReadGateTest {
         val result = withTimeoutOrNull(15_000) { read.await() }
         assertNotNull(result)
         assertEquals("001c0000000000000000", writes.first())
+    }
+
+    /** Every back-off is per watch. A failed read on one watch never holds back another watch's read. */
+    @Test fun theBackOffAfterAFailureIsTheFailedWatchsOnly() = runBlocking {
+        var watch = "AA:AA:AA:AA:AA:01"
+        H5600WorkoutIO.watch = { watch }
+        ConnectionSetup.onWatchSetupDone()
+        assertTrue(H5600WorkoutIO.download()!!.error!!.contains("fail reason 1"))
+        watch = "BB:BB:BB:BB:BB:02"
+        writes.clear()
+        assertNotNull("another watch reads at once", H5600WorkoutIO.download())
+        assertTrue(writes.isNotEmpty())
+        watch = "AA:AA:AA:AA:AA:01"
+        writes.clear()
+        assertNull("the failed watch still waits", H5600WorkoutIO.download())
+        assertTrue(writes.toString(), writes.isEmpty())
     }
 
     @Test fun afterAFailureAutomaticReadsWaitTenMinutesButTheButtonReads() = runBlocking {

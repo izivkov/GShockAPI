@@ -124,7 +124,9 @@ class CommandTableTest {
         assertTrue(CommandTable.matches(b(0x56, 2), b(0x56, 0x6D, 3, 0x20)))
         assertTrue(CommandTable.longEnough(b(0x56, 2), b(0x56, 0x6D, 3, 0x20)))
         assertTrue(CommandTable.matches(b(0x54, 0, 3, 0x46, 0), b(0x54, 3, 0x46, 1)))
-        assertFalse(CommandTable.longEnough(b(0x28), b(0x28, 1)))
+        assertFalse(CommandTable.longEnough(b(0x28), b(0x28, 1), layouts = true))
+        // Other models keep their own decoders: the DW-H5600 lengths are not checked for them.
+        assertTrue(CommandTable.longEnough(b(0x28), b(0x28, 0x13, 0x1B, 0x00), layouts = false))
         assertTrue(CommandTable.longEnough(b(0x42), b(0x42, 0x0A, 0xFF, 0x7F, 0xFF, 0x7F)))
     }
 
