@@ -70,7 +70,7 @@ class H5600WorkoutReadGateTest {
         assertEquals("001c0000000000000000", writes.first())
     }
 
-    /** Owner 2026-11-24: every back-off is per watch. A failed read on one watch never holds back another watch's read. */
+    /** Every back-off is per watch. A failed read on one watch never holds back another watch's read. */
     @Test fun theBackOffAfterAFailureIsTheFailedWatchsOnly() = runBlocking {
         var watch = "AA:AA:AA:AA:AA:01"
         H5600WorkoutIO.watch = { watch }
