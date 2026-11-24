@@ -17,13 +17,38 @@ import org.avmedia.gshockapi.DeviceInfo
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
+import org.avmedia.gshockapi.casio.WatchChannel
+import org.avmedia.gshockapi.casio.WatchLink
+import org.avmedia.gshockapi.casio.WatchTransport
 import timber.log.Timber
 
 object Connection {
+    /** The queue's way to the radio: the write result of the current manager, false when there is none. */
+    private object ManagerTransport : WatchTransport {
+        override suspend fun write(
+            channel: WatchChannel,
+            frame: ByteArray,
+        ): Boolean {
+            val manager = bleManager
+            if (manager == null) {
+                ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
+                return false
+            }
+            return manager.writeChecked(channel.handle, frame)
+        }
+    }
+
+    init {
+        WatchLink.setTransport(ManagerTransport)
+    }
+
     @Volatile
     private var bleManager: IGShockManager? = null
     private lateinit var appContext: Context
     private val scope = CoroutineScope(Dispatchers.IO)
+
+    /** Kept across manager re-creation: a fresh manager would otherwise drop every notification, `49 00` included. */
+    @Volatile private var lastDataCallback: IDataReceived? = null
 
     fun isInitialized(): Boolean = bleManager != null
 
@@ -34,7 +59,7 @@ object Connection {
         }
 
         if (bleManager == null) {
-            bleManager = IGShockManager(appContext)
+            bleManager = IGShockManager(appContext).also { it.setDataCallback(lastDataCallback) }
             Timber.i("Created BLE manager for connection lifecycle")
         }
     }
@@ -43,7 +68,7 @@ object Connection {
         bleManager ?: synchronized(this) {
             bleManager ?: run {
                 check(::appContext.isInitialized) { "Connection.init(context) must be called first" }
-                IGShockManager(appContext).also { bleManager = it }
+                IGShockManager(appContext).also { it.setDataCallback(lastDataCallback); bleManager = it }
             }
         }
 
@@ -53,6 +78,7 @@ object Connection {
                 bleManager.also { bleManager = null }
             }
         if (manager != null) Timber.i("Releasing BLE manager; next connection will create a fresh manager")
+        WatchLink.queue.clear("The link to the watch was closed.")
         manager?.release()
     }
 
@@ -125,22 +151,20 @@ object Connection {
         MessageDispatcher.sendToWatch(message)
     }
 
+    /** The handler now installed, so a temporary one can be replaced and the same instance put back. */
+    fun getDataCallback(): IDataReceived? = requireBleManager().currentDataCallback()
+
     fun setDataCallback(dataCallback: IDataReceived) {
+        lastDataCallback = dataCallback
         requireBleManager().setDataCallback(dataCallback)
     }
 
+    /** Puts the request or write in the one queue (the command table decides what goes on the air). */
     fun write(
         handle: GetSetMode,
         data: ByteArray,
     ) {
-        scope.launch {
-            val manager = bleManager
-            if (manager == null) {
-                ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
-            } else {
-                manager.write(handle, data)
-            }
-        }
+        WatchLink.write(handle, data)
     }
 
     fun isServiceSupported(handle: GetSetMode): Boolean = bleManager?.isServiceSupported(handle) == true

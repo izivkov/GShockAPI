@@ -48,14 +48,20 @@ android {
     }
     testOptions {
         targetSdk 36
+        unitTests {
+            // A failing test prints its assertion message in the CI log (the reports are not uploaded).
+            all { testLogging { exceptionFormat = 'full'; events 'failed' } }
+        }
     }
 }
 
 dependencies {
     implementation libs.androidx.core.ktx
     implementation(libs.androidx.appcompat)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.material3)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 

@@ -6,13 +6,17 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withTimeoutOrNull
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.casio.CasioConstants
+import org.avmedia.gshockapi.casio.CommandTable
+import org.avmedia.gshockapi.casio.WatchChannel
 import timber.log.Timber
 import java.util.UUID
 
@@ -47,6 +51,9 @@ interface GShock {
 
     fun setDataCallback(dataCallback: IDataReceived?)
 
+    /** The handler now installed (null when none). */
+    fun currentDataCallback(): IDataReceived?
+
     fun enableNotifications()
 
     var connectionState: ConnectionState
@@ -55,6 +62,12 @@ interface GShock {
         handle: GetSetMode,
         data: ByteArray,
     )
+
+    /** Like [write], and true only when Android reported the write done (the write result, for a write with response). */
+    suspend fun writeChecked(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean
 
     fun isServiceSupported(handle: GetSetMode): Boolean
 }
@@ -73,8 +86,6 @@ private class GShockManagerImpl(
     private var writeCharacteristicHolderSPRequest: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderSPData: BluetoothGattCharacteristic? = null
     private var writeCharacteristicHolderConvoy: BluetoothGattCharacteristic? = null
-
-    private val subscribedCharacteristics = mutableSetOf<UUID>()
 
     var dataReceivedCallback: IDataReceived? = null
     private lateinit var device: BluetoothDevice
@@ -114,14 +125,16 @@ private class GShockManagerImpl(
             Timber.i("UUID: $key, Properties: ${propsToString(info.properties)}")
         }
 
+        // A new link: notifications must be enabled again (the descriptors are per connection).
+        org.avmedia.gshockapi.casio.NotificationSubscriptions.beginDiscovery()
+
         // Subscribe to notifications on every characteristic that supports them.
         // Mirrors the Python subscribe-all approach — no per-model whitelists needed.
         gatt.services.forEach { service ->
             service.characteristics.forEach { char ->
                 val hasNotify = char.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
                 val hasIndicate = char.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
-                if ((hasNotify || hasIndicate) && !subscribedCharacteristics.contains(char.uuid)) {
-                    subscribedCharacteristics.add(char.uuid)
+                if ((hasNotify || hasIndicate) && org.avmedia.gshockapi.casio.NotificationSubscriptions.claim(char.uuid)) {
 
                     setNotificationCallback(char).with { _, data ->
                         val hexData =
@@ -129,7 +142,9 @@ private class GShockManagerImpl(
                                 String.format("%02X", it)
                             }
                         Timber.d("Notification from ${char.uuid}: $hexData")
-                        dataReceivedCallback?.dataReceived(hexData)
+                        org.avmedia.gshockapi.casio.NotificationSubscriptions.logNotification(char.uuid, hexData)
+                        org.avmedia.gshockapi.casio.WatchLink.onNotification(char.uuid, hexData)
+                        org.avmedia.gshockapi.casio.WatchLink.withSource(char.uuid) { dataReceivedCallback?.dataReceived(hexData) }
                     }
                     enableNotifications(char)
                         .fail { _, status ->
@@ -152,6 +167,7 @@ private class GShockManagerImpl(
         onConnected: OnConnectedType,
     ) {
         this.onConnected = onConnected
+        org.avmedia.gshockapi.casio.ConnectionSetup.reset()
 
         connect(device)
             .retry(3, 100)
@@ -184,7 +200,7 @@ private class GShockManagerImpl(
         writeCharacteristicHolderSPData = null
         writeCharacteristicHolderConvoy = null
         characteristicUUIDs.clear()
-        subscribedCharacteristics.clear()
+        org.avmedia.gshockapi.casio.NotificationSubscriptions.clear()
 
         if (isReady) {
             disconnect().enqueue()
@@ -194,6 +210,8 @@ private class GShockManagerImpl(
     override fun setDataCallback(dataCallback: IDataReceived?) {
         dataReceivedCallback = dataCallback
     }
+
+    override fun currentDataCallback(): IDataReceived? = dataReceivedCallback
 
     override fun enableNotifications() {
         // No-op: notifications are now enabled for all notifiable characteristics
@@ -212,6 +230,7 @@ private class GShockManagerImpl(
             Timber.i("$device onDeviceConnected — waiting for service discovery")
             ProgressEvents.onNext("ConnectionStarted")
             connectionState = ConnectionState.CONNECTING
+            org.avmedia.gshockapi.casio.ConnectionSetup.reset()
         }
 
         override fun onDeviceFailedToConnect(
@@ -259,6 +278,9 @@ private class GShockManagerImpl(
             reason: Int,
         ) {
             ProgressEvents.onNext("Disconnect", device)
+            org.avmedia.gshockapi.casio.ConnectionSetup.onLinkLost()
+            // A LifeLog read in progress ends with the link (it must not run its setup on the next one).
+            org.avmedia.gshockapi.io.H5600HealthIO.onLinkLost()
 
             Timber.d("Device disconnected with reason: $reason")
             when (reason) {
@@ -431,15 +453,24 @@ private class GShockManagerImpl(
         handle: GetSetMode,
         data: ByteArray,
     ) {
+        writeChecked(handle, data)
+    }
+
+    override suspend fun writeChecked(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean {
         if (characteristicUUIDs.isEmpty()) {
-            ProgressEvents.onNext("ApiError", "Not connected to watch")
-            disconnect()
-            return
+            // The link is away (an always-connected watch drops by design): wait for it, else fail plainly.
+            if (!ReconnectWait.awaitLink({ characteristicUUIDs.isNotEmpty() && writeCharacteristicHolder != null })) {
+                ProgressEvents.onNext("ApiError", ReconnectWait.NOT_CONNECTED_MESSAGE)
+                return false
+            }
         }
 
         if (!isServiceSupported(handle)) {
             Timber.e("${handle.name.lowercase()} feature not supported")
-            return
+            return false
         }
 
         val characteristic =
@@ -453,13 +484,12 @@ private class GShockManagerImpl(
                 GetSetMode.CONVOY -> writeCharacteristicHolderConvoy
             }
 
+        // The write type comes from the command table: request and notification text without response, settings with response.
         val writeType =
-            if (handle == GetSetMode.GET || handle == GetSetMode.NOTIFY || handle == GetSetMode.SP_REQUEST ||
-                handle == GetSetMode.CONVOY
-            ) {
-                BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-            } else {
+            if (WatchChannel.of(handle).withResponse) {
                 BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            } else {
+                BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             }
 
         val isStartupRead = handle == GetSetMode.GET && data.firstOrNull()?.toInt()?.and(0xFF) in setOf(0x10, 0x22)
@@ -468,18 +498,25 @@ private class GShockManagerImpl(
             Timber.i("Queueing startup read: request=0x$requestHex characteristic=${characteristic?.uuid} writeType=$writeType")
         }
 
-        try {
-            val request = writeCharacteristic(characteristic, data, writeType)
-            if (isStartupRead) {
-                request
-                    .done { Timber.i("Startup read write completed: request=0x$requestHex") }
-                    .fail { _, status -> Timber.e("Startup read write failed: request=0x$requestHex status=$status") }
-            }
-            request.enqueue()
+        return try {
+            val finished = CompletableDeferred<Boolean>()
+            writeCharacteristic(characteristic, data, writeType)
+                .done {
+                    if (isStartupRead) Timber.i("Startup read write completed: request=0x$requestHex")
+                    finished.complete(true)
+                }
+                .fail { _, status ->
+                    Timber.e("Write failed: request=0x$requestHex status=$status")
+                    finished.complete(false)
+                }
+                .enqueue()
+            withTimeoutOrNull(CommandTable.REQUEST_TIMEOUT_MS) { finished.await() }
+                ?: false.also { Timber.w("No write result within ${CommandTable.REQUEST_TIMEOUT_MS} ms: request=0x$requestHex") }
         } catch (e: Exception) {
             Timber.e(e, "Error writing to characteristic ${characteristic?.uuid}")
             ProgressEvents.onNext("ApiError", "Failed to write data: ${e.message}")
             disconnect()
+            false
         }
     }
 }

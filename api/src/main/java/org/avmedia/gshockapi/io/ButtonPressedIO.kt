@@ -87,27 +87,49 @@ object ButtonPressedIO {
 
     private var state = State()
 
+    /** The last valid 0x10 answer and when it came. The connection setup and init read the same answer: one read, both use it. */
+    private data class Answer(val button: IO.WatchButton, val at: Long)
+
+    @Volatile private var answer: Answer? = null
+
+    @Volatile var clock: () -> Long = System::currentTimeMillis
+
+    /** An answer this old is not shared any more: init asks again. */
+    const val SHARE_WINDOW_MS = 30_000L
+
+    fun forgetAnswer() {
+        answer = null
+    }
+
+    private fun freshAnswer(): IO.WatchButton? = answer?.takeIf { clock() - it.at in 0..SHARE_WINDOW_MS }?.button
+
     suspend fun request(): IO.WatchButton {
         Timber.i("Button info request started (0x10)")
         // Always ask the watch: a value cached for an earlier watch must not answer for this one.
         CachedIO.remove("10")
         return CachedIO.request("10") { key ->
-            val deferred = CompletableDeferred<IO.WatchButton>()
-            synchronized(this) {
-                if (state.deferredResult != null) {
-                    Timber.w("BTN_TEST replacing a pending button request; the earlier one can no longer be answered")
-                }
-                state = state.copy(deferredResult = deferred)
-                Timber.i("BTN_TEST request pending=true")
-            }
-            try {
-                Timber.i("Sending button info request (0x$key)")
-                IO.request(key)
-                deferred.await()
-            } finally {
+            val shared = freshAnswer()
+            if (shared != null) {
+                Timber.i("Button info already received on this link: $shared")
+                shared
+            } else {
+                val deferred = CompletableDeferred<IO.WatchButton>()
                 synchronized(this) {
-                    if (state.deferredResult === deferred) {
-                        state = state.copy(deferredResult = null)
+                    if (state.deferredResult != null) {
+                        Timber.w("BTN_TEST replacing a pending button request; the earlier one can no longer be answered")
+                    }
+                    state = state.copy(deferredResult = deferred)
+                    Timber.i("BTN_TEST request pending=true")
+                }
+                try {
+                    Timber.i("Sending button info request (0x$key)")
+                    IO.request(key)
+                    deferred.await()
+                } finally {
+                    synchronized(this) {
+                        if (state.deferredResult === deferred) {
+                            state = state.copy(deferredResult = null)
+                        }
                     }
                 }
             }
@@ -132,6 +154,7 @@ object ButtonPressedIO {
         ButtonPressedIOFunctional.parseButtonPress(data)
             .fold(
                 onSuccess = { button ->
+                    answer = Answer(button, clock())
                     synchronized(this) {
                         if (state.deferredResult == null) {
                             Timber.w("BTN_TEST reply dropped: no request was pending")

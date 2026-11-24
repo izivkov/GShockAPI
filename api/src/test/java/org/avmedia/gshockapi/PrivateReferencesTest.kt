@@ -1,0 +1,96 @@
+package org.avmedia.gshockapi
+
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.File
+
+/**
+ * Comments and docs describe the protocol in our own words, as behaviour seen on the watch. They never point at documents
+ * a reader cannot see or describe code as copied from another app. Scans the sources and docs of the api and example app modules.
+ */
+class PrivateReferencesTest {
+    private val pattern = Regex(
+        listOf(
+            """notes?,? section""", """\(notes""", """\bnotes [A-Z][0-9]?\b""", """the notes""", """casio-protocol-notes""",
+            """Casio.s app""", """official app""", """decompil""", """jadx""", """\bDart\b""",
+        ).joinToString("|"),
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Upstream text (izivkov), kept word for word so merges from upstream stay clean. Path to the exact trimmed line. */
+    private val upstream = setOf(
+        "docs/ADDING_A_WATCH.md" to "## 2. Capture the official app's traffic",
+        "docs/ADDING_A_WATCH.md" to "You need a Bluetooth HCI snoop log and the official app's behaviour, recorded with the",
+        "docs/ADDING_A_WATCH.md" to "fields, and then writes the current time, in the order the official app uses.",
+        "docs/TECHNICAL-OVERVIEW.md" to "account, no official app in the loop. It owns everything below the level",
+        "api/src/main/java/org/avmedia/gshockapi/io/AppInfoIO.kt" to "* The value is a hard-coded magic number (0x93), matching the official app behavior.",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600HealthIO.kt" to "// The official app and the Python script write START before the first poll. The watch",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600LifeLogSync.kt" to "// busy: the official app waits about 3.5 s before polling again",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600LifeLogSync.kt" to "/** Setup requests, in the order the official app sends them. Each one is answered on STATUS. */",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600LifeLogSync.kt" to "/** Replies the official app writes back unchanged to STATUS. */",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* DW-H5600 (module 3516 family) settings decoded from the official app's BLE traffic.",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "/** CASIO_CURRENT_TIME_MANAGER. The official app requests it after connecting and writes the reply back. */",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* Without it the watch drops Smart Sync's connection after ~45 s; with the official app it stays",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "/** Read-only: reads packets the official app reads on every connect, for logging/comparison. */",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* as the current official app writes it (user's capture 2026-11-16 23:08; izivkov's older capture",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* before the city names (1F) and the time (09): the exact place the official app writes 0x24,",
+        "api/src/main/java/org/avmedia/gshockapi/model/H5600Settings.kt" to "/** DW-H5600 watch-face display item: bytes[2..5] of packet 0x51 (codes from the official app, 2026-11-16). */",
+    )
+
+    /**
+     * Where a decoding or a fix came from: owner or user logs, screenshots, dumps and hints, dated logs, recordings and
+     * captures, decode dates, analysis script names. The comment says what the watch does, not who saw it when.
+     */
+    private val provenance = Regex(
+        listOf(
+            """\bowner'?s?\s+(log|logs|screenshot|screenshots|dump|hint|test|reads|watch|capture)\b""",
+            """\b(owner|user)\b,?\s+20\d\d-\d\d-\d\d""", """\((owner|user),?\s*20\d\d""",
+            """\blogs?\s+(of\s+)?20\d\d-\d\d-\d\d""", """\blogs?\s+\d\d:\d\d""",
+            """\b(recording|recorded|capture|captured|decoded|matched|seen|measured|brief)\b(\s+\S+){0,3}\s+20\d\d-\d\d-\d\d""",
+            """\b(recording|recorded|capture|captured|decoded)\b(\s+\S+){0,3}\s+\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) 20\d\d""",
+            """\buser'?s (capture|log|screenshot|watch)\b""", """\(20\d\d-\d\d-\d\d:""", """parse_\w+\.py""",
+            """\bscreenshots? 20\d\d""",
+        ).joinToString("|"),
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Upstream text (izivkov) that names its own captures and decode dates, kept word for word. */
+    private val upstreamProvenance = setOf(
+        "api/src/main/java/org/avmedia/gshockapi/model/H5600Settings.kt" to "ALL_ON(0x0A), // all five confirmed on the user's watch 2026-11-16",
+        "api/src/main/java/org/avmedia/gshockapi/model/H5600Settings.kt" to "* flags bit 0x01 = on, 0x02 = snooze; window = minutes before (15/30/45/60). Decoded 2026-11-16.",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600HealthDecoder.kt" to "// parse_lifelog.py, matched on 2026-10-26 and 2026-11-16).",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* Connection handshake copied from the official CASIO app (capture 2026-11-16 17:57:06):",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* as the current official app writes it (user's capture 2026-11-16 23:08; izivkov's older capture",
+    )
+
+    private val textExtensions = setOf("kt", "kts", "java", "md", "yml", "yaml", "gradle", "txt", "json", "xml", "properties")
+
+    @Test
+    fun noSourceOrDocPointsAtPrivateNotesOrAnotherApp() {
+        val hits = scan(pattern, upstream)
+        assertTrue("Describe the protocol in our own words, without pointing at notes or another app:\n" +
+            hits.joinToString("\n"), hits.isEmpty())
+    }
+
+    @Test
+    fun noCommentSaysWhereADecodingCameFrom() {
+        val hits = scan(provenance, upstreamProvenance)
+        assertTrue("Say what the watch does, without owner/user logs, screenshots, recordings or decode dates:\n" +
+            hits.joinToString("\n"), hits.isEmpty())
+    }
+
+    private fun scan(regex: Regex, allowed: Set<Pair<String, String>>): List<String> {
+        val repo = File("..").canonicalFile
+        val roots = listOf("app/src", "api/src", "docs", ".github").map { File(repo, it) } +
+            repo.listFiles().orEmpty().filter { it.isFile && it.extension in setOf("md", "gradle", "yml") }
+        val self = File(repo, "api/src/test/java/org/avmedia/gshockapi/PrivateReferencesTest.kt").canonicalFile
+        val files = roots.flatMap { r -> r.walkTopDown().filter { it.isFile && it.extension in textExtensions }.toList() }
+        assertTrue("the scan found too few files, wrong working directory? ${repo.path}", files.size > 150)
+        return files.filter { it.canonicalFile != self }.flatMap { f ->
+            val rel = f.relativeTo(repo).invariantSeparatorsPath
+            f.readLines().withIndex()
+                .filter { (_, line) -> regex.containsMatchIn(line) && (rel to line.trim()) !in allowed }
+                .map { (i, line) -> "$rel:${i + 1}: ${line.trim()}" }
+        }
+    }
+}
