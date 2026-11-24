@@ -34,6 +34,14 @@ class PrivateReferencesTest {
         "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "/** Read-only: reads packets the official app reads on every connect, for logging/comparison. */",
         "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* as the current official app writes it (user's capture 2026-11-16 23:08; izivkov's older capture",
         "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* before the city names (1F) and the time (09): the exact place the official app writes 0x24,",
+        "api/src/test/java/org/avmedia/gshockapi/OceanusTimeSyncTest.kt" to "// Values as the official app writes them for New York (capture C02), city kept.",
+        "api/src/test/java/org/avmedia/gshockapi/OceanusTimeSyncTest.kt" to "// As the official app wrote for Pacific/Easter (capture C07), except that the",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* with the commands the official app sends for it: the home-time DST records are read,",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* app information and BLE settings as the official app does, then sets the time.",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* BLE settings (auto-sync on/off) are only written on the connection the official app",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "/** Connection kinds on which the official app sets the time: 1 normal, 3 auto, 4 time button. */",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* `02`. The official app uses 10 random bytes per install; this library uses its",
+        "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* BLE settings (0x11) written when pairing, as the official app does: automatic time",
         "api/src/main/java/org/avmedia/gshockapi/model/H5600Settings.kt" to "/** DW-H5600 watch-face display item: bytes[2..5] of packet 0x51 (codes from the official app, 2026-11-16). */",
     )
 

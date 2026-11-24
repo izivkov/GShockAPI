@@ -146,6 +146,13 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         }
 
         Timber.i("Watch button info received: $button")
+        try {
+            WatchInfo.protocol.onInitialized()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Timber.e(error, "Watch protocol initialization failed")
+        }
         ProgressEvents.onNext("ButtonPressedInfoReceived")
         ProgressEvents.onNext("WatchInitializationCompleted")
         Timber.i("Watch initialization complete event emitted")
@@ -475,7 +482,8 @@ class GShockAPI(private val context: Context) : IGShockAPI {
     /**
      * Checks if the scratchpad data was reset since the last read.
      *
-     * @return true if scratchpad was reset.
+     * @return true if scratchpad was reset, or if the watch has no scratchpad, so there is
+     * no stored data to decode and defaults should be used.
      */
     override fun isScratchpadReset(): Boolean {
         return !WatchInfo.hasScratchpad || AppInfoIO.wasScratchpadReset
@@ -570,6 +578,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param ArrayList<[Event]>
      */
     override fun setEvents(events: ArrayList<Event>) {
+        if (!WatchInfo.hasReminders) {
+            Timber.i("setEvents: ${WatchInfo.model} has no reminders; not written")
+            return
+        }
         EventsIO.set(events)
     }
 
@@ -579,6 +591,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @param none
      */
     override fun clearEvents() {
+        if (!WatchInfo.hasReminders) return
         EventsIO.clearAll()
     }
 

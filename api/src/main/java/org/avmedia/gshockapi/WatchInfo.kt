@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.protocols.AnalogueProtocol
 import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.avmedia.gshockapi.protocols.MipProtocol
+import org.avmedia.gshockapi.protocols.OceanusProtocol
 import org.avmedia.gshockapi.protocols.StandardProtocol
 import org.avmedia.gshockapi.protocols.WatchProtocol
 
@@ -157,6 +158,24 @@ data object WatchInfo {
     val settingsSize: Int
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.settingsSize
+    val hasScratchpad: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasScratchpad
+    val hasTimer: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasTimer
+    val hasLight: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasLight
+    val hasOperationTone: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasOperationTone
+    val hasWatchSettings: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasWatchSettings
+    val hasTimeAdjustmentMinutes: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasTimeAdjustmentMinutes
 
     val protocol: WatchProtocol
         @RequiresApi(Build.VERSION_CODES.O)
@@ -231,11 +250,18 @@ data object WatchInfo {
         val hasHourlyChime: Boolean = true,
         val hasLongTimerKey: Boolean = false,
         val hasExerciseProfile: Boolean = false,
+        val settingsSize: Int = 17,
+        val protocol: WatchProtocol = StandardProtocol,
         // The 10-byte user area of app information (0x22) is used as a scratchpad.
         // Disable for watches where 0x22 holds data of the CASIO WATCHES app.
         val hasScratchpad: Boolean = true,
-        val settingsSize: Int = 17,
-        val protocol: WatchProtocol = StandardProtocol,
+        val hasTimer: Boolean = true,
+        val hasLight: Boolean = true,
+        val hasOperationTone: Boolean = true,
+        // Basic watch settings (0x13): language, date/time format, light, tone...
+        val hasWatchSettings: Boolean = true,
+        // "Adjustment time minutes" in BLE settings (0x11) can be changed by the user.
+        val hasTimeAdjustmentMinutes: Boolean = true,
     )
 
     // =========================================================================
@@ -414,7 +440,8 @@ data object WatchInfo {
                 hasPowerSavingMode = false,
             ),
             ModelInfo(
-                // Oceanus analog (upstream GShockAPI). Writing the 0x22 scratchpad makes the CASIO WATCHES app forget the watch.
+                // Oceanus analog, single button (A). Supports pairing, time sync (following the
+                // phone's time zone), battery/temperature, auto-sync on/off and phone finder only.
                 model = WatchModel.OCW_S400,
                 alarmCount = 0,
                 hasAutoLight = false,
@@ -430,6 +457,12 @@ data object WatchInfo {
                 hasTimeFormat = false,
                 hasHourlyChime = false,
                 hasScratchpad = false,
+                hasTimer = false,
+                hasLight = false,
+                hasOperationTone = false,
+                hasWatchSettings = false,
+                hasTimeAdjustmentMinutes = false,
+                protocol = OceanusProtocol,
             ),
             ModelInfo(model = WatchModel.GENERIC),
         )
@@ -550,11 +583,11 @@ data object WatchInfo {
             // Module 5672: MTG-B3000
             put("MTG-B3000", WatchModel.MTG_B3000)
             // Module 5701: OCW-S7000
-            put("OCW-S7000", WatchModel.OCW_S400)
+            put("OCW-S7000", WatchModel.GENERIC)
             // Module 5713: GWG-B1000
             put("GWG-B1000", WatchModel.GW)
             // Module 5728: OCW-S400
-            put("OCW-S400", WatchModel.GENERIC)
+            put("OCW-S400", WatchModel.OCW_S400)
             // Module 5736: GA-B010
             put("GA-B010", WatchModel.GA)
             // Module 5737: GBA-950

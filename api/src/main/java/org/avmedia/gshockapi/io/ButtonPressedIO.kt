@@ -66,6 +66,15 @@ object ButtonPressedIOFunctional {
                 }
             }
         }
+
+    /**
+     * Pure parser: the raw "kind of connection" byte, [8], or null if the data is too short.
+     */
+    fun parseConnectionKind(data: String): Int? =
+        runCatching { Utils.toIntArray(data) }
+            .getOrNull()
+            ?.takeIf { it.size >= 19 }
+            ?.get(8)
 }
 
 // ============================================================================
@@ -82,6 +91,7 @@ object ButtonPressedIOFunctional {
 object ButtonPressedIO {
     private data class State(
         val lastKnownButton: IO.WatchButton = IO.WatchButton.INVALID,
+        val connectionKind: Int? = null,
         val deferredResult: CompletableDeferred<IO.WatchButton>? = null,
     )
 
@@ -110,9 +120,11 @@ object ButtonPressedIO {
         return CachedIO.request("10") { key ->
             val shared = freshAnswer()
             if (shared != null) {
+                // The kind of connection came with that same answer and stays as it was read.
                 Timber.i("Button info already received on this link: $shared")
                 shared
             } else {
+                resetConnectionKind()
                 val deferred = CompletableDeferred<IO.WatchButton>()
                 synchronized(this) {
                     if (state.deferredResult != null) {
@@ -141,6 +153,18 @@ object ButtonPressedIO {
 
     fun get(): IO.WatchButton = state.lastKnownButton
 
+    /**
+     * The raw kind of connection reported by the watch for the current connection,
+     * or null if it has not been read yet.
+     */
+    fun getConnectionKind(): Int? = state.connectionKind
+
+    fun resetConnectionKind() {
+        synchronized(this) {
+            state = state.copy(connectionKind = null)
+        }
+    }
+
     fun put(value: Any) {
         CachedIO.put("10", value)
     }
@@ -148,7 +172,7 @@ object ButtonPressedIO {
     fun onReceived(data: String) {
         Timber.i("Button info response received: $data")
         synchronized(this) {
-            Timber.i("BTN_TEST reply received; request pending=${state.deferredResult != null}")
+            state = state.copy(connectionKind = ButtonPressedIOFunctional.parseConnectionKind(data))
         }
         // Use pure function to parse button press
         ButtonPressedIOFunctional.parseButtonPress(data)

@@ -2,6 +2,7 @@ package org.avmedia.gshockapi.protocols
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.io.AlarmsIO
 import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.HomeTimeIOFunctional
@@ -98,7 +99,8 @@ open class StandardProtocol : WatchProtocol {
     }
 
     override suspend fun getSettings(): Settings {
-        val settings = SettingsIO.request()
+        // Basic watch settings (0x13) only exist on watches that have them.
+        val settings = if (WatchInfo.hasWatchSettings) SettingsIO.request() else Settings()
         val timeAdjustment = TimeAdjustmentIO.request()
         settings.timeAdjustment = timeAdjustment.isTimeAdjustmentSet
         settings.adjustmentTimeMinutes = timeAdjustment.adjustmentTimeMinutes
@@ -106,12 +108,12 @@ open class StandardProtocol : WatchProtocol {
     }
 
     override fun setSettings(settings: Settings) {
-        SettingsIO.set(settings)
+        if (WatchInfo.hasWatchSettings) SettingsIO.set(settings)
         TimeAdjustmentIO.set(settings)
     }
 
     override suspend fun getBasicSettings(): Settings {
-        return SettingsIO.request()
+        return if (WatchInfo.hasWatchSettings) SettingsIO.request() else Settings()
     }
 
     override suspend fun getTimeAdjustment(): TimeAdjustmentInfo {

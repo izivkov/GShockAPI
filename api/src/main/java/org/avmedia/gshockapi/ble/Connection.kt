@@ -20,6 +20,7 @@ import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.casio.WatchChannel
 import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchTransport
+import org.avmedia.gshockapi.io.ButtonPressedIO
 import timber.log.Timber
 
 object Connection {
@@ -84,6 +85,7 @@ object Connection {
 
     private suspend fun connectToDevice(device: BluetoothDevice): ConnectionResult =
         try {
+            ButtonPressedIO.resetConnectionKind()
             requireBleManager().connect(device) { name, address ->
                 WatchInfo.setNameAndModel(name.trimEnd('\u0000'))
                 WatchInfo.setAddress(address)
@@ -166,6 +168,18 @@ object Connection {
     ) {
         WatchLink.write(handle, data)
     }
+
+    /**
+     * Writes in call order. Unlike [write], which hands the frame to the queue and returns,
+     * this returns only once the write has completed, so consecutive calls from one coroutine
+     * reach the watch in the same order, each after the previous one.
+     *
+     * @return true if the write succeeded, false if it failed or could not be sent.
+     */
+    suspend fun writeInOrder(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean = WatchLink.writeChecked(handle, data)
 
     fun isServiceSupported(handle: GetSetMode): Boolean = bleManager?.isServiceSupported(handle) == true
 

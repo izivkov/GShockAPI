@@ -68,6 +68,13 @@ interface WatchProtocol {
 
     fun extractKey(data: String): Int?
 
+    /**
+     * Called once per connection, after the connection kind (0x10) is known and before
+     * initialization completes. Watches that need extra steps on some connections, such
+     * as pairing, override it. Default: nothing.
+     */
+    suspend fun onInitialized() = Unit
+
     fun unwrapPayload(
         data: String,
         key: Int,

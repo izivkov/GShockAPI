@@ -69,6 +69,15 @@ interface GShock {
         data: ByteArray,
     ): Boolean
 
+    /**
+     * Like [write], but returns only once the write has completed: true if it succeeded,
+     * false if it failed or could not be sent.
+     */
+    suspend fun writeAndWait(
+        handle: GetSetMode,
+        data: ByteArray,
+    ): Boolean = writeChecked(handle, data)
+
     fun isServiceSupported(handle: GetSetMode): Boolean
 }
 
@@ -509,6 +518,7 @@ private class GShockManagerImpl(
                     Timber.e("Write failed: request=0x$requestHex status=$status")
                     finished.complete(false)
                 }
+                .invalid { finished.complete(false) }
                 .enqueue()
             withTimeoutOrNull(CommandTable.REQUEST_TIMEOUT_MS) { finished.await() }
                 ?: false.also { Timber.w("No write result within ${CommandTable.REQUEST_TIMEOUT_MS} ms: request=0x$requestHex") }
