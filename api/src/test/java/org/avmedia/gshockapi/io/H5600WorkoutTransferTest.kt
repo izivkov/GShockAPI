@@ -19,8 +19,10 @@ internal class FakeWatch(
     private val keepsMarks: Boolean = false,
     /** A second workout in slot 1 (header at 4352, data block at 16384, lap block at 20480). */
     twoWorkouts: Boolean = false,
-    /** Sent instead of the answer to the first read request after a fetched mark: the watch replaying its last read. */
+    /** Sent instead of the answer to the first read request after a fetched mark (or to [replayOn]): the watch replaying its last read. */
     private val staleReplay: List<WorkoutMsg>? = null,
+    /** The read (`read cat addr`, decimal) answered by [staleReplay] instead of the first read after a mark. */
+    private val replayOn: String? = null,
     /** The test clock (virtual time), to see how long after the mark answer the next request came. */
     private val now: () -> Long = { 0L },
 ) : WorkoutLink {
@@ -29,6 +31,9 @@ internal class FakeWatch(
     /** Per mark: the time from its answer to the next read request. */
     val gapsAfterMark = mutableListOf<Long>()
     private var markAnsweredAt: Long? = null
+    /** Per block read request: the time since the last block read ended (its `07`). */
+    val gapsAfterBlockEnd = mutableListOf<Long>()
+    private var blockEndAt: Long? = null
     private var replayed = false
     private var corrupted = false
     private val store = HashMap<Pair<Int, Long>, ByteArray>()
@@ -78,9 +83,11 @@ internal class FakeWatch(
         if (cat == 0x1C) { inbox.trySend(WorkoutMsg(H5600Channel.CONVOY, data.copyOf())); return }
         events += "read $cat $addr"
         markAnsweredAt?.let { gapsAfterMark += now() - it }
+        if (len != 256) blockEndAt?.let { gapsAfterBlockEnd += now() - it }
         val afterMark = markAnsweredAt != null
         markAnsweredAt = null
-        if (afterMark && staleReplay != null && !replayed) {
+        val replayHere = if (replayOn != null) "read $cat $addr" == replayOn else afterMark
+        if (replayHere && staleReplay != null && !replayed) {
             replayed = true
             events += "stale replay"
             for (m in staleReplay) inbox.trySend(WorkoutMsg(m.channel, m.data.copyOf()))
@@ -99,7 +106,7 @@ internal class FakeWatch(
         }
         // As the real watch: a 256-byte read (1D, 1E) ends with `09`; a block read (1F, 20) ends
         // with its sector end `07`, and then the watch waits for the next request (no `09`).
-        if (len == 256) send(H5600Channel.DRSP, 0x09) else send(H5600Channel.DRSP, 0x07)
+        if (len == 256) send(H5600Channel.DRSP, 0x09) else { send(H5600Channel.DRSP, 0x07); blockEndAt = now() }
     }
 }
 
@@ -200,9 +207,9 @@ class H5600WorkoutTransferTest {
         assertTrue(result.error!!.contains("battery"))
     }
 
-    /** The frames the watch sent instead of an answer, from resource `h5600_workout_stale_replay.txt`. */
-    private fun staleReplayFrames(): List<WorkoutMsg> =
-        javaClass.getResourceAsStream("/h5600_workout_stale_replay.txt")!!.bufferedReader().readLines()
+    /** The frames the watch sent instead of an answer, from a resource like `h5600_workout_stale_replay.txt`. */
+    private fun staleReplayFrames(resource: String = "/h5600_workout_stale_replay.txt"): List<WorkoutMsg> =
+        javaClass.getResourceAsStream(resource)!!.bufferedReader().readLines()
             .filter { it.isNotBlank() && !it.startsWith("#") }
             .map { line ->
                 val (_, ch, hex) = line.trim().split(" ")
@@ -231,5 +238,27 @@ class H5600WorkoutTransferTest {
         assertTrue("its whole end was answered: $why", lines.any { it.endsWith("tx 07 20 00 00 00 00 00") })
         assertTrue("one log line: $why", lines.count { it.contains("stale replay of 20 00016000, request sent again") } == 1)
         assertTrue("the request after the mark waits 1 s: ${watch.gapsAfterMark}", watch.gapsAfterMark.isNotEmpty() && watch.gapsAfterMark.all { it >= 1_000L })
+    }
+
+    /**
+     * Owner log 2026-11-24 04:16:48: between two block reads of one workout (data 1F, then laps 20) the watch replayed the
+     * previous read (echo `00 1F 00 70 01 ...`, 512 bytes, `07 1F`). Handled the same way, and each block request waits a
+     * short pause after the previous block's sector end.
+     */
+    @Test
+    fun aStaleReplayBetweenBlockReadsIsAnsweredAndTheRequestSentAgain() = runTest {
+        val inbox = Channel<WorkoutMsg>(Channel.UNLIMITED)
+        val watch = FakeWatch(inbox, staleReplay = staleReplayFrames("/h5600_workout_stale_replay_block.txt"), replayOn = "read 32 12288", now = { testScheduler.currentTime })
+        val lines = mutableListOf<String>()
+        val result = WorkoutTransfer(watch, inbox, sink = { true }, log = { lines += it }).run()
+        val why = "error ${result.error}, events ${watch.events.takeLast(12)}, log ${lines.takeLast(8)}"
+
+        assertNull(why, result.error)
+        assertEquals(why, 1, result.downloaded)
+        assertEquals(why, 1, watch.events.count { it == "stale replay" })
+        assertEquals("lap block asked for twice: $why", 2, watch.events.count { it == "read 32 12288" })
+        assertTrue("its whole end was answered: $why", lines.any { it.endsWith("tx 07 1F 00 00 00 00 00") })
+        assertEquals("one log line: $why", 1, lines.count { it.contains("stale replay of 1F 00017000, request sent again") })
+        assertTrue("each block request waits after the last block end: ${watch.gapsAfterBlockEnd}", watch.gapsAfterBlockEnd.isNotEmpty() && watch.gapsAfterBlockEnd.all { it >= 300L })
     }
 }
