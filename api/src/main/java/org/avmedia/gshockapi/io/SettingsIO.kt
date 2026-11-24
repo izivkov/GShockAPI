@@ -365,14 +365,13 @@ object SettingsIO {
                     if (valueObj.has("smartAlarm")) {
                         val saJson = valueObj.optJSONObject("smartAlarm")
                         if (saJson != null) {
-                            val smartAlarm =
-                                SmartAlarm(
-                                    hour = saJson.optInt("hour", 0),
-                                    minute = saJson.optInt("minute", 0),
-                                    enabled = saJson.optBoolean("enabled", false),
-                                    snooze = saJson.optBoolean("snooze", false),
-                                    windowMin = saJson.optInt("windowMin", 0),
-                                )
+                            val smartAlarm = SmartAlarm(
+                                hour = saJson.optInt("hour", 0),
+                                minute = saJson.optInt("minute", 0),
+                                enabled = saJson.optBoolean("enabled", false),
+                                snooze = saJson.optBoolean("snooze", false),
+                                windowMin = saJson.optInt("windowMin", 0)
+                            )
                             H5600SettingsIO.setSmartAlarm(smartAlarm)
                         }
                     }

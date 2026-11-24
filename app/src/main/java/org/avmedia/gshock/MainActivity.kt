@@ -465,7 +465,7 @@ class MainActivity : ComponentActivity() {
         if (WatchInfo.hasTemperature) {
             viewModel.addLog("Temperature: ${api.getWatchTemperature()}")
         }
-        if (WatchInfo.isH5600Family) {
+        if (WatchInfo.model == WatchInfo.WatchModel.DW_H5600) {
             runHealthTest(viewModel)
         }
 

@@ -35,7 +35,11 @@ object WatchConditionIOFunctional {
      *
      * No side effects - pure extraction.
      */
-    fun decode(data: String): Result<WatchConditionValue> =
+    fun decode(
+        data: String,
+        batteryLevelLowerLimit: Int = WatchInfo.batteryLevelLowerLimit,
+        batteryLevelUpperLimit: Int = WatchInfo.batteryLevelUpperLimit,
+    ): Result<WatchConditionValue> =
         runCatching {
             val intArr = Utils.toIntArray(data)
             val bytes = Utils.byteArrayOfIntArray(intArr.drop(1).toIntArray())
@@ -47,18 +51,16 @@ object WatchConditionIOFunctional {
             val batteryRawValue = bytes[0].toInt()
             Timber.i("battery level raw value: $batteryRawValue")
 
-            // Calibrate battery level using watch-specific limits
-            val batteryLevelLowerLimit = WatchInfo.batteryLevelLowerLimit
-            val batteryLevelUpperLimit = WatchInfo.batteryLevelUpperLimit
+            // Calibrate battery level using watch-specific limits (the connected watch's unless given)
             val range = batteryLevelUpperLimit - batteryLevelLowerLimit
 
             if (range <= 0) {
                 throw IllegalArgumentException("Invalid battery limit range: $range")
             }
 
-            val multiplier: Int = (100.0 / range).roundToInt()
+            // Exact scaling: the same as a rounded multiplier for the 10 and 100 step ranges, right for the H5600's 6 steps.
             val batteryLevel = (batteryRawValue - batteryLevelLowerLimit)
-            val batteryLevelPercent: Int = (batteryLevel * multiplier).coerceIn(0, 100)
+            val batteryLevelPercent: Int = (batteryLevel * 100.0 / range).roundToInt().coerceIn(0, 100)
             val temperature: Int = bytes[1].toInt()
 
             WatchConditionValue(batteryLevelPercent, temperature)
