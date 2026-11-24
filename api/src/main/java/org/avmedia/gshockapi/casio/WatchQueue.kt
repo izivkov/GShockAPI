@@ -131,9 +131,7 @@ class WatchQueue(
 
 /** The queue of the real link. The transport is set by the connection code; a fake in the unit tests. */
 object WatchLink {
-    private object NoLink : WatchTransport {
-        override suspend fun write(channel: WatchChannel, frame: ByteArray) = false
-    }
+    private val NoLink = WatchTransport { _, _ -> false }
 
     @Volatile var queue: WatchQueue = WatchQueue(transport = NoLink)
 

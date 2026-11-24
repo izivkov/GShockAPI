@@ -17,7 +17,6 @@ import org.avmedia.gshockapi.DeviceInfo
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.casio.MessageDispatcher
-import org.avmedia.gshockapi.casio.WatchChannel
 import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchTransport
 import org.avmedia.gshockapi.io.ButtonPressedIO
@@ -25,17 +24,13 @@ import timber.log.Timber
 
 object Connection {
     /** The queue's way to the radio: the write result of the current manager, false when there is none. */
-    private object ManagerTransport : WatchTransport {
-        override suspend fun write(
-            channel: WatchChannel,
-            frame: ByteArray,
-        ): Boolean {
-            val manager = bleManager
-            if (manager == null) {
-                ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
-                return false
-            }
-            return manager.writeChecked(channel.handle, frame)
+    private val ManagerTransport = WatchTransport { channel, frame ->
+        val manager = bleManager
+        if (manager == null) {
+            ProgressEvents.onNext("ApiError", "Connection manager is not initialized")
+            false
+        } else {
+            manager.writeChecked(channel.handle, frame)
         }
     }
 
