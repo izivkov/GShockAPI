@@ -727,6 +727,12 @@ data object WatchInfo {
     internal fun resolvedFor(name: String): Pair<WatchModel, WatchProtocol> =
         resolveModel(name).let { it to resolveModelInfo(it).protocol }
 
+    /** Sets the watch [name] resolves to without the DeviceName event (which needs the main thread); for tests. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    internal fun setModelForTest(name: String) {
+        state = buildState(name)
+    }
+
     /** The model attributes a device name resolves to; for tests. */
     @RequiresApi(Build.VERSION_CODES.O)
     internal fun infoFor(name: String): ModelInfo = resolveModelInfo(resolveModel(name))

@@ -19,10 +19,10 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * The first OCW-S7000 connection (owner log 2026-11-24 01:27): "request 28 failed: The answer is shorter than the layout
- * needs" for its 4-byte condition answer, reads of timer, alarms and basic settings it does not have (58 s until its name
- * was read), its 0x22 app information at risk of a scratchpad write, and a failed phone notification write that the log
- * showed as "request 20 failed". Answers below are the watch's own from that log.
+ * A first OCW-S7000 connection: its 4-byte condition answer was failed as "shorter than the layout needs", it was asked for
+ * timer, alarms and basic settings it does not have (58 s until its name was read), its 0x22 app information could get a
+ * scratchpad write, and a failed phone notification write was logged as "request 20 failed". The answers below are the
+ * OCW-S7000's own.
  */
 class OcwFirstConnectionTest {
     init { TestLog.install() }
@@ -55,7 +55,7 @@ class OcwFirstConnectionTest {
     private fun b(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }
 
     private fun conditionRead(name: String): Outcome = runBlocking {
-        WatchInfo.setNameAndModel(name)
+        WatchInfo.setModelForTest(name)
         val read = queue.enqueue(GetSetMode.GET, b(0x28))
         while (transport.sent.isEmpty()) delay(5)
         queue.onNotification(allFeatures, b(0x28, 0x13, 0x1B, 0x00))
@@ -73,7 +73,7 @@ class OcwFirstConnectionTest {
     }
 
     @Test fun aConnectionOfAnOcwWritesNothingTo0x22() {
-        WatchInfo.setNameAndModel("CASIO OCW-S7000")
+        WatchInfo.setModelForTest("CASIO OCW-S7000")
         // The OCW's own app information: no scratchpad marker (0x95), which on a scratchpad watch means "write it".
         AppInfoIO.onReceived("0x22 70 43 FD DF 79 92 21 D0 E9 00 02")
         Thread.sleep(200)
@@ -81,7 +81,7 @@ class OcwFirstConnectionTest {
     }
 
     @Test fun theOcwIsNotAskedForTimerAlarmsOrBasicSettings() = runBlocking {
-        WatchInfo.setNameAndModel("CASIO OCW-S7000")
+        WatchInfo.setModelForTest("CASIO OCW-S7000")
         val protocol = WatchInfo.protocol
         withTimeoutOrNull(1_000) {
             protocol.getTimer()
@@ -93,9 +93,9 @@ class OcwFirstConnectionTest {
     }
 
     @Test fun theOcwShowsNoPhoneNotificationsEvenWithTheCharacteristic() {
-        WatchInfo.setNameAndModel("CASIO OCW-S7000")
+        WatchInfo.setModelForTest("CASIO OCW-S7000")
         assertFalse(WatchInfo.showsAppNotifications(serviceFound = true))
-        WatchInfo.setNameAndModel("CASIO GBX-H5600")
+        WatchInfo.setModelForTest("CASIO GBX-H5600")
         assertTrue(WatchInfo.showsAppNotifications(serviceFound = true))
         assertFalse(WatchInfo.showsAppNotifications(serviceFound = false))
     }
