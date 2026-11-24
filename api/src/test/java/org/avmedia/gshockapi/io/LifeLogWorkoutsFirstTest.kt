@@ -15,7 +15,7 @@ import org.avmedia.gshockapi.casio.WatchChannel
 import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchQueue
 import org.avmedia.gshockapi.casio.WatchTransport
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -85,6 +85,8 @@ private class WorkoutHoldingWatch(private val condition: ByteArray) : WatchTrans
 
 /** Workouts flagged in `0x28` are read before the LifeLog START, so the read no longer hangs on such a watch. */
 class LifeLogWorkoutsFirstTest {
+    init { TestLog.install() }
+
     private val savedQueue = WatchLink.queue
     private val savedRun = H5600HealthIO.workoutsFirst
 
@@ -94,7 +96,7 @@ class LifeLogWorkoutsFirstTest {
         ConnectionSetup.busy = { false }
         ConnectionSetup.reset()
         ConnectionSetup.onWatchSetupDone()
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
     }
 
     @After fun restore() {
@@ -114,7 +116,7 @@ class LifeLogWorkoutsFirstTest {
             watch.workoutsPending = false
         }
         H5600HealthIO.request(peek = true)
-        watch to AppLog.recentEvents()
+        watch to TestLog.recentEvents()
     }
 
     @Test fun theFlagIsReadFromTheOwnersFrames() {
@@ -145,7 +147,7 @@ class LifeLogWorkoutsFirstTest {
             error("no answer")
         }
         H5600HealthIO.request(peek = true)
-        val lines = AppLog.recentEvents()
+        val lines = TestLog.recentEvents()
         assertTrue(lines.toString(), lines.any { it.contains("Workout read before the LifeLog failed") })
         assertTrue(lines.toString(), lines.any { it.contains("LifeLog read goes on after the workouts") })
         assertTrue(watch.events.toString(), watch.events.contains("START"))
@@ -166,7 +168,7 @@ class LifeLogWorkoutsFirstTest {
             delay(300)
             WatchExchange.mutex.unlock()
             val result = read.await()
-            val lines = AppLog.recentEvents().filter { it.contains("Workout read") }
+            val lines = TestLog.recentEvents().filter { it.contains("Workout read") }
             assertTrue(lines.toString(), result?.error.orEmpty().contains("did not answer the start"))
             for (want in listOf("Workout read asked", "Workout read waits", "Workout read starts", "session 1C requested", "Workout read stopped: the watch did not answer the start")) {
                 assertTrue("$want in $lines", lines.any { it.contains(want) })

@@ -268,7 +268,7 @@ object H5600WorkoutIO {
     /** Why a workout read stopped: one App log line with the source Workouts (the steps before it are Watch lines). */
     private fun problem(text: String) {
         Timber.w("H5600 workouts: $text")
-        org.avmedia.gshockapi.log.AppLog.log(org.avmedia.gshockapi.log.LogSource.Workouts, text)
+        org.avmedia.gshockapi.log.LibraryLog.log(org.avmedia.gshockapi.log.LibraryLog.Source.Workouts, text)
     }
 
     /** The two characteristics; a test seam. */

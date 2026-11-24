@@ -86,23 +86,33 @@ object NotificationSender {
     fun send(buffer: ByteArray): Job =
         scope.launch {
             mutex.withLock {
-                var held = 0L
-                while (!NotificationGate.allowed() || busy()) {
-                    if (held >= holdLimitMs) {
-                        Timber.w("Notification text dropped: the watch did not allow it for ${holdLimitMs / 1000} s")
-                        return@withLock
-                    }
-                    delay(holdPollMs)
-                    held += holdPollMs
-                }
-                val pieces = chunks(buffer, NotificationGate.chunkSize())
-                for ((i, piece) in pieces.withIndex()) {
-                    if (!writer(piece)) {
-                        Timber.w("Notification text: chunk ${i + 1} of ${pieces.size} failed, the rest is dropped")
-                        return@withLock
-                    }
-                    if (i < pieces.size - 1) delay(spacingMs)
-                }
+                if (awaitAllowed()) writePieces(buffer)
             }
         }
+
+    /** False when the watch did not allow a text within [holdLimitMs]: the text is dropped. */
+    private suspend fun awaitAllowed(): Boolean {
+        var held = 0L
+        while (!NotificationGate.allowed() || busy()) {
+            if (held >= holdLimitMs) {
+                Timber.w("Notification text dropped: the watch did not allow it for ${holdLimitMs / 1000} s")
+                return false
+            }
+            delay(holdPollMs)
+            held += holdPollMs
+        }
+        return true
+    }
+
+    /** The text in chunks, [spacingMs] apart; a failed chunk drops the rest. */
+    private suspend fun writePieces(buffer: ByteArray) {
+        val pieces = chunks(buffer, NotificationGate.chunkSize())
+        for ((i, piece) in pieces.withIndex()) {
+            if (!writer(piece)) {
+                Timber.w("Notification text: chunk ${i + 1} of ${pieces.size} failed, the rest is dropped")
+                return
+            }
+            if (i < pieces.size - 1) delay(spacingMs)
+        }
+    }
 }

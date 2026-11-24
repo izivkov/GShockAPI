@@ -1,6 +1,7 @@
 package org.avmedia.gshockapi.casio
 
 import org.avmedia.gshockapi.protocols.H5600Protocol
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,12 +18,14 @@ private class FakeWriter : WatchWriter {
 }
 
 class ConnectionKeepAliveTest {
+    init { TestLog.install() }
+
     private val fake = FakeWriter()
 
     @Before fun install() {
         ConnectionKeepAlive.writer = fake
         ConnectionKeepAlive.clock = { 1_700_000_000_000L }
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
         ConnectionSetup.busy = { false }
         ConnectionSetup.timeWriter = { timeWrites++ }
     }
@@ -47,7 +50,7 @@ class ConnectionKeepAliveTest {
         receive("49 00")
         receive("49 00")
         assertEquals(2, fake.all.size)
-        val log = ConnectionKeepAlive.recentEvents()
+        val log = TestLog.recentEvents()
         assertEquals(2, log.size)
         assertTrue(log[0], log[0].startsWith("2023-11-14 ") && log[0].endsWith("49 00 received, 49 01 written"))
     }
@@ -55,7 +58,7 @@ class ConnectionKeepAliveTest {
     @Test fun anotherCheckValueIsNotAnswered() {
         receive("0x49 05")
         assertTrue(fake.all.isEmpty())
-        assertEquals(1, ConnectionKeepAlive.recentEvents().size)
+        assertEquals(1, TestLog.recentEvents().size)
     }
 
     @Test fun setupValueTwoWritesLinkLossLevelOne() {
@@ -67,7 +70,7 @@ class ConnectionKeepAliveTest {
     @Test fun setupValueOneIsOnlyLogged() {
         receive("0x47 01")
         assertTrue(fake.linkLoss.isEmpty() && fake.all.isEmpty())
-        assertTrue(ConnectionKeepAlive.recentEvents().single().endsWith("47 01 received: the watch's setup is done"))
+        assertTrue(TestLog.recentEvents().single().endsWith("47 01 received: the watch's setup is done"))
     }
 
     @Test fun reconnectKindTenRunsTheWholeSetup() {
@@ -139,7 +142,7 @@ class ConnectionKeepAliveTest {
         val before = fake.all.size
         receive("0x39 05")
         assertEquals(before, fake.all.size)
-        assertTrue(ConnectionKeepAlive.recentEvents().last().endsWith("39 05: the watch aborted (ignored)"))
+        assertTrue(TestLog.recentEvents().last().endsWith("39 05: the watch aborted (ignored)"))
     }
 
     @Test fun otherKindsSkipThe3AAnd3BSteps() {
@@ -171,7 +174,7 @@ class ConnectionKeepAliveTest {
         val before = fake.requests.size
         receive("0x10 00 00 00 00 00 00 00 0E 00") // same link, setup done: skipped and logged
         assertEquals(before, fake.requests.size)
-        assertTrue(ConnectionKeepAlive.recentEvents().last().contains("setup skipped"))
+        assertTrue(TestLog.recentEvents().last().contains("setup skipped"))
         ConnectionSetup.onLinkLost() // the watch drops the link and reconnects by itself, no connect() call
         receive("0x10 00 00 00 00 00 00 00 0E 00")
         assertEquals(0x23, fake.requests.last())
@@ -185,7 +188,7 @@ class ConnectionKeepAliveTest {
         ConnectionSetup.busy = { true }
         receive("0x10 00 00 00 00 00 00 00 0E 00")
         assertTrue(fake.requests.isEmpty())
-        assertTrue(ConnectionKeepAlive.recentEvents().last().contains("setup deferred"))
+        assertTrue(TestLog.recentEvents().last().contains("setup deferred"))
         ConnectionSetup.busy = { false }
         ConnectionSetup.onTransferEnded()
         assertEquals(listOf(0x23), fake.requests)

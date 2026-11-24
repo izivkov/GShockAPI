@@ -155,17 +155,7 @@ object H5600HealthIO {
             Timber.i("H5600: step counter not supported on model ${WatchInfo.model}")
             return StepCounterData.unavailable()
         }
-        val started =
-            synchronized(lock) {
-                if (requestRunning) {
-                    false
-                } else {
-                    requestRunning = true
-                    linkLostDuringRequest = false
-                    true
-                }
-            }
-        if (!started) {
+        if (!claimRequest()) {
             Timber.w("H5600: request ignored, a transfer is already running")
             return StepCounterData.unavailable()
         }
@@ -174,52 +164,74 @@ object H5600HealthIO {
         requestStartedMs = System.currentTimeMillis()
         var locked = false
         try {
-            // The connection setup runs first and the watch's own setup ends with `47 01`: before that no transfer and no setup
-            // reads of ours (they took the setup's answers). Without `47 01` the read is left out on this link.
-            if (!org.avmedia.gshockapi.casio.ConnectionSetup.watchSetupDone) {
-                org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read waits for 47 01 (the watch's setup)")
-            }
-            if (!org.avmedia.gshockapi.casio.ConnectionSetup.awaitWatchSetup()) {
-                org.avmedia.gshockapi.casio.ConnectionKeepAlive.log(
-                    "LifeLog read left out: no 47 01 in ${org.avmedia.gshockapi.casio.ConnectionSetup.watchSetupWaitMs / 1000} s on this link",
-                )
-                lastError = "The watch has not finished its setup on this connection. The LifeLog is read at the next connection."
-                return StepCounterData.unavailable()
-            }
+            if (!watchSetupReady()) return StepCounterData.unavailable()
             // No START in the middle of a time or settings exchange (the reads of the time exchange are counted one by one).
             WatchExchange.awaitNoSettingsExchange()
             // One exchange on the link at a time: a raw or settings read in progress finishes first.
             WatchExchange.mutex.lock()
             locked = true
-            for (attempt in 1..MAX_TRANSFER_ATTEMPTS) {
-                _status.value =
-                    if (attempt == 1) {
-                        null
-                    } else {
-                        "LifeLog data failed, trying again (attempt $attempt of $MAX_TRANSFER_ATTEMPTS)"
-                    }
-                val outcome =
-                    if (linkLostDuringRequest) AttemptOutcome(StepCounterData.unavailable(), restart = false, lost = true)
-                    else runAttempt(ZoneId.systemDefault(), peek)
-                if (outcome.lost || linkLostDuringRequest) {
-                    lastError = "The watch disconnected during the LifeLog read. It is read again at the next connection."
-                    org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read stopped: the link dropped (attempt $attempt)")
-                    return StepCounterData.unavailable()
-                }
-                if (!outcome.restart) return outcome.data
-                Timber.w("H5600: the watch did not answer; attempt $attempt of $MAX_TRANSFER_ATTEMPTS failed")
-                org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog attempt $attempt of $MAX_TRANSFER_ATTEMPTS failed: the watch did not answer")
-            }
-            lastError =
-                "LifeLog data could not be read after $MAX_TRANSFER_ATTEMPTS tries. Open the Health screen to try again."
-            Timber.e("H5600: giving up after $MAX_TRANSFER_ATTEMPTS attempts")
-            org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read failed after $MAX_TRANSFER_ATTEMPTS tries")
-            return StepCounterData.unavailable()
+            return runAttempts(peek)
         } finally {
             _status.value = null
             synchronized(lock) { requestRunning = false }
             if (locked) WatchExchange.mutex.unlock()
         }
+    }
+
+    /** True when no request was running: this one runs now. */
+    private fun claimRequest(): Boolean =
+        synchronized(lock) {
+            if (requestRunning) {
+                false
+            } else {
+                requestRunning = true
+                linkLostDuringRequest = false
+                true
+            }
+        }
+
+    /**
+     * The connection setup runs first and the watch's own setup ends with `47 01`: before that no transfer and no setup
+     * reads of ours (they took the setup's answers). Without `47 01` the read is left out on this link (false).
+     */
+    private suspend fun watchSetupReady(): Boolean {
+        if (!org.avmedia.gshockapi.casio.ConnectionSetup.watchSetupDone) {
+            org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read waits for 47 01 (the watch's setup)")
+        }
+        if (org.avmedia.gshockapi.casio.ConnectionSetup.awaitWatchSetup()) return true
+        org.avmedia.gshockapi.casio.ConnectionKeepAlive.log(
+            "LifeLog read left out: no 47 01 in ${org.avmedia.gshockapi.casio.ConnectionSetup.watchSetupWaitMs / 1000} s on this link",
+        )
+        lastError = "The watch has not finished its setup on this connection. The LifeLog is read at the next connection."
+        return false
+    }
+
+    /** Up to [MAX_TRANSFER_ATTEMPTS] attempts; a dropped link ends them at once. */
+    private suspend fun runAttempts(peek: Boolean): StepCounterData {
+        for (attempt in 1..MAX_TRANSFER_ATTEMPTS) {
+            _status.value =
+                if (attempt == 1) {
+                    null
+                } else {
+                    "LifeLog data failed, trying again (attempt $attempt of $MAX_TRANSFER_ATTEMPTS)"
+                }
+            val outcome =
+                if (linkLostDuringRequest) AttemptOutcome(StepCounterData.unavailable(), restart = false, lost = true)
+                else runAttempt(ZoneId.systemDefault(), peek)
+            if (outcome.lost || linkLostDuringRequest) {
+                lastError = "The watch disconnected during the LifeLog read. It is read again at the next connection."
+                org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read stopped: the link dropped (attempt $attempt)")
+                return StepCounterData.unavailable()
+            }
+            if (!outcome.restart) return outcome.data
+            Timber.w("H5600: the watch did not answer; attempt $attempt of $MAX_TRANSFER_ATTEMPTS failed")
+            org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog attempt $attempt of $MAX_TRANSFER_ATTEMPTS failed: the watch did not answer")
+        }
+        lastError =
+            "LifeLog data could not be read after $MAX_TRANSFER_ATTEMPTS tries. Open the Health screen to try again."
+        Timber.e("H5600: giving up after $MAX_TRANSFER_ATTEMPTS attempts")
+        org.avmedia.gshockapi.casio.ConnectionKeepAlive.log("LifeLog read failed after $MAX_TRANSFER_ATTEMPTS tries")
+        return StepCounterData.unavailable()
     }
 
     /** One attempt: setup, START, polls, then the data. restart = true when the watch stopped answering. */
@@ -282,7 +294,7 @@ object H5600HealthIO {
             if (decoded == null) {
                 val stream = H5600HealthDecoder.lifeLogStream(snapshot.first, snapshot.second)
                 Timber.w("H5600: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
-                org.avmedia.gshockapi.log.AppLog.log(org.avmedia.gshockapi.log.LogSource.Health, "LifeLog read: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
+                org.avmedia.gshockapi.log.LibraryLog.log(org.avmedia.gshockapi.log.LibraryLog.Source.Health, "LifeLog read: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
                 return AttemptOutcome(StepCounterData.unavailable(), restart = false)
             }
             Timber.i(

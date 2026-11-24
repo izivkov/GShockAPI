@@ -15,7 +15,7 @@ import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchQueue
 import org.avmedia.gshockapi.casio.WatchTransport
 import org.avmedia.gshockapi.casio.WatchWriter
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -32,6 +32,8 @@ import org.junit.Test
  * before `47 01`; without it the transfer is left out for this link.
  */
 class TransferWaitsForWatchSetupTest {
+    init { TestLog.install() }
+
     private class Writer : WatchWriter {
         override fun writeAllFeatures(bytes: ByteArray) {}
         override fun request(code: Int) {}
@@ -55,7 +57,7 @@ class TransferWaitsForWatchSetupTest {
 
     @Before fun install() {
         ConnectionKeepAlive.writer = Writer()
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
         ConnectionSetup.busy = { false }
         ConnectionSetup.timeWriter = {}
         ConnectionSetup.reset()
@@ -92,7 +94,7 @@ class TransferWaitsForWatchSetupTest {
         receive("0x3B 50 00 0A 40 01 05 05 20 03")
         receive("0x3A 00 34 01 40 01 04 00 58 02")
         receive("0x23 43 41 53 49 4F 20 47 42 58")
-        assertTrue(AppLog.recentEvents().toString(), AppLog.recentEvents().any { it.endsWith("time and DST write started") })
+        assertTrue(TestLog.recentEvents().toString(), TestLog.recentEvents().any { it.endsWith("time and DST write started") })
     }
 
     @Test fun aLateSetupDoneStartsNoTransferAndTheSettingsReadsOfTheScreensGoOn() = runBlocking {
@@ -122,7 +124,7 @@ class TransferWaitsForWatchSetupTest {
         assertNull("no workout read", workouts)
         assertTrue("nothing on the link: ${link.frames}", link.frames.isEmpty())
         assertTrue("no workout session: $workoutWrites", workoutWrites.isEmpty())
-        val lines = AppLog.recentEvents()
+        val lines = TestLog.recentEvents()
         assertTrue(lines.toString(), lines.none { it.contains("going on") })
     }
 }

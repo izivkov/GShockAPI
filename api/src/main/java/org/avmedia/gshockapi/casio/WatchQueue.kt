@@ -13,7 +13,7 @@ import org.avmedia.gshockapi.ble.GetSetMode
 import timber.log.Timber
 
 /** The GATT side of the queue: one write, done when Android reports it (with or without response), false when it failed. */
-interface WatchTransport {
+fun interface WatchTransport {
     suspend fun write(channel: WatchChannel, frame: ByteArray): Boolean
 }
 
