@@ -193,7 +193,7 @@ object H5600HealthIO {
                     watchCondition = transfer.watchCondition,
                 )
             if (decoded == null) {
-                val stream = H5600HealthDecoder.lifeLogStream(snapshot.first)
+                val stream = H5600HealthDecoder.lifeLogStream(snapshot.first, snapshot.second)
                 Timber.w("H5600: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
                 return AttemptOutcome(StepCounterData.unavailable(), restart = false)
             }
