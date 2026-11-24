@@ -710,13 +710,15 @@ data object WatchInfo {
             put("OCW-P3000", WatchModel.GENERIC)
         }
 
+    /** Pure: the model name in a Bluetooth device name ("CASIO GBX-H5600" is "GBX-H5600"). */
+    private fun modelNameOf(name: String): String = name.removePrefix("CASIO ").trim()
+
     /** Pure: derive the short name from the Bluetooth device name. */
-    private fun deriveShortName(name: String): String = name.removePrefix("CASIO ").trim().split(" ").firstOrNull().orEmpty()
+    private fun deriveShortName(name: String): String = modelNameOf(name).split(" ").firstOrNull().orEmpty()
 
     /** Pure: resolve only an exact official model name; never use partial matching. */
     private fun resolveModel(name: String): WatchModel {
-        val modelName = name.removePrefix("CASIO ").trim()
-        return exactModelMap[modelName] ?: WatchModel.GENERIC
+        return exactModelMap[modelNameOf(name)] ?: WatchModel.GENERIC
     }
 
     /** Pure: look up ModelInfo, falling back to GENERIC. */
@@ -747,7 +749,7 @@ data object WatchInfo {
     /** How many faces [name]'s watch has (faces 1 to the count); 0 when it has no face setting. */
     @RequiresApi(Build.VERSION_CODES.O)
     fun faceCountFor(name: String): Int =
-        facesByName[name.removePrefix("CASIO ").trim()] ?: resolveModelInfo(resolveModel(name)).faceCount
+        facesByName[modelNameOf(name)] ?: resolveModelInfo(resolveModel(name)).faceCount
 
     /** True when the connected watch shows phone notifications: its model has them and [serviceFound] (the characteristic is there). */
     @RequiresApi(Build.VERSION_CODES.O)
