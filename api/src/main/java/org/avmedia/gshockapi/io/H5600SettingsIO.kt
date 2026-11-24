@@ -63,7 +63,7 @@ object H5600SettingsIO {
             before = p.copyOf()
             transform(p)?.let { Utils.byteArrayOfIntArray(it) }
         }
-        if (result is SettingWriteResult.Failed) throw IllegalStateException(result.message)
+        (result as? SettingWriteResult.Failed)?.let { error(it.message) }
         return checkNotNull(before) { "0x%02X was not read".format(code) }
     }
 

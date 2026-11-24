@@ -70,22 +70,8 @@ object WorkoutSummaryDecoder {
         val v = layout.read(c)
         val loadf = if (withLoadF) LOAD_FLOAT.read(c)["loadf"] else null
         fun i(k: String) = v[k]?.toInt()
-        val swimMap: Map<String, Long> = if (swim) {
-            val sc = WorkoutCursor(header, OFFSET + layout.size - 68)
-            val styles = listOf("free", "breast", "back", "butterfly")
-            buildMap<String, Long> {
-                for (k in listOf("strokes", "strokesPerLap", "swolfAvg", "swolfBest")) v[k]?.let { put(k, it.toLong()) }
-                for (s in styles) {
-                    val st = WorkoutLayout(STYLE).read(sc)
-                    for ((k, x) in st) x?.let { put(s + k.replaceFirstChar { ch -> ch.uppercase() }, it.toLong()) }
-                }
-            }
-        } else {
-            emptyMap<String, Long>()
-        }
-        val profile = buildMap<String, Int> {
-            for (k in listOf("age", "birthYear", "birthMonth", "birthDay", "male", "height", "weight", "hand")) v[k]?.let { put(k, it.toInt()) }
-        }
+        val swimMap = if (swim) swimValues(header, layout, v) else emptyMap()
+        val profile = profileValues(v)
         val fuel = if (v.containsKey("fuelC")) listOf(i("fuelC"), i("fuelP"), i("fuelF")) else null
         return WorkoutSummary(
             totalSeconds = i("time"),
@@ -117,5 +103,22 @@ object WorkoutSummaryDecoder {
             swim = swimMap,
             profile = profile,
         )
+    }
+
+    /** The swim totals and, per stroke style, the 68 bytes at the end of the swimming layout. */
+    private fun swimValues(header: ByteArray, layout: WorkoutLayout, v: Map<String, Double?>): Map<String, Long> {
+        val sc = WorkoutCursor(header, OFFSET + layout.size - 68)
+        val styles = listOf("free", "breast", "back", "butterfly")
+        return buildMap<String, Long> {
+            for (k in listOf("strokes", "strokesPerLap", "swolfAvg", "swolfBest")) v[k]?.let { put(k, it.toLong()) }
+            for (s in styles) {
+                val st = WorkoutLayout(STYLE).read(sc)
+                for ((k, x) in st) x?.let { put(s + k.replaceFirstChar { ch -> ch.uppercase() }, it.toLong()) }
+            }
+        }
+    }
+
+    private fun profileValues(v: Map<String, Double?>): Map<String, Int> = buildMap<String, Int> {
+        for (k in listOf("age", "birthYear", "birthMonth", "birthDay", "male", "height", "weight", "hand")) v[k]?.let { put(k, it.toInt()) }
     }
 }

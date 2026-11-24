@@ -19,7 +19,8 @@ object TideStationParser {
         data class Error(val message: String) : Result()
     }
 
-    fun parse(text: String): Result {
+    /** What the lines said so far. */
+    private class Draft {
         var name: String? = null
         var lat: Double? = null
         var lon: Double? = null
@@ -27,37 +28,60 @@ object TideStationParser {
         var z0: Double? = null
         val constants = LinkedHashMap<String, TideConstant>()
         val ignored = ArrayList<String>()
+    }
+
+    fun parse(text: String): Result {
+        val d = Draft()
         text.lines().forEachIndexed { index, raw ->
             val line = raw.substringBefore('#').trim()
             if (line.isEmpty()) return@forEachIndexed
-            val parts = line.split(Regex("[\\s,;=]+"))
-            val key = parts[0].lowercase()
-            fun num(i: Int): Double? = parts.getOrNull(i)?.replace(',', '.')?.toDoubleOrNull()?.takeIf { it.isFinite() }
-            when (key) {
-                "name" -> name = line.substring(parts[0].length).trim(' ', '=', ':').ifEmpty { null }
-                "lat" -> lat = num(1) ?: return Result.Error("Line ${index + 1}: latitude is not a number.")
-                "lon" -> lon = num(1) ?: return Result.Error("Line ${index + 1}: longitude is not a number.")
-                "utc" -> utc = num(1) ?: return Result.Error("Line ${index + 1}: the UTC offset is not a number.")
-                "z0" -> z0 = num(1) ?: return Result.Error("Line ${index + 1}: z0 is not a number.")
-                else -> {
-                    val amp = num(1)
-                    val pha = num(2)
-                    if (amp == null || pha == null) return Result.Error("Line ${index + 1}: expected a constituent, its amplitude (cm) and its phase lag (degrees).")
-                    if (amp < 0 || amp > 2000) return Result.Error("Line ${index + 1}: the amplitude of ${parts[0]} is outside 0 to 2000 cm.")
-                    val canonical = TideConstituents.canonical(parts[0])
-                    if (canonical == null) ignored += parts[0] else if (canonical in constants) return Result.Error("Line ${index + 1}: ${parts[0]} twice.") else constants[canonical] = TideConstant(amp, pha)
-                }
-            }
+            readLine(d, line)?.let { return Result.Error("Line ${index + 1}: $it") }
         }
-        val n = name ?: return Result.Error("The station has no name line.")
-        val la = lat ?: return Result.Error("The station has no lat line.")
-        val lo = lon ?: return Result.Error("The station has no lon line.")
-        val offset = utc ?: return Result.Error("The station has no utc line (hours east of UTC).")
+        return station(d)
+    }
+
+    private fun num(parts: List<String>, i: Int): Double? =
+        parts.getOrNull(i)?.replace(',', '.')?.toDoubleOrNull()?.takeIf { it.isFinite() }
+
+    /** One non-empty line into [d]; the error text (without the line number) when it is wrong. */
+    private fun readLine(d: Draft, line: String): String? {
+        val parts = line.split(Regex("[\\s,;=]+"))
+        when (parts[0].lowercase()) {
+            "name" -> d.name = line.substring(parts[0].length).trim(' ', '=', ':').ifEmpty { null }
+            "lat" -> d.lat = num(parts, 1) ?: return "latitude is not a number."
+            "lon" -> d.lon = num(parts, 1) ?: return "longitude is not a number."
+            "utc" -> d.utc = num(parts, 1) ?: return "the UTC offset is not a number."
+            "z0" -> d.z0 = num(parts, 1) ?: return "z0 is not a number."
+            else -> return readConstituent(d, parts)
+        }
+        return null
+    }
+
+    private fun readConstituent(d: Draft, parts: List<String>): String? {
+        val amp = num(parts, 1)
+        val pha = num(parts, 2)
+        if (amp == null || pha == null) return "expected a constituent, its amplitude (cm) and its phase lag (degrees)."
+        if (amp < 0 || amp > 2000) return "the amplitude of ${parts[0]} is outside 0 to 2000 cm."
+        val canonical = TideConstituents.canonical(parts[0])
+        if (canonical == null) {
+            d.ignored += parts[0]
+            return null
+        }
+        if (canonical in d.constants) return "${parts[0]} twice."
+        d.constants[canonical] = TideConstant(amp, pha)
+        return null
+    }
+
+    private fun station(d: Draft): Result {
+        val n = d.name ?: return Result.Error("The station has no name line.")
+        val la = d.lat ?: return Result.Error("The station has no lat line.")
+        val lo = d.lon ?: return Result.Error("The station has no lon line.")
+        val offset = d.utc ?: return Result.Error("The station has no utc line (hours east of UTC).")
         if (la !in -90.0..90.0 || lo !in -180.0..180.0) return Result.Error("Latitude or longitude is out of range.")
         val quarters = Math.round(offset * 4).toInt()
         if (quarters !in -48..56) return Result.Error("The UTC offset is out of range.")
-        val station = TideStation(n, la, lo, quarters, constants, z0)
+        val station = TideStation(n, la, lo, quarters, d.constants, d.z0)
         if (!TideRecords.can4(station)) return Result.Error("M2, S2, K1 and O1 are needed, each with an amplitude above 0.")
-        return Result.Ok(station, ignored)
+        return Result.Ok(station, d.ignored)
     }
 }

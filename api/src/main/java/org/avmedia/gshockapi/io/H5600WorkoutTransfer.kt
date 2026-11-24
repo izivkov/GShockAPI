@@ -95,63 +95,94 @@ class WorkoutTransfer(
      * order; it answers `04` only after its echo, so step 3 starts when both came. A fail reason (kind `03`) ends at once.
      */
     private suspend fun start() {
-        val open = request(CAT_SESSION, 0L, 0)
+        val st = StartState(request(CAT_SESSION, 0L, 0))
         sessionOpen = true
-        drsp("step 1", open)
-        var echoed = false
-        var tries = 0
+        drsp("step 1", st.open)
         val ok = withTimeoutOrNull(sessionTimeoutMs + BUSY_TRIES * BUSY_RETRY_MS) {
-            while (true) {
-                // One answer per write: a busy watch repeats `00 01 04` about every 60 ms; the frames queued since the last
-                // write are dropped (the session echo and a fail reason among them still count).
-                while (true) {
-                    val m = inbox.tryReceive().getOrNull() ?: break
-                    capture(m, null)
-                    if (m.data.contentEquals(open)) { echoed = true; log("Workout read: step 1 rx ${hex(m.data)} (session echo)") }
-                    else failReason(m.data)
-                }
-                bulk("step 2", byteArrayOf(0, 0, 0))
-                val reply = withTimeoutOrNull(replyTimeoutMs) {
-                    var got: ByteArray? = null
-                    while (got == null) {
-                        val m = take()
-                        if (m.data.contentEquals(open)) {
-                            echoed = true
-                            log("Workout read: step 1 rx ${hex(m.data)} (session echo)")
-                        } else {
-                            failReason(m.data)
-                            if (m.channel == H5600Channel.CONVOY && m.data.firstOrNull()?.toInt() == KIND_START) got = m.data
-                        }
-                    }
-                    got
-                } ?: throw Fail("the watch did not answer the start")
-                log("Workout read: step 2 rx ${hex(reply)} (start state)")
-                val state = reply.getOrElse(1) { 0 }.toInt() and 0xFF
-                val reason = reply.getOrElse(2) { 0 }.toInt() and 0xFF
-                if (state == 0) break
-                when (reason) {
-                    1 -> throw Fail("the watch battery is too low for the workout transfer", refused = true)
-                    2 -> throw Fail("the watch is too cold for the workout transfer", refused = true)
-                    else -> if (++tries >= BUSY_TRIES) throw Fail("the watch stayed busy (reason $reason)", refused = true) else delay(BUSY_RETRY_MS)
-                }
-            }
-            while (!echoed) {
-                val m = take()
-                failReason(m.data)
-                if (m.data.contentEquals(open)) { echoed = true; log("Workout read: step 1 rx ${hex(m.data)} (session echo)") }
-            }
+            awaitReady(st)
+            while (!st.echoed) sawEcho(take(), st)
             true
         }
-        if (ok == null) throw Fail(if (echoed) "the watch did not answer the start" else "the watch did not open the session (no 00 1C echo in ${sessionTimeoutMs / 1000} s)")
+        if (ok == null) throw Fail(if (st.echoed) "the watch did not answer the start" else "the watch did not open the session (no 00 1C echo in ${sessionTimeoutMs / 1000} s)")
         paramsSent = true
-        bulk("step 3", ByteArray(10).also { it[0] = 4 })
-        awaitBulk("step 3", KIND_PARAMS) ?: throw Fail("no answer to the connection parameters")
-        bulk("step 3", byteArrayOf(4, 1, 0x18, 0, 0x18, 0, 0, 0, 0xDC.toByte(), 5))
-        awaitBulk("step 3", KIND_PARAMS) ?: throw Fail("no answer to the interval")
-        bulk("step 3", ByteArray(14).also { it[0] = 6 })
-        val parameters = awaitBulk("step 3", KIND_SIZES) ?: throw Fail("no answer to the transfer parameters")
-        bulk("step 3", parameters)
-        awaitBulk("step 3", KIND_SIZES)
+        sendParameters()
+    }
+
+    /** The session request and whether its echo came. */
+    private class StartState(val open: ByteArray) {
+        var echoed = false
+    }
+
+    /** Step 2 until the watch answers state 0; a busy watch is asked again, a low battery or cold ends it. */
+    private suspend fun awaitReady(st: StartState) {
+        var tries = 0
+        while (true) {
+            dropQueued(st)
+            bulk("step 2", byteArrayOf(0, 0, 0))
+            val reply = awaitStartState(st)
+            log("Workout read: step 2 rx ${hex(reply)} (start state)")
+            val state = reply.getOrElse(1) { 0 }.toInt() and 0xFF
+            val reason = reply.getOrElse(2) { 0 }.toInt() and 0xFF
+            if (state == 0) return
+            tries = busyOrRefused(reason, tries)
+        }
+    }
+
+    /**
+     * One answer per write: a busy watch repeats `00 01 04` about every 60 ms; the frames queued since the last
+     * write are dropped (the session echo and a fail reason among them still count).
+     */
+    private fun dropQueued(st: StartState) {
+        while (true) {
+            val m = inbox.tryReceive().getOrNull() ?: break
+            capture(m, null)
+            sawEcho(m, st)
+        }
+    }
+
+    /** The start state (kind `00` on the bulk channel) within [replyTimeoutMs]. */
+    private suspend fun awaitStartState(st: StartState): ByteArray =
+        withTimeoutOrNull(replyTimeoutMs) {
+            var got: ByteArray? = null
+            while (got == null) {
+                val m = take()
+                if (!sawEcho(m, st) && m.channel == H5600Channel.CONVOY && m.data.firstOrNull()?.toInt() == KIND_START) got = m.data
+            }
+            got
+        } ?: throw Fail("the watch did not answer the start")
+
+    /** Reason 1 or 2 ends the start; another reason waits and counts one more try (the new count). */
+    private suspend fun busyOrRefused(reason: Int, tries: Int): Int {
+        when (reason) {
+            1 -> throw Fail("the watch battery is too low for the workout transfer", refused = true)
+            2 -> throw Fail("the watch is too cold for the workout transfer", refused = true)
+        }
+        if (tries + 1 >= BUSY_TRIES) throw Fail("the watch stayed busy (reason $reason)", refused = true)
+        delay(BUSY_RETRY_MS)
+        return tries + 1
+    }
+
+    /** True for the session echo (noted and logged); any other frame is checked for a fail reason. */
+    private fun sawEcho(m: WorkoutMsg, st: StartState): Boolean {
+        if (m.data.contentEquals(st.open)) {
+            st.echoed = true
+            log("Workout read: step 1 rx ${hex(m.data)} (session echo)")
+            return true
+        }
+        failReason(m.data)
+        return false
+    }
+
+    /** Step 3: connection parameters, the fast interval, the transfer parameters written back. */
+    private suspend fun sendParameters() {
+        bulk(STEP_3, ByteArray(10).also { it[0] = 4 })
+        awaitBulk(STEP_3, KIND_PARAMS) ?: throw Fail("no answer to the connection parameters")
+        bulk(STEP_3, byteArrayOf(4, 1, 0x18, 0, 0x18, 0, 0, 0, 0xDC.toByte(), 5))
+        awaitBulk(STEP_3, KIND_PARAMS) ?: throw Fail("no answer to the interval")
+        bulk(STEP_3, ByteArray(14).also { it[0] = 6 })
+        val parameters = awaitBulk(STEP_3, KIND_SIZES) ?: throw Fail("no answer to the transfer parameters")
+        bulk(STEP_3, parameters)
+        awaitBulk(STEP_3, KIND_SIZES)
     }
 
     /** Kind `03` (fail reason, A1) on either channel ends the start, e.g. `03 01`. */
@@ -213,67 +244,115 @@ class WorkoutTransfer(
      * our request goes out again (once per read).
      */
     private suspend fun read(category: Int, address: Long, length: Int, chunk: Int): ByteArray? {
-        var resent = false
+        val r = ReadCall(category, length, chunk, request(category, address, length))
         repeat(2) {
-            var asm = WorkoutChunkAssembler(length, chunk)
-            val step = "read %02X".format(category)
-            val ours = request(category, address, length)
+            r.restart()
             if (category == CAT_DATA || category == CAT_LAPS) delay(BLOCK_GAP_MS)
-            drsp(step, ours)
-            var stale: ByteArray? = null
-            var bad = 0
-            while (true) {
-                val m = next(readTimeoutMs) ?: return null.also { log("Workout read: $step rx nothing in ${readTimeoutMs / 1000} s (${asm.receivedBytes} of $length bytes)") }
-                if (m.channel == H5600Channel.CONVOY) {
-                    if (stale == null && m.data.size > 1 && m.data[0] == BULK_DATA) asm.feed(m.data.copyOfRange(1, m.data.size))
-                    continue
-                }
-                if (isOtherEcho(m.data, ours)) { stale = m.data; continue }
-                val replay = stale
-                if (replay != null && (m.data.firstOrNull()?.toInt() == SECTOR_END || m.data.firstOrNull()?.toInt() == ALL_SENT)) {
-                    drsp(step, echo(m.data, replay[1].toInt() and 0xFF))
-                    if (resent) return null.also { log("Workout read: $step stale replay again, read given up") }
-                    resent = true
-                    stale = null
-                    asm = WorkoutChunkAssembler(length, chunk)
-                    log("Workout read: stale replay of ${describe(replay)}, request sent again")
-                    delay(BLOCK_GAP_MS)
-                    drsp(step, ours)
-                    continue
-                }
-                // The watch's `07` and `09` frames carry more than the category (`07 1F 00 00 00 00 00`); like the LifeLog
-                // block confirm, the whole frame goes back. A short `07 1F` got no answer at all: the watch waited for the echo.
-                when (m.data.firstOrNull()?.toInt()) {
-                    SECTOR_END ->
-                        if (asm.endSector()) {
-                            drsp(step, echo(m.data, category))
-                            // The sector end with every asked byte in is the end of a block read (1F, 20): the watch then
-                            // waits for the next request and sends no `09`. 1D and 1E end with `09`.
-                            asm.result()?.let { capture(null, it); return it }
-                        } else {
-                            if (++bad >= 2) return null
-                            asm.dropSector()
-                            drsp(step, byteArrayOf(0x08, category.toByte()))
-                            drsp(step, byteArrayOf(0x06, category.toByte()))
-                        }
-                    DROP_SECTOR -> asm.dropSector()
-                    ALL_SENT -> {
-                        drsp(step, echo(m.data, category))
-                        drsp(step, byteArrayOf(0x04, category.toByte()))
-                        val result = asm.result()
-                        if (result != null) {
-                            capture(null, result)
-                            return result
-                        }
-                        log("Workout read: $step incomplete (${asm.receivedBytes} of $length bytes, ${asm.partialBytes} in an open chunk)")
-                        drsp(step, byteArrayOf(0x03, category.toByte()))
-                        return@repeat
-                    }
-                    ABORTED -> return null
-                }
-            }
+            drsp(r.step, r.ours)
+            val end = readAttempt(r)
+            if (end is ReadStep.End) return end.bytes
         }
         return null
+    }
+
+    /** One read in progress: [resent] counts over both attempts, the rest is new for each attempt. */
+    private class ReadCall(val category: Int, val length: Int, val chunk: Int, val ours: ByteArray) {
+        val step = "read %02X".format(category)
+        var resent = false
+        var asm = WorkoutChunkAssembler(length, chunk)
+        var stale: ByteArray? = null
+        var bad = 0
+
+        fun restart() {
+            asm = WorkoutChunkAssembler(length, chunk)
+            stale = null
+            bad = 0
+        }
+    }
+
+    /** What a frame means for the read: wait for the next, ask the whole read again, or the read ends ([End.bytes]). */
+    private sealed class ReadStep {
+        object Next : ReadStep()
+
+        object Again : ReadStep()
+
+        class End(val bytes: ByteArray?) : ReadStep()
+    }
+
+    /** Frames until the read ends or asks again ([ReadStep.Again]); nothing within [readTimeoutMs] ends it. */
+    private suspend fun readAttempt(r: ReadCall): ReadStep {
+        while (true) {
+            val m = next(readTimeoutMs) ?: return ReadStep.End(null).also { log("Workout read: ${r.step} rx nothing in ${readTimeoutMs / 1000} s (${r.asm.receivedBytes} of ${r.length} bytes)") }
+            val step = onReadFrame(r, m)
+            if (step !is ReadStep.Next) return step
+        }
+    }
+
+    private suspend fun onReadFrame(r: ReadCall, m: WorkoutMsg): ReadStep {
+        if (m.channel == H5600Channel.CONVOY) {
+            if (r.stale == null && m.data.size > 1 && m.data[0] == BULK_DATA) r.asm.feed(m.data.copyOfRange(1, m.data.size))
+            return ReadStep.Next
+        }
+        if (isOtherEcho(m.data, r.ours)) {
+            r.stale = m.data
+            return ReadStep.Next
+        }
+        val kind = m.data.firstOrNull()?.toInt()
+        val replay = r.stale
+        if (replay != null && (kind == SECTOR_END || kind == ALL_SENT)) return answerReplay(r, m.data, replay)
+        // The watch's `07` and `09` frames carry more than the category (`07 1F 00 00 00 00 00`); like the LifeLog
+        // block confirm, the whole frame goes back. A short `07 1F` got no answer at all: the watch waited for the echo.
+        return when (kind) {
+            SECTOR_END -> onSectorEnd(r, m.data)
+            DROP_SECTOR -> {
+                r.asm.dropSector()
+                ReadStep.Next
+            }
+            ALL_SENT -> onAllSent(r, m.data)
+            ABORTED -> ReadStep.End(null)
+            else -> ReadStep.Next
+        }
+    }
+
+    /** The end of a replayed read: answered, its bytes dropped, and our request sent again (once per read). */
+    private suspend fun answerReplay(r: ReadCall, frame: ByteArray, replay: ByteArray): ReadStep {
+        drsp(r.step, echo(frame, replay[1].toInt() and 0xFF))
+        if (r.resent) return ReadStep.End(null).also { log("Workout read: ${r.step} stale replay again, read given up") }
+        r.resent = true
+        r.stale = null
+        r.asm = WorkoutChunkAssembler(r.length, r.chunk)
+        log("Workout read: stale replay of ${describe(replay)}, request sent again")
+        delay(BLOCK_GAP_MS)
+        drsp(r.step, r.ours)
+        return ReadStep.Next
+    }
+
+    private fun onSectorEnd(r: ReadCall, frame: ByteArray): ReadStep {
+        if (r.asm.endSector()) {
+            drsp(r.step, echo(frame, r.category))
+            // The sector end with every asked byte in is the end of a block read (1F, 20): the watch then
+            // waits for the next request and sends no `09`. 1D and 1E end with `09`.
+            return r.asm.result()?.let { capture(null, it); ReadStep.End(it) } ?: ReadStep.Next
+        }
+        if (++r.bad >= 2) return ReadStep.End(null)
+        r.asm.dropSector()
+        drsp(r.step, byteArrayOf(0x08, r.category.toByte()))
+        drsp(r.step, byteArrayOf(0x06, r.category.toByte()))
+        return ReadStep.Next
+    }
+
+    /** `09`: answered and closed; an incomplete read is aborted and asked again. */
+    private fun onAllSent(r: ReadCall, frame: ByteArray): ReadStep {
+        drsp(r.step, echo(frame, r.category))
+        drsp(r.step, byteArrayOf(0x04, r.category.toByte()))
+        val result = r.asm.result()
+        if (result != null) {
+            capture(null, result)
+            return ReadStep.End(result)
+        }
+        log("Workout read: ${r.step} incomplete (${r.asm.receivedBytes} of ${r.length} bytes, ${r.asm.partialBytes} in an open chunk)")
+        drsp(r.step, byteArrayOf(0x03, r.category.toByte()))
+        return ReadStep.Again
     }
 
     private suspend fun next(timeoutMs: Long): WorkoutMsg? =
@@ -296,10 +375,10 @@ class WorkoutTransfer(
     /** Step 8. Before step 3 nothing was set, so an abort then only sends `03 1C`. */
     private suspend fun finish(abort: Boolean) {
         if (paramsSent) {
-            bulk("step 8", ByteArray(10).also { it[0] = 4 })
-            awaitBulk("step 8", KIND_PARAMS)
-            bulk("step 8", byteArrayOf(4, 1, 0x30, 1, 0x40, 1, 4, 0, 0xDC.toByte(), 5))
-            awaitBulk("step 8", KIND_PARAMS)
+            bulk(STEP_8, ByteArray(10).also { it[0] = 4 })
+            awaitBulk(STEP_8, KIND_PARAMS)
+            bulk(STEP_8, byteArrayOf(4, 1, 0x30, 1, 0x40, 1, 4, 0, 0xDC.toByte(), 5))
+            awaitBulk(STEP_8, KIND_PARAMS)
         }
         close(abort)
     }
@@ -307,7 +386,7 @@ class WorkoutTransfer(
     /** Abort inside the block categories names the session category. */
     private fun close(abort: Boolean) {
         sessionOpen = false
-        drsp("step 8", byteArrayOf(if (abort) 0x03 else 0x04, CAT_SESSION.toByte()))
+        drsp(STEP_8, byteArrayOf(if (abort) 0x03 else 0x04, CAT_SESSION.toByte()))
     }
 
     private fun hex(b: ByteArray) = b.joinToString(" ") { "%02X".format(it) }
@@ -351,6 +430,8 @@ class WorkoutTransfer(
         private const val DROP_SECTOR = 0x06
         private const val ALL_SENT = 0x09
         private const val ABORTED = 0x03
+        private const val STEP_3 = "step 3"
+        private const val STEP_8 = "step 8"
         /** Busy (state not 0, reason other than 1 or 2): tried again every [BUSY_RETRY_MS] for about 30 s. */
         private const val BUSY_TRIES = 15
         private const val BUSY_RETRY_MS = 2_000L

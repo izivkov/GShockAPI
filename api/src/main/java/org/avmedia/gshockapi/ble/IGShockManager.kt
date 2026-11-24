@@ -469,12 +469,12 @@ private class GShockManagerImpl(
         handle: GetSetMode,
         data: ByteArray,
     ): Boolean {
-        if (characteristicUUIDs.isEmpty()) {
-            // The link is away (an always-connected watch drops by design): wait for it, else fail plainly.
-            if (!ReconnectWait.awaitLink({ characteristicUUIDs.isNotEmpty() && writeCharacteristicHolder != null })) {
-                ProgressEvents.onNext("ApiError", ReconnectWait.NOT_CONNECTED_MESSAGE)
-                return false
-            }
+        // The link is away (an always-connected watch drops by design): wait for it, else fail plainly.
+        if (characteristicUUIDs.isEmpty() &&
+            !ReconnectWait.awaitLink({ characteristicUUIDs.isNotEmpty() && writeCharacteristicHolder != null })
+        ) {
+            ProgressEvents.onNext("ApiError", ReconnectWait.NOT_CONNECTED_MESSAGE)
+            return false
         }
 
         if (!isServiceSupported(handle)) {
