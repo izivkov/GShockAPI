@@ -94,6 +94,9 @@ object H5600WorkoutIO {
         scope.launch { download() }
     }
 
+    /** The connected watch (a test seam). */
+    @Volatile internal var watch: () -> String = { org.avmedia.gshockapi.WatchInfo.getAddress() }
+
     /** End of the last download that finished (with or without workouts); null until one did. */
     @Volatile
     var lastCheckMs: Long? = null
