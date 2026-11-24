@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.casio.ConnectionSetup
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -51,6 +51,8 @@ private class BusyFloodWatch(private val inbox: Channel<WorkoutMsg>, private val
 }
 
 class WorkoutStartBusyTest {
+    init { TestLog.install() }
+
     @Test fun aFloodOfBusyAnswersCountsOneTryPerWriteAndTheReadGoesOnWithinThirtySeconds() = runTest {
         val inbox = Channel<WorkoutMsg>(Channel.UNLIMITED)
         val watch = BusyFloodWatch(inbox, backgroundScope, busyWrites = 8)
@@ -147,7 +149,7 @@ class WorkoutStartAfterExchangeTest {
         H5600WorkoutIO.sink = { stored += it; true }
         val result = withTimeoutOrNull(20_000) { H5600WorkoutIO.download(userAsked = true) }
         assertNotNull(result)
-        assertNull("${result!!.error} ${AppLog.recentEvents().takeLast(10)}", result.error)
+        assertNull("${result!!.error} ${TestLog.recentEvents().takeLast(10)}", result.error)
         assertEquals(1, stored.size)
         assertEquals("two session requests", 2, writes.count { it == "001c0000000000000000" })
     }

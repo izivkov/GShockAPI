@@ -16,8 +16,8 @@ import org.avmedia.gshockapi.casio.WatchChannel
 import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchQueue
 import org.avmedia.gshockapi.casio.WatchTransport
-import org.avmedia.gshockapi.log.AppLog
-import org.avmedia.gshockapi.log.LogSource
+import org.avmedia.gshockapi.log.TestLog
+import org.avmedia.gshockapi.log.LibraryLog
 import org.avmedia.gshockapi.model.WorkoutSession
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -96,6 +96,8 @@ private class LifeLogWatch : WatchTransport {
  * the workout transfer fails. A transfer problem is one App log line with the source Workouts.
  */
 class HealthReadWorkoutsTest {
+    init { TestLog.install() }
+
     private val savedQueue = WatchLink.queue
     private val savedSink = H5600WorkoutIO.sink
     private val savedLink = H5600WorkoutIO.link
@@ -108,7 +110,7 @@ class HealthReadWorkoutsTest {
         ConnectionSetup.busy = { false }
         ConnectionSetup.reset()
         ConnectionSetup.onWatchSetupDone()
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
         H5600WorkoutIO.resetBackoff()
         WatchLink.queue = WatchQueue(transport = lifeLog, readTimeoutMs = 2_000)
     }
@@ -138,7 +140,7 @@ class HealthReadWorkoutsTest {
     }
 
     private fun linesAfter(marker: String): List<String> {
-        val all = AppLog.recentEvents()
+        val all = TestLog.recentEvents()
         return all.drop(all.indexOfLast { it.contains(marker) } + 1)
     }
 
@@ -171,7 +173,7 @@ class HealthReadWorkoutsTest {
             }
         }
         val marker = "test marker ${System.nanoTime()}"
-        AppLog.log(LogSource.App, marker)
+        LibraryLog.log(LibraryLog.Source.Watch, marker)
 
         val data = H5600HealthIO.request(peek = true)
         delay(1_000)
@@ -181,7 +183,6 @@ class HealthReadWorkoutsTest {
         val workouts = lines.filter { it.contains("[Workouts]") }
         assertEquals("one Workouts line: $lines", 1, workouts.size)
         assertTrue(workouts.single(), workouts.single().contains("fail reason 1"))
-        assertTrue("the source exists for the App log filter", LogSource.ofLabel("Workouts") != null)
     }
 
     /**
@@ -207,7 +208,7 @@ class HealthReadWorkoutsTest {
         H5600HealthIO.request(peek = true)
         assertTrue("the first read tried: $sessions", afterFirst >= 1)
         assertTrue("the second read tried again: $sessions", sessions.size > afterFirst)
-        assertTrue(AppLog.recentEvents().none { it.contains("next automatic try in") && it.contains("LifeLog") })
+        assertTrue(TestLog.recentEvents().none { it.contains("next automatic try in") && it.contains("LifeLog") })
     }
 
     /** A second LifeLog attempt of the same Health read must not start the workout read again. */
@@ -223,7 +224,7 @@ class HealthReadWorkoutsTest {
             }
         }
         val marker = "test marker ${System.nanoTime()}"
-        AppLog.log(LogSource.App, marker)
+        LibraryLog.log(LibraryLog.Source.Watch, marker)
         try {
             val data = H5600HealthIO.request(peek = true)
             val lines = linesAfter(marker)
@@ -232,7 +233,7 @@ class HealthReadWorkoutsTest {
             assertEquals("one workout read in one Health read: $lines", 1, lines.count { it.contains("Workout read starts") })
         } finally {
             // Its restart line ("LifeLog attempt 1 of 3 failed") must not reach the tests that read the whole App log.
-            AppLog.clear()
+            TestLog.clear()
         }
     }
 }

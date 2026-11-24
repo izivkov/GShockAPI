@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.avmedia.gshockapi.casio.ConnectionSetup
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -21,6 +21,8 @@ import org.junit.Test
  * button queued behind a running one and started again right after it failed (six tries in 14 minutes).
  */
 class H5600WorkoutReadGateTest {
+    init { TestLog.install() }
+
     private val savedSink = H5600WorkoutIO.sink
     private val savedLink = H5600WorkoutIO.link
     private var now = 1_000_000L
@@ -60,7 +62,7 @@ class H5600WorkoutReadGateTest {
         val read = async(Dispatchers.IO) { H5600WorkoutIO.download() }
         delay(400)
         assertTrue(writes.toString(), writes.isEmpty())
-        assertTrue(AppLog.recentEvents().any { it.contains("Workout read waits for 47 01") })
+        assertTrue(TestLog.recentEvents().any { it.contains("Workout read waits for 47 01") })
         ConnectionSetup.onWatchSetupDone()
         val result = withTimeoutOrNull(15_000) { read.await() }
         assertNotNull(result)
@@ -73,7 +75,7 @@ class H5600WorkoutReadGateTest {
         writes.clear()
         assertNull(H5600WorkoutIO.download())
         assertTrue(writes.toString(), writes.isEmpty())
-        assertTrue(AppLog.recentEvents().any { it.contains("next automatic try in 10 min") })
+        assertTrue(TestLog.recentEvents().any { it.contains("next automatic try in 10 min") })
 
         assertNotNull(H5600WorkoutIO.download(userAsked = true))
         assertEquals("001c0000000000000000", writes.first())
@@ -91,7 +93,7 @@ class H5600WorkoutReadGateTest {
         delay(300)
         // Bounded: queued behind the held lock it would wait for ever (that was the failure).
         assertNull(withTimeoutOrNull(2_000) { H5600WorkoutIO.download() })
-        assertTrue(AppLog.recentEvents().any { it.contains("one is already running or waiting") })
+        assertTrue(TestLog.recentEvents().any { it.contains("one is already running or waiting") })
         WatchExchange.mutex.unlock()
         assertNotNull(withTimeoutOrNull(15_000) { first.await() })
         // One read: its start and the one repeat after `03 01`; no second read behind it.

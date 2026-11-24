@@ -1,10 +1,8 @@
 package org.avmedia.gshockapi.casio
 
-import java.io.File
 import org.avmedia.gshockapi.ble.GetSetMode
 import org.avmedia.gshockapi.utils.Utils
-import org.avmedia.gshockapi.log.AppLog
-import org.avmedia.gshockapi.log.LogSource
+import org.avmedia.gshockapi.log.LibraryLog
 
 /** Link Loss is written as `00 level` to the all-features characteristic, never to the standard Link Loss characteristic. */
 fun linkLossFrame(level: Int): ByteArray = byteArrayOf(0x00, level.toByte())
@@ -44,21 +42,11 @@ object ConnectionKeepAlive {
     /** Called on `47 01` (the watch's setup is done): the app writes what was waiting for it. */
     @Volatile var onSetupDone: () -> Unit = {}
 
-    /** Where the events are also kept (a file in the health-log folder), null keeps them in memory only. */
-    var logFile: File?
-        get() = AppLog.logFile
-        set(v) { AppLog.logFile = v }
+    /** The time source of the link age checks (a fixed clock in the tests). */
+    @Volatile var clock: () -> Long = System::currentTimeMillis
 
-    var clock: () -> Long
-        get() = AppLog.clock
-        set(v) { AppLog.clock = v }
-
-    fun recentEvents(): List<String> = AppLog.recentEvents()
-
-    fun clearEvents() = AppLog.clear()
-
-    /** The watch's connection events go to the one app log, source Watch. */
-    fun log(text: String) = AppLog.log(LogSource.Watch, text)
+    /** The watch's connection events go to the library log, source Watch. */
+    fun log(text: String) = LibraryLog.log(LibraryLog.Source.Watch, text)
 
     private fun values(data: String): List<Int> = runCatching { Utils.toIntArray(data) }.getOrDefault(emptyList())
 

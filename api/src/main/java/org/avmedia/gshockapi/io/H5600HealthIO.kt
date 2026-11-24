@@ -294,7 +294,7 @@ object H5600HealthIO {
             if (decoded == null) {
                 val stream = H5600HealthDecoder.lifeLogStream(snapshot.first, snapshot.second)
                 Timber.w("H5600: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
-                org.avmedia.gshockapi.log.AppLog.log(org.avmedia.gshockapi.log.LogSource.Health, "LifeLog read: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
+                org.avmedia.gshockapi.log.LibraryLog.log(org.avmedia.gshockapi.log.LibraryLog.Source.Health, "LifeLog read: no LifeLog header in ${stream.size} stream bytes; first bytes ${hex(stream, 20)}")
                 return AttemptOutcome(StepCounterData.unavailable(), restart = false)
             }
             Timber.i(

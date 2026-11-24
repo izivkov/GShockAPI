@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.avmedia.gshockapi.casio.ConnectionSetup
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -20,6 +20,8 @@ import org.junit.Test
  * (b, 15:42:33 to 15:42:35: "Timed out waiting for button info").
  */
 class LifeLogLinkTest {
+    init { TestLog.install() }
+
     private val end = byteArrayOf(0x04, 0x2E, 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte())
 
     private fun endWrites(sync: H5600LifeLogSync): List<H5600Write> {
@@ -57,7 +59,7 @@ class LifeLogLinkTest {
         val data = withTimeout(3_000) { read.await() }
         assertNull(data.h5600)
         assertFalse(H5600HealthIO.isActive)
-        val lines = AppLog.recentEvents()
+        val lines = TestLog.recentEvents()
         assertTrue(lines.toString(), lines.none { it.contains("LifeLog attempt 1 of") })
         assertTrue(lines.toString(), lines.any { it.contains("LifeLog read stopped: the link dropped") })
     }

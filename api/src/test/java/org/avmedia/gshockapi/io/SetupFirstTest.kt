@@ -8,7 +8,7 @@ import org.avmedia.gshockapi.casio.ConnectionSetup
 import org.avmedia.gshockapi.casio.ConnectionWriter
 import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.casio.WatchWriter
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -23,6 +23,8 @@ import org.junit.Test
  * The setup runs first; the rest waits for it.
  */
 class SetupFirstTest {
+    init { TestLog.install() }
+
     private class Writer : WatchWriter {
         val all = ArrayList<List<Int>>()
         val requests = ArrayList<Int>()
@@ -36,7 +38,7 @@ class SetupFirstTest {
 
     @Before fun install() {
         ConnectionKeepAlive.writer = writer
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
         ConnectionSetup.busy = { false }
         ConnectionSetup.timeWriter = {}
         RawSettingIO.link = link
@@ -76,19 +78,19 @@ class SetupFirstTest {
         startKind14()
         receive("0x23 41 42 43")
         assertEquals(0x23, read.await().frame!![0].toInt())
-        assertTrue(AppLog.recentEvents().toString(), AppLog.recentEvents().any { it.endsWith("0x23 name written back") })
+        assertTrue(TestLog.recentEvents().toString(), TestLog.recentEvents().any { it.endsWith("0x23 name written back") })
     }
 
     @Test fun theWaitEndsAtTheTimeoutAndSaysSo() = runBlocking {
         startKind14()
         assertFalse(ConnectionSetup.awaitIdle(timeoutMs = 150, pollMs = 10))
-        assertTrue(AppLog.recentEvents().any { it.contains("still at") })
+        assertTrue(TestLog.recentEvents().any { it.contains("still at") })
     }
 
     @Test fun aKindAnswerAlwaysWritesALogLine() {
         receive("0x10 00 00 00 00 00 00 00 0E 00")
         receive("0x10 00 00 00 00 00 00 00 0E 00")
-        val lines = AppLog.recentEvents()
+        val lines = TestLog.recentEvents()
         assertTrue(lines.toString(), lines.any { it.endsWith("Connection kind 14: setup starts") })
         assertTrue(lines.toString(), lines.any { it.contains("setup skipped") })
     }

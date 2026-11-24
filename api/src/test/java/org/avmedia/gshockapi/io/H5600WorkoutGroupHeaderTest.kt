@@ -11,7 +11,7 @@ import org.avmedia.gshockapi.casio.CasioConstants
 import org.avmedia.gshockapi.casio.ConnectionSetup
 import org.avmedia.gshockapi.casio.MessageDispatcher
 import org.avmedia.gshockapi.casio.WatchLink
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.avmedia.gshockapi.protocols.H5600Protocol
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -26,6 +26,8 @@ import org.junit.Test
  * routing (characteristic + [H5600Protocol] + [MessageDispatcher]), not straight into the transfer's inbox.
  */
 class H5600WorkoutGroupHeaderTest {
+    init { TestLog.install() }
+
     private val savedSink = H5600WorkoutIO.sink
     private val savedLink = H5600WorkoutIO.link
     private val writes = CopyOnWriteArrayList<String>()
@@ -102,7 +104,7 @@ class H5600WorkoutGroupHeaderTest {
         val outcome = withTimeoutOrNull(15_000) { read.await() }
         read.cancel()
         val drsp = writes.filter { !it.startsWith("bulk") }
-        val events = AppLog.recentEvents().filter { it.contains("Workout read") || it.contains("workout rx") }.takeLast(30)
+        val events = TestLog.recentEvents().filter { it.contains("Workout read") || it.contains("workout rx") }.takeLast(30)
         val why = "outcome ${outcome?.map { it?.error }} drsp $drsp log $events"
         assertTrue("group header read: $why", events.any { it.contains("1D group header read") })
         for (addr in listOf("00000000", "00010000", "00020000", "00030000")) {
@@ -114,6 +116,6 @@ class H5600WorkoutGroupHeaderTest {
         assertTrue("0x11 keeps its key: $keysOfSettingsAnswers", keysOfSettingsAnswers.isNotEmpty() && keysOfSettingsAnswers.all { it == 0x11 })
         // The next log must show every bulk frame whole, not the first two bytes.
         val whole = "workout rx bulk " + bulkFrames()[1].joinToString(" ") { b -> "%02X".format(b) }
-        assertTrue("whole bulk frame logged: $why", AppLog.recentEvents().any { it.contains(whole) })
+        assertTrue("whole bulk frame logged: $why", TestLog.recentEvents().any { it.contains(whole) })
     }
 }

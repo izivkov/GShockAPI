@@ -1,6 +1,7 @@
 package org.avmedia.gshockapi.casio
 
 import java.util.concurrent.CopyOnWriteArrayList
+import org.avmedia.gshockapi.log.TestLog
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +41,8 @@ private class FakeTransport : WatchTransport {
 }
 
 class WatchQueueTest {
+    init { TestLog.install() }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val transport = FakeTransport()
     private lateinit var queue: WatchQueue
@@ -51,7 +54,7 @@ class WatchQueueTest {
         WatchLink.queue = queue
         NotificationGate.reset()
         ConnectionKeepAlive.writer = ConnectionWriter
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
         ConnectionSetup.busy = { false }
         ConnectionSetup.reset()
     }
@@ -110,7 +113,7 @@ class WatchQueueTest {
         dispatch("0x39 04") // handled (ignored for a connection kind that has no 0x39 exchange), never an error
         dispatch("0x3D 10")
         dispatch("0x28 00 00 00 00 B9 00 00 00 00")
-        val events = ConnectionKeepAlive.recentEvents().joinToString("\n")
+        val events = TestLog.recentEvents().joinToString("\n")
         assertTrue(events, events.contains("49 00 received, 49 01 written"))
         assertTrue(events, events.contains("47 02 received"))
         assertFalse("a pause command of 0x3D was taken in", NotificationGate.allowed())
@@ -135,7 +138,7 @@ class WatchQueueTest {
             queue.onNotification(allFeatures, b(0xFF, 0x81, 0x82))
             assertFalse(read.await().ok)
         }
-        val lines = ConnectionKeepAlive.recentEvents().filter { it.contains("0x82 is not supported") || it.contains("request 82 failed") }
+        val lines = TestLog.recentEvents().filter { it.contains("0x82 is not supported") || it.contains("request 82 failed") }
         assertEquals(lines.toString(), 1, lines.size)
         assertTrue(lines.single().contains("not supported"))
     }

@@ -14,7 +14,7 @@ import org.avmedia.gshockapi.casio.WatchChannel
 import org.avmedia.gshockapi.casio.WatchLink
 import org.avmedia.gshockapi.casio.WatchQueue
 import org.avmedia.gshockapi.casio.WatchTransport
-import org.avmedia.gshockapi.log.AppLog
+import org.avmedia.gshockapi.log.TestLog
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -89,13 +89,15 @@ private class SlowLinkWatch(private val prepMs: Long = 10_000L) : WatchTransport
 
 /** LifeLog read speed (56 and 61 s for a read with no new data before). */
 class LifeLogReadSpeedTest {
+    init { TestLog.install() }
+
     private val savedQueue = WatchLink.queue
 
     @Before fun install() {
         H5600HealthIO.stepCounterSupported = { true }
         ConnectionSetup.busy = { false }
         ConnectionSetup.reset()
-        ConnectionKeepAlive.clearEvents()
+        TestLog.clear()
     }
 
     @After fun restore() {
@@ -117,7 +119,7 @@ class LifeLogReadSpeedTest {
         val started = System.currentTimeMillis()
         H5600HealthIO.request(peek = true)
         val seconds = (System.currentTimeMillis() - started) / 1000.0
-        val lines = AppLog.recentEvents()
+        val lines = TestLog.recentEvents()
         println("LifeLog read on the slow link: $seconds s, reads ${watch.reads.map { "%02X".format(it) }}")
         assertTrue(lines.toString(), lines.none { it.contains("LifeLog attempt 1 of") })
         assertEquals("only the step goal and the watch condition are read", listOf(0x43, 0x28), watch.reads.toList())
