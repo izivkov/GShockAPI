@@ -23,9 +23,11 @@ import java.time.ZoneOffset
  * and the DRSP index announcements, then calls [decode].
  *
  * Stream layout, from the transfer captures:
- * - Every bulk notification starts with 0x05. Each block is sent in chunks of 512 data bytes
- *   followed by a 2-byte checksum (see [lifeLogStream]). Prefix and checksums are removed, then
- *   every byte is XOR'd with 0xFF.
+ * - Every bulk notification starts with 0x05. The watch sends each block (the header, then one block
+ *   per announced frame, in announcement order) as chunks of 512 data bytes, each followed by a
+ *   2-byte checksum. A chunk spans several notifications, so a checksum is not at the end of a
+ *   notification. Prefix and checksums are removed (see [lifeLogStream]), then every byte is
+ *   XOR'd with 0xFF.
  * - The stream begins with a 20-byte header: magic `00 0F 00 00 00`, then the UTC time
  *   (year-2000, month, day, hour, minute), the payload length, the day's steps (u16 at 14,
  *   valid only when bytes 16-17 are zero) and the energy (u16 at 18, kcal provisional).
@@ -207,15 +209,14 @@ object H5600HealthDecoder {
     /**
      * Concatenates the bulk payloads, drops their prefix and the chunk checksums, and XORs with 0xFF.
      *
-     * The watch sends each block (the header, then one block per announced frame, in announcement
-     * order) as chunks of [CHUNK_BYTES] data bytes, each followed by a [CHECKSUM_BYTES]-byte checksum.
-     * A chunk spans several notifications, so the checksum is not at the end of a notification.
-     * Block lengths come from the announcements; the header is [HEADER_SIZE] bytes unless announced
-     * under index 0. Whatever follows the announced blocks is read as one more block of unknown length.
+     * Block lengths come from [announcedLengths], which must keep the order of the announcements
+     * (a [LinkedHashMap], as the transfer collects them): the header is [HEADER_SIZE] bytes unless
+     * announced under index 0, then one block per other entry. Whatever follows the announced blocks
+     * (a transfer that stopped early) is read as one more block of unknown length.
      */
     fun lifeLogStream(
         notifications: List<ByteArray>,
-        announcedLengths: Map<Int, Int> = emptyMap(),
+        announcedLengths: Map<Int, Int>,
     ): ByteArray {
         val payload = java.io.ByteArrayOutputStream()
         for (notification in notifications) {
@@ -227,8 +228,8 @@ object H5600HealthDecoder {
         val out = java.io.ByteArrayOutputStream()
         var pos = 0
 
-        val lengths = listOf(announcedLengths[0] ?: HEADER_SIZE) + announcedLengths.filterKeys { it != 0 }.values
-        for (length in lengths) {
+        val blockLengths = listOf(announcedLengths[0] ?: HEADER_SIZE) + announcedLengths.filterKeys { it != 0 }.values
+        for (length in blockLengths) {
             var remaining = length
             while (remaining > 0 && pos < raw.size) {
                 val take = minOf(CHUNK_BYTES, remaining, raw.size - pos)

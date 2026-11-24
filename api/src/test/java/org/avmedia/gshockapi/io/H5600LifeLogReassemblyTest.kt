@@ -10,8 +10,8 @@ import java.time.ZoneId
 
 /**
  * Guards the chunk rule: a block is sent as chunks of 512 data bytes, each followed by a 2-byte
- * checksum, and a chunk spans several notifications. The recorded session is upstream's
- * (see the resource file for source and licence).
+ * checksum, and a chunk spans several notifications. The recorded session is the one in
+ * gshock_api (h5600_lifelog.json.sav); see the header of the resource file.
  */
 class H5600LifeLogReassemblyTest {
     private class Recording(
@@ -65,6 +65,7 @@ class H5600LifeLogReassemblyTest {
     fun aBlockOfSeveralChunksSpanningNotificationsKeepsEveryByte() {
         val header = ByteArray(20) { it.toByte() }
         val block = ByteArray(1200) { (it % 251).toByte() }
+
         fun encode(bytes: ByteArray): List<Byte> =
             bytes.toList().chunked(512).flatMap { it + listOf<Byte>(0x7E, 0x7E) }.map { (it.toInt() xor 0xFF).toByte() }
         val notifications = (encode(header) + encode(block)).chunked(18).map { byteArrayOf(0x05) + it.toByteArray() }
