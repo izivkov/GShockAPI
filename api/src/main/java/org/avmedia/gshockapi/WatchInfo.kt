@@ -260,7 +260,7 @@ data object WatchInfo {
         // "Adjustment time minutes" in BLE settings (0x11) can be changed by the user.
         val hasTimeAdjustmentMinutes: Boolean = true,
         // The faces a person can choose (0x51 index 0): 1 to faceCount, 0 = no face setting.
-        val faceCount: Int = 4,
+        val faceCount: Int = 0,
     )
 
     // =========================================================================
@@ -402,6 +402,8 @@ data object WatchInfo {
                 alwaysConnected = true, hasDateFormat = false,
                 weekLanguageSupported = false,
                 hasStepCounter = true,
+                // Module 3516 (DW-H5600) user manual: faces 1 to 3. Module 3586 (GBX-H5600) adds face 4, see facesByName.
+                faceCount = 3,
                 protocol = H5600Protocol,
             ),
             ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
@@ -724,9 +726,16 @@ data object WatchInfo {
     @RequiresApi(Build.VERSION_CODES.O)
     internal fun infoFor(name: String): ModelInfo = resolveModelInfo(resolveModel(name))
 
+    /** Models whose face count differs from their WatchModel block (same protocol, more faces). */
+    private val facesByName: Map<String, Int> = mapOf(
+        // Module 3586 user manual: face 4 is the tide graph (0:00 to 23:30).
+        "GBX-H5600" to 4,
+    )
+
     /** How many faces [name]'s watch has (faces 1 to the count); 0 when it has no face setting. */
     @RequiresApi(Build.VERSION_CODES.O)
-    fun faceCountFor(name: String): Int = resolveModelInfo(resolveModel(name)).faceCount
+    fun faceCountFor(name: String): Int =
+        facesByName[name.removePrefix("CASIO ").trim()] ?: resolveModelInfo(resolveModel(name)).faceCount
 
     /** Look up whether a watch model is always-connected by device name. */
     @RequiresApi(Build.VERSION_CODES.O)

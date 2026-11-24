@@ -283,12 +283,12 @@ class WatchSettingCodecsTest {
     @Test
     fun aTopRightWriteChangesOnlySlotThreesByte() {
         val before = frame(0x51, 2, 0, 10, 12, 19, 0x77)
-        val after = WatchFaceCodec.withTopRight(before, 6)!!
+        val after = WatchFaceCodec.withTopRight(before, 16)!!
         assertEquals(setOf(4), changed(before, after))
         assertEquals(WatchFaceCodec.TOP_RIGHT_BYTES, changed(before, after))
-        assertEquals(6.toByte(), after[4])
+        assertEquals(16.toByte(), after[4])
         // The bytes of slots 1, 2 and 4, the face and the trailing byte are kept.
-        assertEquals(listOf<Byte>(0x51, 2, 0, 10, 6, 19, 0x77), after.toList())
+        assertEquals(listOf<Byte>(0x51, 2, 0, 10, 16, 19, 0x77), after.toList())
         assertNull(WatchFaceCodec.withTopRight(before, 20))
         assertNull(WatchFaceCodec.withTopRight(before, 0x0F))
     }

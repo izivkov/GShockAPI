@@ -76,8 +76,13 @@ object TideUserPointCodec {
 
     fun unit(point: Int): Int = FIRST_UNIT + point - 1
 
-    /** True for the values an own point has before anyone set it. */
-    fun isFactory(p: Point): Boolean = false
+    /** The values an own point has before anyone set it (the watch's factory point, 09:00 at 35.60 N 139.80 E, UTC+9). */
+    val FACTORY = Point(9, 0, 35.60, 139.80, 9f, false)
+
+    /** True for [FACTORY] (summer time aside): the screen says "Not set" instead of these numbers. */
+    fun isFactory(p: Point): Boolean =
+        p.hour == FACTORY.hour && p.minute == FACTORY.minute && Math.abs(p.latitude - FACTORY.latitude) < 0.005 &&
+            Math.abs(p.longitude - FACTORY.longitude) < 0.005 && p.utcOffsetHours == FACTORY.utcOffsetHours
 
     fun request(point: Int): ByteArray? = if (point in 1..POINTS) byteArrayOf(TideSettingCodec.CODE.toByte(), unit(point).toByte()) else null
 
