@@ -173,6 +173,9 @@ data object WatchInfo {
     val hasTimeAdjustmentMinutes: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.hasTimeAdjustmentMinutes
+    val hasAppNotifications: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasAppNotifications
 
     val protocol: WatchProtocol
         @RequiresApi(Build.VERSION_CODES.O)
@@ -261,6 +264,8 @@ data object WatchInfo {
         val hasTimeAdjustmentMinutes: Boolean = true,
         // The faces a person can choose (0x51 index 0): 1 to faceCount, 0 = no face setting.
         val faceCount: Int = 0,
+        // Shows phone notifications. A watch that does not may still list the notification characteristic.
+        val hasAppNotifications: Boolean = true,
     )
 
     // =========================================================================
@@ -584,7 +589,7 @@ data object WatchInfo {
             // Module 5672: MTG-B3000
             put("MTG-B3000", WatchModel.MTG_B3000)
             // Module 5701: OCW-S7000
-            put("OCW-S7000", WatchModel.OCW_S400)
+            put("OCW-S7000", WatchModel.GENERIC) // RED CHECK: as on the night of the log
             // Module 5713: GWG-B1000
             put("GWG-B1000", WatchModel.GW)
             // Module 5728: OCW-S400
@@ -736,6 +741,10 @@ data object WatchInfo {
     @RequiresApi(Build.VERSION_CODES.O)
     fun faceCountFor(name: String): Int =
         facesByName[name.removePrefix("CASIO ").trim()] ?: resolveModelInfo(resolveModel(name)).faceCount
+
+    /** True when the connected watch shows phone notifications: its model has them and [serviceFound] (the characteristic is there). */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun showsAppNotifications(serviceFound: Boolean): Boolean = serviceFound && hasAppNotifications
 
     /** Look up whether a watch model is always-connected by device name. */
     @RequiresApi(Build.VERSION_CODES.O)
