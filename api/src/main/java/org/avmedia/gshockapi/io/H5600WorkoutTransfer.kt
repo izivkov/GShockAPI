@@ -74,6 +74,8 @@ class WorkoutTransfer(
                 bulk("step 7", WorkoutGroup.fetchedMark(transferred, noneLeft = index == sorted.lastIndex))
                 awaitBulk("step 7", KIND_MARK) ?: throw Fail("no answer to the fetched mark")
                 log("Workout read: slot $slot stored and marked as fetched")
+                // A request 12 ms after the mark answer was not taken (the watch replayed its last read): give it time.
+                if (index < sorted.lastIndex) delay(AFTER_MARK_MS)
                 blockCache.keys.removeAll { it.startsWith("${hdr.startUtcMillis}:") }
                 done++
             }
@@ -205,17 +207,38 @@ class WorkoutTransfer(
         return blocks
     }
 
-    /** One read (`00 cat address length`) with sector answers, one retry of a sector and one retry of the whole read. */
+    /**
+     * One read (`00 cat address length`) with sector answers, one retry of a sector and one retry of the whole read.
+     * An echo of another request is the watch replaying its last read: its bytes are dropped, its end is answered and
+     * our request goes out again (once per read).
+     */
     private suspend fun read(category: Int, address: Long, length: Int, chunk: Int): ByteArray? {
+        var resent = false
         repeat(2) {
-            val asm = WorkoutChunkAssembler(length, chunk)
+            var asm = WorkoutChunkAssembler(length, chunk)
             val step = "read %02X".format(category)
-            drsp(step, request(category, address, length))
+            val ours = request(category, address, length)
+            if (category == CAT_DATA || category == CAT_LAPS) delay(BLOCK_GAP_MS)
+            drsp(step, ours)
+            var stale: ByteArray? = null
             var bad = 0
             while (true) {
                 val m = next(readTimeoutMs) ?: return null.also { log("Workout read: $step rx nothing in ${readTimeoutMs / 1000} s (${asm.receivedBytes} of $length bytes)") }
                 if (m.channel == H5600Channel.CONVOY) {
-                    if (m.data.size > 1 && m.data[0] == BULK_DATA) asm.feed(m.data.copyOfRange(1, m.data.size))
+                    if (stale == null && m.data.size > 1 && m.data[0] == BULK_DATA) asm.feed(m.data.copyOfRange(1, m.data.size))
+                    continue
+                }
+                if (isOtherEcho(m.data, ours)) { stale = m.data; continue }
+                val replay = stale
+                if (replay != null && (m.data.firstOrNull()?.toInt() == SECTOR_END || m.data.firstOrNull()?.toInt() == ALL_SENT)) {
+                    drsp(step, echo(m.data, replay[1].toInt() and 0xFF))
+                    if (resent) return null.also { log("Workout read: $step stale replay again, read given up") }
+                    resent = true
+                    stale = null
+                    asm = WorkoutChunkAssembler(length, chunk)
+                    log("Workout read: stale replay of ${describe(replay)}, request sent again")
+                    delay(BLOCK_GAP_MS)
+                    drsp(step, ours)
                     continue
                 }
                 // The watch's `07` and `09` frames carry more than the category (`07 1F 00 00 00 00 00`); like the LifeLog
@@ -289,6 +312,14 @@ class WorkoutTransfer(
 
     private fun hex(b: ByteArray) = b.joinToString(" ") { "%02X".format(it) }
 
+    /** A read request echo (`00 cat address length`) of a block category that is not [ours]. */
+    private fun isOtherEcho(frame: ByteArray, ours: ByteArray): Boolean =
+        frame.size == ours.size && frame[0].toInt() == 0 && (frame[1].toInt() and 0xFF) in CAT_GROUP..CAT_LAPS && !frame.contentEquals(ours)
+
+    /** `cat address` of a request echo, both hex, e.g. `20 00016000`. */
+    private fun describe(echo: ByteArray): String =
+        "%02X %08X".format(echo[1].toInt() and 0xFF, (0 until 4).sumOf { (echo[2 + it].toLong() and 0xFF) shl (8 * it) })
+
     /** The answer to a `07` or `09` frame of the watch: the frame itself; a bare one-byte frame gets its category added. */
     private fun echo(frame: ByteArray, category: Int): ByteArray =
         if (frame.size >= 2) frame.copyOf() else byteArrayOf(frame[0], category.toByte())
@@ -324,5 +355,12 @@ class WorkoutTransfer(
         private const val BUSY_TRIES = 15
         private const val BUSY_RETRY_MS = 2_000L
         private const val MAX_BLOCKS = 2_048
+        /** Pause after a fetched mark answer before the next read request (12 ms was too soon, see [run]). */
+        private const val AFTER_MARK_MS = 1_000L
+        /**
+         * Pause before a block request (1F, 20) and before a request sent again after a stale replay. Requests 10 to 33 ms
+         * after the previous sector end were not taken and the last read was replayed; 300 ms costs about 6 s on 20 blocks.
+         */
+        private const val BLOCK_GAP_MS = 300L
     }
 }

@@ -217,7 +217,7 @@ class H5600WorkoutTransferTest {
             }
 
     /**
-     * Owner log 2026-11-24 03:34: slot 0 was read and marked; our request for slot 1 went out 12 ms after the mark answer and
+     * Slot 0 was read and marked; our request for slot 1 went out 12 ms after the mark answer and
      * the watch replayed its previous read (echo `00 20 00 60 ...`, 512 bytes, `07 20`). The stale sector is answered, our
      * request goes out once more and slot 1 is read; the next request waits at least 1 s after the mark answer.
      */
@@ -241,7 +241,7 @@ class H5600WorkoutTransferTest {
     }
 
     /**
-     * Owner log 2026-11-24 04:16:48: between two block reads of one workout (data 1F, then laps 20) the watch replayed the
+     * Between two block reads of one workout (data 1F, then laps 20) the watch replayed the
      * previous read (echo `00 1F 00 70 01 ...`, 512 bytes, `07 1F`). Handled the same way, and each block request waits a
      * short pause after the previous block's sector end.
      */
