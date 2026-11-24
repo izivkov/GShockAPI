@@ -1,5 +1,7 @@
 package org.avmedia.gshockapi.protocols
 
+import org.avmedia.gshockapi.io.RawSettingIO
+import org.avmedia.gshockapi.io.H5600SettingsIO
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.casio.CasioConstants
@@ -12,9 +14,7 @@ import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
 import org.avmedia.gshockapi.io.ExerciseIO
 import org.avmedia.gshockapi.io.GwBx5600TimeIO
-import org.avmedia.gshockapi.io.H5600SettingsIO
 import org.avmedia.gshockapi.io.HomeTimeIO
-import org.avmedia.gshockapi.io.RawSettingIO
 import org.avmedia.gshockapi.io.RunActionsIO
 import org.avmedia.gshockapi.io.SettingsIO
 import org.avmedia.gshockapi.io.StepCounterIO

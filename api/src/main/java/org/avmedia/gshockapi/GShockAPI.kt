@@ -1,5 +1,7 @@
 package org.avmedia.gshockapi
 
+import org.avmedia.gshockapi.io.H5600SettingsIO
+import org.avmedia.gshockapi.model.WatchFaceItem
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
@@ -19,7 +21,6 @@ import org.avmedia.gshockapi.io.DstForWorldCitiesIO
 import org.avmedia.gshockapi.io.DstWatchStateIO
 import org.avmedia.gshockapi.io.ErrorIO
 import org.avmedia.gshockapi.io.EventsIO
-import org.avmedia.gshockapi.io.H5600SettingsIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.io.IO.writeCmd
 import org.avmedia.gshockapi.io.TimeAdjustmentInfo
@@ -32,7 +33,6 @@ import org.avmedia.gshockapi.model.Event
 import org.avmedia.gshockapi.model.ExerciseProfile
 import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.StepCounterData
-import org.avmedia.gshockapi.model.WatchFaceItem
 import timber.log.Timber
 import java.time.ZoneId
 
@@ -116,7 +116,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
         val button =
             try {
                 Timber.i("Requesting watch button info")
-                withTimeoutOrNull(INITIALIZATION_REQUEST_TIMEOUT_MS) { getPressedButton() }
+                withTimeoutOrNull(InitCheck.BUTTON_TIMEOUT_MS) { getPressedButton() }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -124,15 +124,24 @@ class GShockAPI(private val context: Context) : IGShockAPI {
                 null
             }
 
-        if (button == null || button == IO.WatchButton.INVALID) {
-            val message =
-                if (button == null) {
-                    "Timed out waiting for button info from the watch"
-                } else {
-                    "Received invalid button info from the watch"
-                }
-            Timber.e(message)
-            ProgressEvents.onNext("Error", message)
+        val decision = InitCheck.decide(
+            button,
+            org.avmedia.gshockapi.casio.ConnectionSetup.isAutomaticConnect(),
+            kindKnown = org.avmedia.gshockapi.casio.ConnectionSetup.lastKind != null,
+        )
+        decision.log?.let {
+            Timber.w(it)
+            org.avmedia.gshockapi.casio.ConnectionKeepAlive.log(it)
+        }
+        if (!decision.complete && decision.error == null) {
+            // A silent link: release it quietly; the watch advertises again and the next attempt starts.
+            runCatching { disconnect() }
+            ProgressEvents.onNext("ConnectionFailed")
+            return false
+        }
+        if (decision.error != null) {
+            Timber.e(decision.error)
+            ProgressEvents.onNext("Error", decision.error)
             return false
         }
 
@@ -656,9 +665,10 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      * @see AppNotification for notification object structure
      * @see NotificationType for supported notification types */
     override fun sendAppNotification(notification: AppNotification) {
-        val encodedBuffer = AppNotificationIO.encodeNotificationPacket(notification)
+        val encodedBuffer = AppNotificationIO.encodeNotificationPacket(NotificationIds.assign(notification))
         val encryptedBuffer = AppNotificationIO.xorEncodeBuffer(encodedBuffer)
-        writeCmd(GetSetMode.NOTIFY, encryptedBuffer)
+        org.avmedia.gshockapi.casio.NotificationSender.spacingMs = if (WatchInfo.protocol === org.avmedia.gshockapi.protocols.H5600Protocol) 2_000L else 500L
+        org.avmedia.gshockapi.casio.NotificationSender.send(encryptedBuffer)
     }
 
     /**
@@ -666,7 +676,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @return true if the notification service is supported.
      */
-    override fun supportsAppNotifications(): Boolean = Connection.isServiceSupported(GetSetMode.NOTIFY)
+    override fun supportsAppNotifications(): Boolean = WatchInfo.showsAppNotifications(Connection.isServiceSupported(GetSetMode.NOTIFY))
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:

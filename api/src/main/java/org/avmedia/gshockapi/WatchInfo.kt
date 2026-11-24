@@ -173,6 +173,9 @@ data object WatchInfo {
     val hasTimeAdjustmentMinutes: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.hasTimeAdjustmentMinutes
+    val hasAppNotifications: Boolean
+        @RequiresApi(Build.VERSION_CODES.O)
+        get() = getState().info.hasAppNotifications
 
     val protocol: WatchProtocol
         @RequiresApi(Build.VERSION_CODES.O)
@@ -250,7 +253,7 @@ data object WatchInfo {
         val settingsSize: Int = 17,
         val protocol: WatchProtocol = StandardProtocol,
         // The 10-byte user area of app information (0x22) is used as a scratchpad.
-        // Disable for watches where 0x22 holds data owned by the official app.
+        // Disable for watches that keep their own data in 0x22.
         val hasScratchpad: Boolean = true,
         val hasTimer: Boolean = true,
         val hasLight: Boolean = true,
@@ -259,6 +262,10 @@ data object WatchInfo {
         val hasWatchSettings: Boolean = true,
         // "Adjustment time minutes" in BLE settings (0x11) can be changed by the user.
         val hasTimeAdjustmentMinutes: Boolean = true,
+        // The faces a person can choose (0x51 index 0): 1 to faceCount, 0 = no face setting.
+        val faceCount: Int = 0,
+        // Shows phone notifications. A watch that does not may still list the notification characteristic.
+        val hasAppNotifications: Boolean = true,
     )
 
     // =========================================================================
@@ -395,9 +402,13 @@ data object WatchInfo {
                 vibrate = true, chimeInSettings = true,
                 findButtonUserDefined = true,
                 shortLightDuration = "1.5s", longLightDuration = "5s",
-                hasBatteryLevel = false, alwaysConnected = true, hasDateFormat = false,
+                // 0x28 index 0 is a battery step 0..6 (the HA sensor's source): shown on the main screen as step * 100 / 6.
+                hasBatteryLevel = true, batteryLevelLowerLimit = 0, batteryLevelUpperLimit = 6,
+                alwaysConnected = true, hasDateFormat = false,
                 weekLanguageSupported = false,
                 hasStepCounter = true,
+                // Module 3516 (DW-H5600) user manual: faces 1 to 3. Module 3586 (GBX-H5600) adds face 4, see facesByName.
+                faceCount = 3,
                 protocol = H5600Protocol,
             ),
             ModelInfo(model = WatchModel.DW, hasAutoLight = true, hasReminders = false),
@@ -457,6 +468,7 @@ data object WatchInfo {
                 hasOperationTone = false,
                 hasWatchSettings = false,
                 hasTimeAdjustmentMinutes = false,
+                hasAppNotifications = false,
                 protocol = OceanusProtocol,
             ),
             ModelInfo(model = WatchModel.GENERIC),
@@ -536,7 +548,7 @@ data object WatchInfo {
             // Module 3577: GM-H5600
             put("GM-H5600", WatchModel.DW_H5600)
             // Module 3586: GBX-H5600
-            put("GBX-H5600", WatchModel.GBD)
+            put("GBX-H5600", WatchModel.DW_H5600)
             // Module 3587: GDG-B100
             put("GDG-B100", WatchModel.GBD)
             // Module 3599: GWF-300
@@ -698,18 +710,50 @@ data object WatchInfo {
             put("OCW-P3000", WatchModel.GENERIC)
         }
 
+    /** Pure: the model name in a Bluetooth device name ("CASIO GBX-H5600" is "GBX-H5600"). */
+    private fun modelNameOf(name: String): String = name.removePrefix("CASIO ").trim()
+
     /** Pure: derive the short name from the Bluetooth device name. */
-    private fun deriveShortName(name: String): String = name.removePrefix("CASIO ").trim().split(" ").firstOrNull().orEmpty()
+    private fun deriveShortName(name: String): String = modelNameOf(name).split(" ").firstOrNull().orEmpty()
 
     /** Pure: resolve only an exact official model name; never use partial matching. */
     private fun resolveModel(name: String): WatchModel {
-        val modelName = name.removePrefix("CASIO ").trim()
-        return exactModelMap[modelName] ?: WatchModel.GENERIC
+        return exactModelMap[modelNameOf(name)] ?: WatchModel.GENERIC
     }
 
     /** Pure: look up ModelInfo, falling back to GENERIC. */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resolveModelInfo(model: WatchModel): ModelInfo = modelMap[model] ?: modelMap.getValue(WatchModel.GENERIC)
+
+    /** The model and protocol a device name resolves to (the pure part of [setNameAndModel]); for tests. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    internal fun resolvedFor(name: String): Pair<WatchModel, WatchProtocol> =
+        resolveModel(name).let { it to resolveModelInfo(it).protocol }
+
+    /** Sets the watch [name] resolves to without the DeviceName event (which needs the main thread); for tests. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    internal fun setModelForTest(name: String) {
+        state = buildState(name)
+    }
+
+    /** The model attributes a device name resolves to; for tests. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    internal fun infoFor(name: String): ModelInfo = resolveModelInfo(resolveModel(name))
+
+    /** Models whose face count differs from their WatchModel block (same protocol, more faces). */
+    private val facesByName: Map<String, Int> = mapOf(
+        // Module 3586 user manual: face 4 is the tide graph (0:00 to 23:30).
+        "GBX-H5600" to 4,
+    )
+
+    /** How many faces [name]'s watch has (faces 1 to the count); 0 when it has no face setting. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun faceCountFor(name: String): Int =
+        facesByName[modelNameOf(name)] ?: resolveModelInfo(resolveModel(name)).faceCount
+
+    /** True when the connected watch shows phone notifications: its model has them and [serviceFound] (the characteristic is there). */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun showsAppNotifications(serviceFound: Boolean): Boolean = serviceFound && hasAppNotifications
 
     /** Look up whether a watch model is always-connected by device name. */
     @RequiresApi(Build.VERSION_CODES.O)

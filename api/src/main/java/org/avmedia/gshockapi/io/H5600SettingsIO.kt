@@ -7,6 +7,7 @@ import org.avmedia.gshockapi.model.SmartAlarm
 import org.avmedia.gshockapi.model.SoundMode
 import org.avmedia.gshockapi.model.WatchFaceItem
 import org.avmedia.gshockapi.protocols.H5600Protocol
+import org.avmedia.gshockapi.utils.Utils
 import timber.log.Timber
 
 /**
@@ -17,8 +18,9 @@ import timber.log.Timber
  * 0x50 (5 bytes): smart alarm: hh mm flags(01 on, 02 snooze) window(min).
  * 0x51 (6 bytes): [0]=0x51, [1]=face (1 weekday, 2 custom), [2..5]=display item (all four set).
  *
- * All reads go through [RawSettingIO] (shared requests, retries); all writes are read-modify-write
- * through [RawSettingIO.modify], so they keep unknown bytes and cannot undo each other.
+ * All reads go through [RawSettingIO] (shared requests, retries); all writes are checked read-modify-write
+ * through [RawSettingIO.modifySafe] (read, change only the target bytes, write, read back), so they keep unknown
+ * bytes and cannot undo each other. The same writer serves the app's screens and Home Assistant.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object H5600SettingsIO {
@@ -38,31 +40,31 @@ object H5600SettingsIO {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun checkSupported() = check(isSupported()) { "Not an H5600 protocol watch (protocol=${WatchInfo.protocol})" }
 
-    private fun checkPacket(
-        code: Int,
-        packet: IntArray,
-        size: Int = PACKET_SIZE,
-    ) = check(packet.size == size && packet[0] == code) { "Unexpected 0x%02X packet: %s".format(code, packet.toHex()) }
+    private fun checkPacket(code: Int, packet: IntArray, size: Int = PACKET_SIZE) =
+        check(packet.size == size && packet[0] == code) { "Unexpected 0x%02X packet: %s".format(code, packet.toHex()) }
 
-    private suspend fun readChecked(
-        code: Int,
-        size: Int = PACKET_SIZE,
-    ): IntArray {
+    private suspend fun readChecked(code: Int, size: Int = PACKET_SIZE): IntArray {
         checkSupported()
         return RawSettingIO.request(code).also { checkPacket(code, it, size) }
     }
 
-    /** Checked read-modify-write; returns the packet before the change. */
+    /** Checked read-modify-write of the [touched] bytes; returns the packet before the change. */
     private suspend fun modifyChecked(
         code: Int,
+        touched: Set<Int>,
         size: Int = PACKET_SIZE,
         transform: (IntArray) -> IntArray?,
     ): IntArray {
         checkSupported()
-        return RawSettingIO.modify(code) { p ->
+        var before: IntArray? = null
+        val result = RawSettingIO.modifySafe(code, touched) { frame ->
+            val p = IntArray(frame.size) { frame[it].toInt() and 0xFF }
             checkPacket(code, p, size)
-            transform(p)
+            before = p.copyOf()
+            transform(p)?.let { Utils.byteArrayOfIntArray(it) }
         }
+        (result as? SettingWriteResult.Failed)?.let { error(it.message) }
+        return checkNotNull(before) { "0x%02X was not read".format(code) }
     }
 
     // ---- Connection ----
@@ -97,15 +99,9 @@ object H5600SettingsIO {
     @Volatile
     private var homeLocation: Pair<Double, Double>? = null
 
-    private fun isValid(
-        lat: Double,
-        lon: Double,
-    ) = lat in -90.0..90.0 && lon in -180.0..180.0
+    private fun isValid(lat: Double, lon: Double) = lat in -90.0..90.0 && lon in -180.0..180.0
 
-    fun rememberHomeLocation(
-        latitude: Double,
-        longitude: Double,
-    ) {
+    fun rememberHomeLocation(latitude: Double, longitude: Double) {
         if (isValid(latitude, longitude)) homeLocation = latitude to longitude
     }
 
@@ -125,16 +121,12 @@ object H5600SettingsIO {
      */
     fun writeLocationInTimeSync() {
         if (!isSupported()) return
-        val loc =
-            runCatching { homeLocationProvider?.invoke() }.getOrNull()?.takeIf { isValid(it.first, it.second) }
-                ?: homeLocation ?: return
+        val loc = runCatching { homeLocationProvider?.invoke() }.getOrNull()?.takeIf { isValid(it.first, it.second) }
+            ?: homeLocation ?: return
         runCatching { setHomeLocation(loc.first, loc.second) }.onFailure { Timber.e(it, "0x24 location write failed") }
     }
 
-    fun setHomeLocation(
-        latitude: Double,
-        longitude: Double,
-    ) {
+    fun setHomeLocation(latitude: Double, longitude: Double) {
         checkSupported()
         require(isValid(latitude, longitude)) { "Bad coordinates" }
         homeLocation = latitude to longitude
@@ -152,7 +144,7 @@ object H5600SettingsIO {
 
     /** Sets the mode (no write if already equal). Returns the mode the watch had before. */
     suspend fun setSoundMode(mode: SoundMode): SoundMode? =
-        modifyChecked(SOUND_MODE_CODE) { p -> p.also { it[1] = mode.code } }
+        modifyChecked(SOUND_MODE_CODE, setOf(1)) { p -> p.also { it[1] = mode.code } }
             .let { SoundMode.fromCode(it[1]) }
             .also { if (it == mode) Timber.i("Sound mode already $mode, not writing") }
 
@@ -171,12 +163,12 @@ object H5600SettingsIO {
 
     suspend fun setWatchFaceNumber(face: Int) {
         require(face == 1 || face == 2) { "face must be 1 or 2" }
-        modifyChecked(WATCH_FACE_CODE) { p -> p.also { it[1] = face } }
+        modifyChecked(WATCH_FACE_CODE, setOf(1)) { p -> p.also { it[1] = face } }
     }
 
     /** Sets the display item (no write if already equal). Returns the item the watch had before. */
     suspend fun setWatchFaceItem(item: WatchFaceItem): WatchFaceItem? =
-        modifyChecked(WATCH_FACE_CODE) { p -> p.also { for (i in 2 until PACKET_SIZE) it[i] = item.code } }
+        modifyChecked(WATCH_FACE_CODE, (2 until PACKET_SIZE).toSet()) { p -> p.also { for (i in 2 until PACKET_SIZE) it[i] = item.code } }
             .let { before -> itemCode(before)?.let { WatchFaceItem.fromCode(it) } }
 
     // ---- Smart alarm (0x50) ----
@@ -189,7 +181,7 @@ object H5600SettingsIO {
     /** Writes the smart-alarm slot; other flag bits read from the watch are kept. */
     suspend fun setSmartAlarm(a: SmartAlarm) {
         require(a.hour in 0..23 && a.minute in 0..59 && a.windowMin in 0..120) { "Bad smart alarm" }
-        modifyChecked(SMART_ALARM_CODE, SMART_ALARM_SIZE) { p ->
+        modifyChecked(SMART_ALARM_CODE, setOf(1, 2, 3, 4), SMART_ALARM_SIZE) { p ->
             var flags = p[3] and 0x03.inv()
             if (a.enabled) flags = flags or 0x01
             if (a.snooze) flags = flags or 0x02
@@ -198,4 +190,5 @@ object H5600SettingsIO {
     }
 
     // ---- Basic settings restore (0x13) ----
+
 }
