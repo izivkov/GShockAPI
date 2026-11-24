@@ -18,6 +18,9 @@ object WatchFaceCodec {
     const val CUSTOM_FACE = 2
     const val TOP_RIGHT_SLOT = 3
 
+    /** The faces a watch with [faceCount] faces has (see WatchInfo.faceCountFor). */
+    fun faces(faceCount: Int): IntRange = FACES
+
     fun faceName(face: Int): String =
         when (face) {
             1 -> "Time only"
@@ -63,6 +66,7 @@ object WatchFaceCodec {
     fun withFace(
         frame: ByteArray,
         face: Int,
+        faceCount: Int = FACES.last,
     ): ByteArray? = if (face in FACES) withFaceRaw(frame, face) else null
 
     /** Any face index 0 to 255, for decoding only (the Details part of the screen). */

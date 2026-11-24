@@ -51,7 +51,7 @@ class WatchSettingCodecsTest {
         assertEquals(20, WatchFaceCodec.ITEM_NAMES.size)
         assertEquals("Steps", WatchFaceCodec.itemName(0))
         assertEquals("Stress score", WatchFaceCodec.itemName(0x0F))
-        assertEquals(19, WatchFaceCodec.OFFERED_ITEMS.size)
+        assertEquals(13, WatchFaceCodec.OFFERED_ITEMS.size)
         assertEquals(false, 0x0F in WatchFaceCodec.OFFERED_ITEMS)
         assertEquals("Moon age", WatchFaceCodec.itemName(0x13))
     }

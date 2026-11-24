@@ -76,6 +76,9 @@ object TideUserPointCodec {
 
     fun unit(point: Int): Int = FIRST_UNIT + point - 1
 
+    /** True for the values an own point has before anyone set it. */
+    fun isFactory(p: Point): Boolean = false
+
     fun request(point: Int): ByteArray? = if (point in 1..POINTS) byteArrayOf(TideSettingCodec.CODE.toByte(), unit(point).toByte()) else null
 
     fun valid(p: Point): Boolean =

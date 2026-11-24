@@ -259,6 +259,8 @@ data object WatchInfo {
         val hasWatchSettings: Boolean = true,
         // "Adjustment time minutes" in BLE settings (0x11) can be changed by the user.
         val hasTimeAdjustmentMinutes: Boolean = true,
+        // The faces a person can choose (0x51 index 0): 1 to faceCount, 0 = no face setting.
+        val faceCount: Int = 4,
     )
 
     // =========================================================================
@@ -721,6 +723,10 @@ data object WatchInfo {
     /** The model attributes a device name resolves to; for tests. */
     @RequiresApi(Build.VERSION_CODES.O)
     internal fun infoFor(name: String): ModelInfo = resolveModelInfo(resolveModel(name))
+
+    /** How many faces [name]'s watch has (faces 1 to the count); 0 when it has no face setting. */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun faceCountFor(name: String): Int = resolveModelInfo(resolveModel(name)).faceCount
 
     /** Look up whether a watch model is always-connected by device name. */
     @RequiresApi(Build.VERSION_CODES.O)
