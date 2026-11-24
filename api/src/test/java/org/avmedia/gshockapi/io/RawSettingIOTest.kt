@@ -138,7 +138,7 @@ class RawSettingIOTest {
         assertEquals(10, reply.frame!!.size)
     }
 
-    @Test fun theReadWaitsTenSecondsAsCasioDoes() {
+    @Test fun theReadWaitsTenSeconds() {
         assertEquals(10_000L, RawSettingIO.READ_TIMEOUT_MS)
     }
 

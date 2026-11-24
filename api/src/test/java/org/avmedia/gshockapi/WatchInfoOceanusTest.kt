@@ -6,7 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Test
 
-/** GENERIC writes the 0x22 scratchpad, which makes the CASIO WATCHES app forget an Oceanus watch (upstream GShockAPI 38708a0). */
+/** GENERIC writes the 0x22 scratchpad; an Oceanus watch keeps its own data there (upstream GShockAPI 38708a0). */
 class WatchInfoOceanusTest {
     @Test fun ocwS400ResolvesToOcwS400WithoutAScratchpad() {
         val info = WatchInfo.infoFor("CASIO OCW-S400")

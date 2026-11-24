@@ -3,7 +3,7 @@ package org.avmedia.gshockapi.casio
 import java.util.UUID
 import org.avmedia.gshockapi.ble.GetSetMode
 
-/** The characteristics of the watch features service and how each one is written (Casio: request without response, settings with response). */
+/** The characteristics of the watch features service and how each one is written (requests without response, settings with response). */
 enum class WatchChannel(val handle: GetSetMode, val uuid: UUID, val withResponse: Boolean) {
     READ_REQUEST(GetSetMode.GET, CasioConstants.CASIO_READ_REQUEST_FOR_ALL_FEATURES_CHARACTERISTIC_UUID, false),
     ALL_FEATURES(GetSetMode.SET, CasioConstants.CASIO_ALL_FEATURES_CHARACTERISTIC_UUID, true),
