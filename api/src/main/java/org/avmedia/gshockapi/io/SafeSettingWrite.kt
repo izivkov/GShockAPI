@@ -6,7 +6,7 @@ sealed class SettingWriteResult {
 
     data object Done : SettingWriteResult()
 
-    /** The watch confirmed the write, but did not answer the read-back in time. Not a failure: Casio's own app never reads back. */
+    /** The watch confirmed the write, but did not answer the read-back in time. Not a failure: the write itself was confirmed. */
     data object Written : SettingWriteResult()
 
     data class Failed(val message: String) : SettingWriteResult()

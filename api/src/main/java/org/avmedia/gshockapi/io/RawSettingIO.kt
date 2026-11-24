@@ -50,7 +50,7 @@ internal object AndroidSettingLink : SettingLink {
 object RawSettingIO {
     private const val TRIES = 3
 
-    /** Casio waits up to 10 s for the answer to a settings read. */
+    /** The watch answers a settings read within 10 s. */
     const val READ_TIMEOUT_MS = 10_000L
 
     // Seams for unit tests (a fake watch); production values below.
@@ -101,7 +101,7 @@ object RawSettingIO {
     }
 
     /**
-     * One settings read: sends [request], waits up to [timeoutMs] (Casio waits 10 s) and returns the first answer that
+     * One settings read: sends [request], waits up to [timeoutMs] (the watch answers within 10 s) and returns the first answer that
      * begins with the code and that [accept] takes. A refusal (`FF`) names its status; nothing is retried.
      */
     suspend fun read(request: ByteArray, timeoutMs: Long = READ_TIMEOUT_MS, accept: (ByteArray) -> Boolean = { true }): Reply =

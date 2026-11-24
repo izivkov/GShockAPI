@@ -25,8 +25,8 @@ class Outcome(val ok: Boolean, val reason: String? = null, val answer: ByteArray
 }
 
 /**
- * One queue for every read request and every write to the watch, strictly one at a time and in the order asked (Casio's
- * request queue). A write is done when its write result came. A read is done when its answer came (first byte = the code, the
+ * One queue for every read request and every write to the watch, strictly one at a time and in the order asked (the
+ * watch handles one request at a time). A write is done when its write result came. A read is done when its answer came (first byte = the code, the
  * option bytes the table names equal), when an `FF` notification came (that read failed), or after [CommandTable.REQUEST_TIMEOUT_MS].
  * Nothing is retried. Notifications are never consumed here: the handlers of every code, unsolicited ones included, still get all
  * of them while a request waits.

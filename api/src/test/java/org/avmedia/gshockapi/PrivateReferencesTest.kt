@@ -13,6 +13,9 @@ class PrivateReferencesTest {
         listOf(
             """notes?,? section""", """\(notes""", """\bnotes [A-Z][0-9]?\b""", """the notes""", """casio-protocol-notes""",
             """Casio.s app""", """official app""", """decompil""", """jadx""", """\bDart\b""",
+            // Say what the watch does, not what another app does.
+            """\bCasio('|’)?s? (own |official )?(app|setup|does|waits|writes)""", """CASIO WATCHES""", """\bas Casio\b""",
+            """AsCasio""", """\bCasio:""",
         ).joinToString("|"),
         RegexOption.IGNORE_CASE,
     )
@@ -42,6 +45,8 @@ class PrivateReferencesTest {
         "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "/** Connection kinds on which the official app sets the time: 1 normal, 3 auto, 4 time button. */",
         "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* `02`. The official app uses 10 random bytes per install; this library uses its",
         "api/src/main/java/org/avmedia/gshockapi/protocols/OceanusProtocol.kt" to "* BLE settings (0x11) written when pairing, as the official app does: automatic time",
+        "api/src/main/java/org/avmedia/gshockapi/WatchInfo.kt" to "* Exact model-name mapping from the official Casio app.",
+        "api/src/main/java/org/avmedia/gshockapi/io/H5600SettingsIO.kt" to "* Connection handshake copied from the official CASIO app (capture 2026-11-16 17:57:06):",
         "api/src/main/java/org/avmedia/gshockapi/model/H5600Settings.kt" to "/** DW-H5600 watch-face display item: bytes[2..5] of packet 0x51 (codes from the official app, 2026-11-16). */",
     )
 

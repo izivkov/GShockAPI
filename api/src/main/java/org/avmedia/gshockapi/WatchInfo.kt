@@ -250,7 +250,7 @@ data object WatchInfo {
         val settingsSize: Int = 17,
         val protocol: WatchProtocol = StandardProtocol,
         // The 10-byte user area of app information (0x22) is used as a scratchpad.
-        // Disable for watches where 0x22 holds data of the CASIO WATCHES app.
+        // Disable for watches that keep their own data in 0x22.
         val hasScratchpad: Boolean = true,
         val hasTimer: Boolean = true,
         val hasLight: Boolean = true,

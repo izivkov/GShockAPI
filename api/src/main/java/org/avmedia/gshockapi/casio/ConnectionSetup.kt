@@ -26,7 +26,7 @@ object ConnectionSetup {
     private const val CODE_TIME_MANAGER = 0x39
     private val ALWAYS_CONNECT_KINDS = setOf(9, 10)
 
-    /** 13: the watch connected itself after sleep, 14: after a link loss. Casio's setup: no 0x11, 0x3A, 0x3B; the 0x39 exchange. */
+    /** 13: the watch connected itself after sleep, 14: after a link loss. The setup on these kinds: no 0x11, 0x3A, 0x3B; the 0x39 exchange. */
     private val SELF_CONNECT_KINDS = setOf(13, 14)
     private var selfConnect = false
     private var condition: List<Int> = emptyList()
@@ -42,7 +42,7 @@ object ConnectionSetup {
     @Volatile var busy: () -> Boolean = { org.avmedia.gshockapi.io.H5600HealthIO.isActive || org.avmedia.gshockapi.io.H5600WorkoutIO.isActive }
 
     /**
-     * The end of Casio's setup, run on every connection (kind 14 included): the time and the DST values.
+     * The end of the setup, run on every connection (kind 14 included): the time and the DST values.
      * The default hands them to the library's own time setter.
      */
     @Volatile var timeWriter: () -> Unit = {
@@ -198,7 +198,7 @@ object ConnectionSetup {
         }
     }
 
-    /** Every kind: read the watch name and write it back (Casio does so every time). */
+    /** Every kind: read the watch name and write it back, on every connection. */
     private fun nextName() {
         step = Step.WAIT_23
         ConnectionKeepAlive.writer.request(CODE_NAME)
