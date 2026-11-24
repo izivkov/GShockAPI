@@ -50,6 +50,7 @@ class WatchQueueTest {
 
     @Before fun install() {
         CommandTable.strict = true
+        CommandTable.layoutsApply = { true } // the DW-H5600 family's lengths, whatever watch the other tests left set
         queue = WatchQueue(scope, transport, readTimeoutMs = 400)
         WatchLink.queue = queue
         NotificationGate.reset()
@@ -61,6 +62,7 @@ class WatchQueueTest {
 
     @After fun restore() {
         CommandTable.strict = false
+        CommandTable.layoutsApply = { org.avmedia.gshockapi.WatchInfo.protocol === H5600Protocol }
         ConnectionKeepAlive.writer = ConnectionWriter
         ConnectionSetup.busy = { org.avmedia.gshockapi.io.H5600HealthIO.isActive }
     }

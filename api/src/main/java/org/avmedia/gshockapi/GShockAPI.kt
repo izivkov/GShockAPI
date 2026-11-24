@@ -676,7 +676,7 @@ class GShockAPI(private val context: Context) : IGShockAPI {
      *
      * @return true if the notification service is supported.
      */
-    override fun supportsAppNotifications(): Boolean = Connection.isServiceSupported(GetSetMode.NOTIFY)
+    override fun supportsAppNotifications(): Boolean = WatchInfo.showsAppNotifications(Connection.isServiceSupported(GetSetMode.NOTIFY))
 
     /**
      * Set settings to the watch. Populate a [Settings] and call this function. Example:

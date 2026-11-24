@@ -200,8 +200,15 @@ object CommandTable {
         return true
     }
 
-    /** True when the answer has at least the shortest length for the request's code. */
-    fun longEnough(request: ByteArray, answer: ByteArray): Boolean {
+    /**
+     * The shortest lengths are the DW-H5600 family's layouts: other models answer some codes shorter (an OCW-S7000's `0x28` has
+     * 3 value bytes) and keep their own decoders. Set by the library; a test seam.
+     */
+    @Volatile var layoutsApply: () -> Boolean = { org.avmedia.gshockapi.WatchInfo.protocol === org.avmedia.gshockapi.protocols.H5600Protocol }
+
+    /** True when the answer has at least the shortest length for the request's code (only checked for the DW-H5600 family). */
+    fun longEnough(request: ByteArray, answer: ByteArray, layouts: Boolean = layoutsApply()): Boolean {
+        if (!layouts) return true
         val read = byCode[request[0].toInt() and 0xFF]?.read ?: return true
         return answer.size - 1 - (request.size - 1).coerceAtMost(read.matchOptions) >= read.minValue
     }

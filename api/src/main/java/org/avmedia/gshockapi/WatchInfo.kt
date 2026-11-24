@@ -468,6 +468,7 @@ data object WatchInfo {
                 hasOperationTone = false,
                 hasWatchSettings = false,
                 hasTimeAdjustmentMinutes = false,
+                hasAppNotifications = false,
                 protocol = OceanusProtocol,
             ),
             ModelInfo(model = WatchModel.GENERIC),
@@ -589,7 +590,7 @@ data object WatchInfo {
             // Module 5672: MTG-B3000
             put("MTG-B3000", WatchModel.MTG_B3000)
             // Module 5701: OCW-S7000
-            put("OCW-S7000", WatchModel.GENERIC) // RED CHECK: as on the night of the log
+            put("OCW-S7000", WatchModel.OCW_S400)
             // Module 5713: GWG-B1000
             put("GWG-B1000", WatchModel.GW)
             // Module 5728: OCW-S400
