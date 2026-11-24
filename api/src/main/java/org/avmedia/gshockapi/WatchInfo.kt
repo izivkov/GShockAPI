@@ -149,9 +149,6 @@ data object WatchInfo {
     val hasExerciseProfile: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = getState().info.hasExerciseProfile
-    val hasScratchpad: Boolean
-        @RequiresApi(Build.VERSION_CODES.O)
-        get() = getState().info.hasScratchpad
     val hasExcersiseProfile: Boolean
         @RequiresApi(Build.VERSION_CODES.O)
         get() = hasExerciseProfile
