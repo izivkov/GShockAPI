@@ -3,10 +3,13 @@ package org.avmedia.gshockapi.io
 import android.os.Build
 import androidx.annotation.RequiresApi
 import org.avmedia.gshockapi.WatchInfo
+import org.avmedia.gshockapi.model.Settings
 import org.avmedia.gshockapi.model.SmartAlarm
 import org.avmedia.gshockapi.model.SoundMode
 import org.avmedia.gshockapi.model.WatchFaceItem
 import org.avmedia.gshockapi.protocols.H5600Protocol
+import org.avmedia.gshockapi.utils.Utils
+import org.json.JSONObject
 import timber.log.Timber
 
 /**
@@ -17,14 +20,18 @@ import timber.log.Timber
  * 0x50 (5 bytes): smart alarm: hh mm flags(01 on, 02 snooze) window(min).
  * 0x51 (6 bytes): [0]=0x51, [1]=face (1 weekday, 2 custom), [2..5]=display item (all four set).
  *
- * All reads go through [RawSettingIO] (shared requests, retries); all writes are read-modify-write
- * through [RawSettingIO.modify], so they keep unknown bytes and cannot undo each other.
+ * All reads go through [RawSettingIO] (shared requests, retries); all writes are checked read-modify-write
+ * through [RawSettingIO.modifySafe] (read, change only the target bytes, write, read back), so they keep unknown
+ * bytes and cannot undo each other. The same writer serves the app's screens and Home Assistant.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 object H5600SettingsIO {
     const val SOUND_MODE_CODE = 0x42
     const val WATCH_FACE_CODE = 0x51
     const val SMART_ALARM_CODE = 0x50
+
+    /** CASIO_SETTING_FOR_BASIC: time format, light, tone, vibration, chime, do not disturb, power saving. */
+    const val BASIC_SETTINGS_CODE = 0x13
 
     /** CASIO_CURRENT_TIME_MANAGER. The official app requests it after connecting and writes the reply back. */
     const val TIME_MANAGER_CODE = 0x39
@@ -52,17 +59,24 @@ object H5600SettingsIO {
         return RawSettingIO.request(code).also { checkPacket(code, it, size) }
     }
 
-    /** Checked read-modify-write; returns the packet before the change. */
+    /** Checked read-modify-write of the [touched] bytes; returns the packet before the change. */
     private suspend fun modifyChecked(
         code: Int,
+        touched: Set<Int>,
         size: Int = PACKET_SIZE,
         transform: (IntArray) -> IntArray?,
     ): IntArray {
         checkSupported()
-        return RawSettingIO.modify(code) { p ->
-            checkPacket(code, p, size)
-            transform(p)
-        }
+        var before: IntArray? = null
+        val result =
+            RawSettingIO.modifySafe(code, touched) { frame ->
+                val p = IntArray(frame.size) { frame[it].toInt() and 0xFF }
+                checkPacket(code, p, size)
+                before = p.copyOf()
+                transform(p)?.let { Utils.byteArrayOfIntArray(it) }
+            }
+        (result as? SettingWriteResult.Failed)?.let { error(it.message) }
+        return checkNotNull(before) { "0x%02X was not read".format(code) }
     }
 
     // ---- Connection ----
@@ -152,7 +166,7 @@ object H5600SettingsIO {
 
     /** Sets the mode (no write if already equal). Returns the mode the watch had before. */
     suspend fun setSoundMode(mode: SoundMode): SoundMode? =
-        modifyChecked(SOUND_MODE_CODE) { p -> p.also { it[1] = mode.code } }
+        modifyChecked(SOUND_MODE_CODE, setOf(1)) { p -> p.also { it[1] = mode.code } }
             .let { SoundMode.fromCode(it[1]) }
             .also { if (it == mode) Timber.i("Sound mode already $mode, not writing") }
 
@@ -171,12 +185,12 @@ object H5600SettingsIO {
 
     suspend fun setWatchFaceNumber(face: Int) {
         require(face == 1 || face == 2) { "face must be 1 or 2" }
-        modifyChecked(WATCH_FACE_CODE) { p -> p.also { it[1] = face } }
+        modifyChecked(WATCH_FACE_CODE, setOf(1)) { p -> p.also { it[1] = face } }
     }
 
     /** Sets the display item (no write if already equal). Returns the item the watch had before. */
     suspend fun setWatchFaceItem(item: WatchFaceItem): WatchFaceItem? =
-        modifyChecked(WATCH_FACE_CODE) { p -> p.also { for (i in 2 until PACKET_SIZE) it[i] = item.code } }
+        modifyChecked(WATCH_FACE_CODE, (2 until PACKET_SIZE).toSet()) { p -> p.also { for (i in 2 until PACKET_SIZE) it[i] = item.code } }
             .let { before -> itemCode(before)?.let { WatchFaceItem.fromCode(it) } }
 
     // ---- Smart alarm (0x50) ----
@@ -189,7 +203,7 @@ object H5600SettingsIO {
     /** Writes the smart-alarm slot; other flag bits read from the watch are kept. */
     suspend fun setSmartAlarm(a: SmartAlarm) {
         require(a.hour in 0..23 && a.minute in 0..59 && a.windowMin in 0..120) { "Bad smart alarm" }
-        modifyChecked(SMART_ALARM_CODE, SMART_ALARM_SIZE) { p ->
+        modifyChecked(SMART_ALARM_CODE, setOf(1, 2, 3, 4), SMART_ALARM_SIZE) { p ->
             var flags = p[3] and 0x03.inv()
             if (a.enabled) flags = flags or 0x01
             if (a.snooze) flags = flags or 0x02
@@ -197,5 +211,23 @@ object H5600SettingsIO {
         }
     }
 
-    // ---- Basic settings restore (0x13) ----
+    // ---- Basic settings (0x13) ----
+
+    /** Reads the basic settings packet and decodes it with the decoder every watch uses. Throws when the watch does not answer. */
+    suspend fun getBasicSettings(): Settings {
+        val packet = readChecked(BASIC_SETTINGS_CODE, WatchInfo.settingsSize)
+        return SettingsIOFunctional.decode(packet.toHex()).getOrThrow()
+    }
+
+    /**
+     * Writes the fields of [settings] into the basic settings packet: read, change only the bits the settings model
+     * owns ([SettingsIOFunctional.applyTo]), write, read back. The other bits and bytes (length unit, step reminder,
+     * night window of the health settings) stay as the watch has them.
+     */
+    suspend fun setBasicSettings(settings: JSONObject) {
+        val fields = settings.keys().asSequence().associateWith { key -> settings.opt(key).takeUnless { settings.isNull(key) } }
+        modifyChecked(BASIC_SETTINGS_CODE, SettingsIOFunctional.OWNED_BYTES, WatchInfo.settingsSize) { packet ->
+            SettingsIOFunctional.applyTo(packet, fields)
+        }
+    }
 }

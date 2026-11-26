@@ -327,6 +327,11 @@ class GShockAPIMock(private val context: Context) : IGShockAPI {
         Timber.i("sendAppNotification: Message sent: $notification")
     }
 
+    override suspend fun sendAppNotificationAndWait(notification: AppNotification): org.avmedia.gshockapi.casio.NotificationSender.Outcome {
+        sendAppNotification(notification)
+        return org.avmedia.gshockapi.casio.NotificationSender.Outcome.SENT
+    }
+
     override fun supportsAppNotifications(): Boolean {
         return true
     }

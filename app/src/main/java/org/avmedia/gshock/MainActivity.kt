@@ -41,9 +41,12 @@ import org.avmedia.gshockapi.NotificationType
 import org.avmedia.gshockapi.ProgressEvents
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.io.AppNotificationIO
+import org.avmedia.gshockapi.io.H5600SettingsIO
 import org.avmedia.gshockapi.io.IO
 import org.avmedia.gshockapi.model.Alarm
 import org.avmedia.gshockapi.model.Settings
+import org.avmedia.gshockapi.model.SmartAlarm
+import org.avmedia.gshockapi.model.WatchFaceItem
 import timber.log.Timber
 import java.time.ZoneId
 import java.util.TimeZone
@@ -430,7 +433,7 @@ class MainActivity : ComponentActivity() {
 
     /** DW-H5600 LifeLog: runs one transfer and logs the decoded values, for checking against the watch. */
     private suspend fun runHealthTest(viewModel: MainScreenViewModel) {
-        viewModel.addLog("--- DW-H5600 LifeLog ---")
+        viewModel.addLog("--- DW-H5600 LifeLog / Health ---")
         val data = api.getStepCount(peek = true)
         viewModel.addLog("Time (local): ${data.timestamp}")
         viewModel.addLog("Steps today: ${data.currentDaySteps}")
@@ -444,11 +447,73 @@ class MainActivity : ComponentActivity() {
         viewModel.addLog("Energy (provisional): ${data.h5600?.energyKcal} kcal")
         viewModel.addLog("Heart rate (day): ${data.h5600?.heartRate}")
         viewModel.addLog("Heart rate (recent): ${data.h5600?.recentHeartRate}")
+        viewModel.addLog("Heart rate slots count: ${data.h5600?.heartRateSlots?.size ?: 0}")
+        viewModel.addLog("Activity breakdown: ${data.h5600?.activity}")
+        viewModel.addLog("Sleep: ${data.h5600?.sleep}")
+        viewModel.addLog("Body readings: ${data.h5600?.body}")
+        viewModel.addLog("Daily summary: ${data.h5600?.dailySummary}")
         viewModel.addLog(
             "Pending: LifeLog=${data.h5600?.lifeLogPending}, ActivityLog=${data.h5600?.activityLogPending}",
         )
         data.warnings.forEach { viewModel.addLog("Note: $it") }
         viewModel.addLog("Stream: ${data.raw?.size ?: 0} bytes")
+    }
+
+    /** DW-H5600 Smart Alarm test: reads current smart alarm, sets test alarm, reads back, restores original. */
+    private suspend fun runSmartAlarmTest(viewModel: MainScreenViewModel) {
+        viewModel.addLog("--- DW-H5600 Smart Alarm ---")
+        runCatching {
+            val current = H5600SettingsIO.getSmartAlarm()
+            viewModel.addLog("Current Smart Alarm: $current")
+
+            val testAlarm =
+                SmartAlarm(
+                    hour = (current.hour + 1) % 24,
+                    minute = 30,
+                    enabled = true,
+                    snooze = true,
+                    windowMin = 30,
+                )
+            viewModel.addLog("Setting Smart Alarm: $testAlarm")
+            H5600SettingsIO.setSmartAlarm(testAlarm)
+
+            val updated = H5600SettingsIO.getSmartAlarm()
+            viewModel.addLog("Smart Alarm readback: $updated")
+
+            // Restore original
+            H5600SettingsIO.setSmartAlarm(current)
+            viewModel.addLog("Restored original Smart Alarm: $current")
+        }.onFailure { error ->
+            viewModel.addLog("Smart Alarm test failed: ${error.message}")
+            Timber.e(error, "Smart Alarm test failed")
+        }
+    }
+
+    /** DW-H5600 Watch Faces test: reads face number/item, updates item, reads back, restores original. */
+    private suspend fun runWatchFaceTest(viewModel: MainScreenViewModel) {
+        viewModel.addLog("--- DW-H5600 Watch Faces ---")
+        runCatching {
+            val faceNum = api.getH5600WatchFaceNumber()
+            viewModel.addLog("Current Watch Face Number: $faceNum")
+
+            val faceItem = api.getWatchFaceItem()
+            viewModel.addLog("Current Watch Face Item: $faceItem")
+
+            val targetItem = if (faceItem == WatchFaceItem.HEART_RATE) WatchFaceItem.STEPS else WatchFaceItem.HEART_RATE
+            viewModel.addLog("Setting Watch Face Item to: $targetItem")
+            api.setWatchFaceItem(targetItem)
+
+            val readbackItem = api.getWatchFaceItem()
+            viewModel.addLog("Watch Face Item readback: $readbackItem")
+
+            if (faceItem != null) {
+                api.setWatchFaceItem(faceItem)
+                viewModel.addLog("Restored original Watch Face Item: $faceItem")
+            }
+        }.onFailure { error ->
+            viewModel.addLog("Watch Face test failed: ${error.message}")
+            Timber.e(error, "Watch Face test failed")
+        }
     }
 
     private suspend fun runCommands(viewModel: MainScreenViewModel) {
@@ -465,8 +530,10 @@ class MainActivity : ComponentActivity() {
         if (WatchInfo.hasTemperature) {
             viewModel.addLog("Temperature: ${api.getWatchTemperature()}")
         }
-        if (WatchInfo.model == WatchInfo.WatchModel.DW_H5600) {
+        if (WatchInfo.model == WatchInfo.WatchModel.DW_H5600 || H5600SettingsIO.isSupported()) {
             runHealthTest(viewModel)
+            runSmartAlarmTest(viewModel)
+            runWatchFaceTest(viewModel)
         }
 
         getDSTState(viewModel)
@@ -497,6 +564,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun runAppNotificationTest(viewModel: MainScreenViewModel) {
+        viewModel.addLog("--- App Notifications Test ---")
+        viewModel.addLog("Supports App Notifications: ${api.supportsAppNotifications()}")
+
         val calendarNotification =
             AppNotification(
                 type = NotificationType.CALENDAR,
@@ -551,8 +621,9 @@ class MainActivity : ComponentActivity() {
         viewModel.addLog("Sending calendar notification...")
         api.sendAppNotification(calendarNotification)
 
-        viewModel.addLog("Sending email notification...")
-        api.sendAppNotification(emailNotification)
+        viewModel.addLog("Sending email notification and waiting...")
+        val outcome = api.sendAppNotificationAndWait(emailNotification)
+        viewModel.addLog("Email notification outcome: $outcome")
     }
 
     @Suppress("unused")

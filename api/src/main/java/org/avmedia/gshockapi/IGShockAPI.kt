@@ -313,8 +313,12 @@ interface IGShockAPI {
      */
     fun sendAppNotification(notification: AppNotification)
 
+    /** Like [sendAppNotification], and waits for how the text ended: only SENT means it reached the watch. */
+    suspend fun sendAppNotificationAndWait(notification: AppNotification): org.avmedia.gshockapi.casio.NotificationSender.Outcome
+
     /**
-     * Checks if the connected watch supports receiving app notifications.
+     * Checks if the connected watch supports receiving app notifications. While the link's characteristics are not
+     * known (between a drop and the next service discovery) the watch's model decides, never "no".
      *
      * @return true if the notification service is supported.
      */

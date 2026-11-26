@@ -17,15 +17,15 @@ This library provides an API to communicate to the Casio G-Shock watches via the
 
 The library works with many Bluetooth-enabled G-Shock, Edifice, Oceanus, and Pro Trek models.
 
-| Series | Compatible Models (Examples)                                         | Note                                   |
-|:---|:---------------------------------------------------------------------|:---------------------------------------|
-| **Square** | GW-B5600, GMW-B5000, GW-B5000, DW-B5600, DW-H5600, TRN-50            | Classic & health square design support |
-| **CasiOak** | GA-B2100, GBM-2100, GMC-B2100, MRG-B2100                             | Octagonal bezel models                 |
-| **G-Steel** | GST-B100 to B1000, GST-W1000, ECB-900                                | Metal series                           |
-| **Edifice** | ECB-10 to ECB-2300, EQB-500 to EQB-2000                              | Bluetooth Edifice series               |
-| **MT-G / MR-G** | MTG-B1000/B3000/B3100, MRG-B5000/B2100                               | Premium metal and carbon models        |
-| **Oceanus** | OCW-S400, OCW-S7000                                                  | Manta S400 series, S7000 series        |
-| **Others** | ABL-100WE, GBD-100/200, GBD-H1000/H2000, GPR-B1000, BSA-B100         | Step trackers, GPS, and sensors        |
+| Series | Compatible Models (Examples)                                       | Note                                   |
+|:---|:-------------------------------------------------------------------|:---------------------------------------|
+| **Square** | GW-B5600, GMW-B5000, GW-B5000, DW-B5600, DW-H5600, TRN-50          | Classic & health square design support |
+| **CasiOak** | GA-B2100, GBM-2100, GMC-B2100, MRG-B2100                           | Octagonal bezel models                 |
+| **G-Steel** | GST-B100 to B1000, GST-W1000, ECB-900                              | Metal series                           |
+| **Edifice** | ECB-10 to ECB-2300, EQB-500 to EQB-2000                            | Bluetooth Edifice series               |
+| **MT-G / MR-G** | MTG-B1000/B3000/B3100, MRG-B5000/B2100                             | Premium metal and carbon models        |
+| **Oceanus** | OCW-S400, OCW-S7000                                                | Manta S400 series, S7000 series        |
+| **Others** | ABL-100WE, GBD-100/200, GBD-H1000/H2000, GPR-B1000, BSA-B100       | Step trackers, GPS, and sensors        |
 
 > **Note**: While these watches connect, not all specific hardware features (like fitness tracking steps on GBD models) may be fully supported yet.
 
@@ -66,6 +66,10 @@ If you like us to list your project which uses this library, [contact us](mailto
 If you rather not use a mobile app, but still like to set the time on your G-Shock to the correct time, 
 we have also developed a [Python program](https://github.com/izivkov/GShockTimeServer) which can run as a server on a regular PC or Raspberry PI with Bluetooth interface.
 The project is still WIP, but you can give it a try.
+
+## Acknowledgments & Credits
+Special thanks to:
+- [ExcuseMi](https://github.com/ExcuseMi/CasioGShockSmartSync) for contributing code, reverse engineering, and research for DW-H5600 health data/settings protocols support.
 
 ## Support this project
 

@@ -6,8 +6,11 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.avmedia.gshockapi.WatchInfo
 import org.avmedia.gshockapi.ble.Connection
 import org.avmedia.gshockapi.ble.GetSetMode
@@ -237,6 +240,77 @@ object SettingsIOFunctional {
     }
 
     /**
+     * The frame bytes ([0] is the code) that [applyTo] may change: the flags of byte 1, the light byte 2, the date
+     * format 4, the language 5, the font 8 and the sound and vibration byte 12.
+     */
+    val OWNED_BYTES: Set<Int> = setOf(1, 2, 4, 5, 8, 12)
+
+    /**
+     * Pure: [frame] (as read from the watch) with the fields present in [settings] put in, and nothing else changed.
+     * [encode] builds a whole frame from zeros, so bytes the settings model does not own are lost: on a DW-H5600 the
+     * low bits of byte 12 (length unit, step reminder) and bytes 13 to 16 (night window) would be reset. A field that
+     * [settings] (the settings model by field name) does not carry keeps the value of [frame].
+     */
+    fun applyTo(
+        frame: IntArray,
+        settings: Map<String, Any?>,
+    ): IntArray {
+        val out = frame.copyOf()
+        val extended = out.size == 17
+
+        fun flag(
+            index: Int,
+            mask: Int,
+            on: Boolean,
+        ) {
+            out[index] = if (on) out[index] or mask else out[index] and mask.inv()
+        }
+
+        fun bool(name: String): Boolean? = settings[name] as? Boolean
+
+        fun text(name: String): String? = settings[name] as? String
+
+        // Byte 1: a set bit means "off" for tone, auto light, power saving and do not disturb, "on" for 24 hours.
+        if (!WatchInfo.hasTimeFormat) {
+            flag(1, MASK_24_HOURS, true)
+        } else {
+            text("timeFormat")?.let { flag(1, MASK_24_HOURS, it == "24h") }
+        }
+        bool("buttonTone")?.let { on ->
+            flag(1, MASK_BUTTON_TONE_OFF, !on)
+            if (extended) flag(12, SOUND_ONLY, on)
+        }
+        if (extended) {
+            bool("keyVibration")?.let { flag(12, VIBRATION_ONLY, it) }
+            bool("hourlyChime")?.let { flag(12, CHIME, it) }
+        }
+        if (WatchInfo.hasAutoLight) bool("autoLight")?.let { flag(1, MASK_AUTO_LIGHT_OFF, !it) }
+        bool("powerSavingMode")?.let { flag(1, POWER_SAVING_MODE, !it) }
+        if (WatchInfo.findButtonUserDefined) bool("DnD")?.let { flag(1, DO_NOT_DISTURB_OFF, !it) }
+
+        // Byte 2: bit 0 is the long light duration; the other bits stay.
+        text("lightDuration")?.let { flag(2, LIGHT_DURATION_LONG, it == "4s" || it == "3s") }
+
+        if (extended && WatchInfo.hasMultipleFonts) text("font")?.let { flag(8, FONT_CLASSIC_MASK, it == "Classic") }
+        if (WatchInfo.hasDateFormat) text("dateFormat")?.let { out[4] = if (it == "DD:MM") 1 else 0 }
+        if (WatchInfo.weekLanguageSupported) {
+            text("language")?.let {
+                out[5] =
+                    when (it) {
+                        "English" -> 0
+                        "Spanish" -> 1
+                        "French" -> 2
+                        "German" -> 3
+                        "Italian" -> 4
+                        "Russian" -> 5
+                        else -> 0
+                    }
+            }
+        }
+        return out
+    }
+
+    /**
      * Pure command builder: Creates fetch command for settings.
      */
     fun buildFetchCommand(): ByteArray =
@@ -260,6 +334,13 @@ object SettingsIO {
     private data class State(val deferredResult: CompletableDeferred<Settings>? = null)
 
     private var state = State()
+
+    /**
+     * DW-H5600: its settings are read and written by several watch exchanges each, in coroutines. They run one at a
+     * time, in the order the calls were made (a coroutine started undispatched queues on the lock in call order), so
+     * a read sent right after a save cannot reach the watch before the save and bring back the old values.
+     */
+    private val h5600Gate = Mutex()
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun request(): Settings = CachedIO.request("GET_SETTINGS") { key -> getBasicSettings(key) }
@@ -313,20 +394,32 @@ object SettingsIO {
     @Suppress("UNUSED_PARAMETER")
     fun sendToWatch(message: String) {
         if (H5600SettingsIO.isSupported()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                val settings = Settings()
-                runCatching { settings.soundMode = H5600SettingsIO.getSoundMode()?.name }
-                    .onFailure { Timber.w(it, "Failed to read soundMode") }
-                runCatching { settings.watchFaceNumber = H5600SettingsIO.getWatchFaceNumber() }
-                    .onFailure { Timber.w(it, "Failed to read watchFaceNumber") }
-                runCatching { settings.watchFaceItem = H5600SettingsIO.getWatchFaceItem()?.name }
-                    .onFailure { Timber.w(it, "Failed to read watchFaceItem") }
-                runCatching { settings.smartAlarm = H5600SettingsIO.getSmartAlarm() }
-                    .onFailure { Timber.w(it, "Failed to read smartAlarm") }
+            CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.UNDISPATCHED) {
+                h5600Gate.withLock {
+                    // The basic settings (0x13) first: time format, light, tone, vibration, chime, do not disturb...
+                    // Without them the request fails, so no half-filled settings are cached as the watch's.
+                    val settings =
+                        runCatching { H5600SettingsIO.getBasicSettings() }.getOrElse { error ->
+                            Timber.e(error, "Failed to read the basic settings (0x13)")
+                            synchronized(this@SettingsIO) {
+                                state.deferredResult?.completeExceptionally(error)
+                                state = state.copy(deferredResult = null)
+                            }
+                            return@withLock
+                        }
+                    runCatching { settings.soundMode = H5600SettingsIO.getSoundMode()?.name }
+                        .onFailure { Timber.w(it, "Failed to read soundMode") }
+                    runCatching { settings.watchFaceNumber = H5600SettingsIO.getWatchFaceNumber() }
+                        .onFailure { Timber.w(it, "Failed to read watchFaceNumber") }
+                    runCatching { settings.watchFaceItem = H5600SettingsIO.getWatchFaceItem()?.name }
+                        .onFailure { Timber.w(it, "Failed to read watchFaceItem") }
+                    runCatching { settings.smartAlarm = H5600SettingsIO.getSmartAlarm() }
+                        .onFailure { Timber.w(it, "Failed to read smartAlarm") }
 
-                synchronized(this@SettingsIO) {
-                    state.deferredResult?.complete(settings)
-                    state = state.copy(deferredResult = null)
+                    synchronized(this@SettingsIO) {
+                        state.deferredResult?.complete(settings)
+                        state = state.copy(deferredResult = null)
+                    }
                 }
             }
             return
@@ -344,40 +437,46 @@ object SettingsIO {
         val valueObj = jsonObj.optJSONObject("value") ?: jsonObj
 
         if (H5600SettingsIO.isSupported()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                runCatching {
-                    val soundModeStr = valueObj.optString("soundMode", "")
-                    if (soundModeStr.isNotEmpty()) {
-                        SoundMode.entries.firstOrNull { it.name.equals(soundModeStr, ignoreCase = true) }?.let { mode ->
-                            H5600SettingsIO.setSoundMode(mode)
+            CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.UNDISPATCHED) {
+                h5600Gate.withLock {
+                    runCatching {
+                        // The basic settings (0x13): only the bits the settings model owns are changed.
+                        H5600SettingsIO.setBasicSettings(valueObj)
+                    }.onFailure { Timber.e(it, "Failed to set the basic settings (0x13)") }
+                    runCatching {
+                        val soundModeStr = valueObj.optString("soundMode", "")
+                        if (soundModeStr.isNotEmpty()) {
+                            SoundMode.entries.firstOrNull { it.name.equals(soundModeStr, ignoreCase = true) }?.let { mode ->
+                                H5600SettingsIO.setSoundMode(mode)
+                            }
                         }
-                    }
-                    if (valueObj.has("watchFaceNumber")) {
-                        val faceNum = valueObj.getInt("watchFaceNumber")
-                        H5600SettingsIO.setWatchFaceNumber(faceNum)
-                    }
-                    val itemStr = valueObj.optString("watchFaceItem", "")
-                    if (itemStr.isNotEmpty()) {
-                        WatchFaceItem.entries.firstOrNull { it.name.equals(itemStr, ignoreCase = true) }?.let { item ->
-                            H5600SettingsIO.setWatchFaceItem(item)
+                        if (valueObj.has("watchFaceNumber")) {
+                            val faceNum = valueObj.getInt("watchFaceNumber")
+                            H5600SettingsIO.setWatchFaceNumber(faceNum)
                         }
-                    }
-                    if (valueObj.has("smartAlarm")) {
-                        val saJson = valueObj.optJSONObject("smartAlarm")
-                        if (saJson != null) {
-                            val smartAlarm =
-                                SmartAlarm(
-                                    hour = saJson.optInt("hour", 0),
-                                    minute = saJson.optInt("minute", 0),
-                                    enabled = saJson.optBoolean("enabled", false),
-                                    snooze = saJson.optBoolean("snooze", false),
-                                    windowMin = saJson.optInt("windowMin", 0),
-                                )
-                            H5600SettingsIO.setSmartAlarm(smartAlarm)
+                        val itemStr = valueObj.optString("watchFaceItem", "")
+                        if (itemStr.isNotEmpty()) {
+                            WatchFaceItem.entries.firstOrNull { it.name.equals(itemStr, ignoreCase = true) }?.let { item ->
+                                H5600SettingsIO.setWatchFaceItem(item)
+                            }
                         }
+                        if (valueObj.has("smartAlarm")) {
+                            val saJson = valueObj.optJSONObject("smartAlarm")
+                            if (saJson != null) {
+                                val smartAlarm =
+                                    SmartAlarm(
+                                        hour = saJson.optInt("hour", 0),
+                                        minute = saJson.optInt("minute", 0),
+                                        enabled = saJson.optBoolean("enabled", false),
+                                        snooze = saJson.optBoolean("snooze", false),
+                                        windowMin = saJson.optInt("windowMin", 0),
+                                    )
+                                H5600SettingsIO.setSmartAlarm(smartAlarm)
+                            }
+                        }
+                    }.onFailure { error ->
+                        Timber.e(error, "Failed to set DW-H5600 settings")
                     }
-                }.onFailure { error ->
-                    Timber.e(error, "Failed to set DW-H5600 settings")
                 }
             }
             return

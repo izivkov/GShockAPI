@@ -5,14 +5,36 @@
 - **Rich Health Metrics**: Decodes daily total step count, daily step goal, 24-hour hourly step buckets, energy expenditure (kcal), heart rate summary (min, max, average BPM), recent heart rate samples, and breakdown of daily activity times (walking, running, cycling, active, and still seconds).
 - **Self-Healing Sync & Fault Tolerance**: Added automatic retry mechanism (up to 3 attempts) and watchdog polling for missing or delayed watch responses during packet transfer. Real-time transfer status and diagnostics are exposed via `H5600HealthIO.status` and `lastError`.
 
-## ⚙️ DW-H5600 Settings & Watch Face Control
+## ⌚ Watch Faces & Display Widget Control
+- **Dual Watch Face Mode Selection**: Supports switching between simple weekday view (`Face 1`) and customizable widget view (`Face 2`) via `getH5600WatchFaceNumber()` and `setH5600WatchFaceNumber()`.
+- **Display Widget Selection**: Configure active sub-display widget items via `getWatchFaceItem()` and `setWatchFaceItem()`. Supported widgets (`WatchFaceItem` enum):
+  - `STEPS`: Daily step count widget.
+  - `HEART_RATE`: Real-time heart rate measurement.
+  - `HEART_RATE_MIN_MAX`: Daily min/max heart rate ranges.
+  - `SLEEP`: Sleep tracking widget.
+  - `SUNRISE_SUNSET`: Sunrise and sunset times.
+  - `MOON`: Moon phase indicator.
+- **Safe Read-Modify-Write**: All watch face changes use checked byte modification (`H5600SettingsIO.modifyChecked`) to ensure adjacent configuration bits remain intact.
+
+## 🔔 App Notification Delivery System
+- **Synchronous Outcome Tracking**: Introduced `sendAppNotificationAndWait(notification)` returning explicit `Outcome` status (`SENT`, `HELD_TOO_LONG`, `WRITE_FAILED`, `EMPTY`), allowing applications to confirm whether notification texts reached the watch.
+- **Notification ID Assignment**: Added 4-byte frame ID allocation (`NotificationIds.assign(notification)`), allowing watches to identify, update, and manage individual notifications in its internal list.
+- **Intelligent Flow Control & Gating**:
+  - `NotificationGate`: Listens for watch control commands (`0x3D`) to pause sending during active health/workout syncs or watch-side pauses.
+  - `NotificationSender`: Handles chunking based on MTU size (`chunkSize = mtu - 4`), model-dependent chunk spacing (`2,000ms` gap for DW-H5600, `500ms` for standard models), and automatic queueing for up to 10 minutes.
+- **Multilingual UTF-8 Truncation**: Automatic UTF-8 byte boundary truncation and combined length safeguards (`MAX_TEXT_BYTES = 193`, `MAX_SHORT_TEXT_BYTES = 40`, `MAX_COMBINED_BYTES = 206`), supporting special characters, Japanese, and Arabic script rendering.
+- **Robust Model-Based Availability**: `supportsAppNotifications()` uses model capabilities via `WatchInfo.showsAppNotificationsNow()`, ensuring accurate reporting even during connection drops or before service discovery completes.
+
+## ⚙️ DW-H5600 Settings & Smart Alarms
 - **DW-H5600 Configuration IO**: Added dedicated `H5600SettingsIO` and `RawSettingIO` for reading and writing DW-H5600 watch settings.
-- **Sound Mode & Watch Face Customization**: Supports configuring Sound Mode (`MUTE`, `CUSTOM`, `VIBE_ONLY`), Watch Face display selection (Face 1 / Face 2), Watch Face item data widgets (e.g., `STEPS`, `HEART_RATE`), and Smart Alarm schedules.
-- **Unified API Extensions**: Exposed `getWatchFaceItem()`, `setWatchFaceItem()`, `getH5600WatchFaceNumber()`, and `setH5600WatchFaceNumber()` directly on `GShockAPI` / `IGShockAPI`.
+- **Sound Mode & Smart Alarm Customization**: Supports configuring Sound Mode (`MUTE`, `CUSTOM`, `VIBE_ONLY`), and Smart Alarm schedules (`hour`, `minute`, `enabled`, `snooze`, `windowMin`).
 
 ## 🛠 Stability & Protocol Enhancements
 - **Button Response Routing**: Improved button press deferred state routing in `ButtonPressedIO` to handle pending requests safely across watch disconnects/reconnects.
 - **Always-Connected Query API**: Added `WatchInfo.isAlwaysConnected(watchName)` for querying whether a watch model maintains a persistent BLE connection.
+
+## 🙏 Acknowledgments & Credits
+- **Community Contribution**: Special thanks to [ExcuseMi](https://github.com/ExcuseMi/CasioGShockSmartSync) for contributing code, reverse engineering, and research for DW-H5600 health data/settings protocol support.
 
 ---
 
